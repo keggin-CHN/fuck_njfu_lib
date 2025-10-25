@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# fuck_njfu_lib 一键部署脚本 (适用于 Debian/Ubuntu) - 最终健壮版
+# fuck_njfu_lib 一键部署脚本 (适用于 Debian/Ubuntu) - 最终健壮版 v3
 # ==============================================================================
 
 # --- 配置信息 ---
@@ -79,13 +79,19 @@ python3 -m venv "$VENV_DIR" || print_error "创建虚拟环境失败。"
 source "${VENV_DIR}/bin/activate"
 pip install --upgrade pip &>/dev/null
 pip install -r "${APP_DIR_NAME}/requirements.txt" || print_error "安装 Python 依赖失败。"
+
+# 7. 初始化数据库
+print_info "正在初始化数据库..."
+cd "${APP_DIR_NAME}" || exit 1
+python init_db.py || print_error "数据库初始化失败。"
+cd .. # 返回项目根目录
 deactivate
 
-# 7. 修正文件权限
+# 8. 修正文件权限
 print_info "正在修正项目目录权限，所有者: ${REAL_USER}:${REAL_GROUP}"
 chown -R "${REAL_USER}:${REAL_GROUP}" "$INSTALL_DIR"
 
-# 8. 创建 systemd 服务
+# 9. 创建 systemd 服务
 print_info "正在创建 systemd 服务 (使用 gunicorn)..."
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 APP_DIR="${INSTALL_DIR}/${APP_DIR_NAME}"
@@ -108,13 +114,13 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# 9. 启动并启用服务
+# 10. 启动并启用服务
 print_info "正在重载 systemd, 启用并启动服务..."
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}"
 systemctl restart "${SERVICE_NAME}"
 
-# 10. 显示最终状态
+# 11. 显示最终状态
 print_info "等待服务启动..."
 sleep 3
 if systemctl is-active --quiet "${SERVICE_NAME}"; then
