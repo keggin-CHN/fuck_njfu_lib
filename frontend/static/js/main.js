@@ -25,29 +25,41 @@ document.addEventListener('DOMContentLoaded', function () {
 // 移动端抽屉侧边栏
 function initMobileSidebarDrawer() {
     const btn = document.querySelector('.sidebar-toggler');
-    const overlay = document.querySelector('.overlay');
     const sidebar = document.querySelector('.sidebar');
+    let overlay = document.querySelector('.overlay');
 
-    if (!btn || !overlay || !sidebar) return;
+    if (!sidebar) return;
 
-    // 打开
-    btn.addEventListener('click', () => {
+    // 若不存在遮罩则动态创建（确保所有页面可用）
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'overlay';
+        overlay.style.display = 'none';
+        document.body.prepend(overlay);
+    }
+
+    function open() {
         document.body.classList.add('sidebar-open');
         overlay.style.display = 'block';
-    });
-
-    // 关闭（点击遮罩）
-    overlay.addEventListener('click', () => {
+    }
+    function close() {
         document.body.classList.remove('sidebar-open');
         overlay.style.display = 'none';
-    });
+    }
 
-    // 关闭（ESC）
+    // 全局兜底方法（按钮或其它地方可直接调用）
+    window.__openSidebar = open;
+    window.__closeSidebar = close;
+
+    // 点击按钮打开
+    if (btn) {
+        btn.addEventListener('click', open);
+    }
+
+    // 点击遮罩或 ESC 关闭
+    overlay.addEventListener('click', close);
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            document.body.classList.remove('sidebar-open');
-            overlay.style.display = 'none';
-        }
+        if (e.key === 'Escape') close();
     });
 }
 
