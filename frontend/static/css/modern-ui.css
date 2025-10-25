@@ -1,0 +1,452 @@
+/* 现代化UI增强样式 - 浅色主题 */
+
+/* 1. 全局卡片样式优化 */
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%);
+    color: #2d3748;
+    border: none;
+    padding: 1.25rem 1.5rem;
+    font-weight: 600;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* 2. 按钮样式优化 */
+.btn {
+    border-radius: 10px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%);
+    color: #2d3748;
+    box-shadow: 0 2px 8px rgba(168, 179, 255, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #939fef 0%, #b4c3ff 100%);
+    box-shadow: 0 4px 12px rgba(168, 179, 255, 0.4);
+    transform: translateY(-2px);
+    color: #1a202c;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    color: #2d3748;
+    box-shadow: 0 2px 8px rgba(132, 250, 176, 0.3);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #6ee7a0 0%, #7ac2e3 100%);
+    box-shadow: 0 4px 12px rgba(132, 250, 176, 0.4);
+    transform: translateY(-2px);
+    color: #1a202c;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #fbc2eb 0%, #f6d365 100%);
+    color: #2d3748;
+    box-shadow: 0 2px 8px rgba(251, 194, 235, 0.3);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #f5b4e1 0%, #f0c655 100%);
+    box-shadow: 0 4px 12px rgba(251, 194, 235, 0.4);
+    transform: translateY(-2px);
+    color: #1a202c;
+}
+
+.btn-sm {
+    border-radius: 8px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.875rem;
+}
+
+/* 3. 流量显示区域优化 */
+#trafficDataDisplay {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#trafficCount {
+    font-size: 3.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #a8b3ff 0%, #84fab0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+/* 4. 进度条优化 */
+.progress {
+    border-radius: 12px;
+    height: 30px !important;
+    background-color: #f0f4f8;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.progress-bar {
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.6s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+.progress-bar.bg-success {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    color: #2d3748;
+}
+
+.progress-bar.bg-warning {
+    background: linear-gradient(135deg, #fbc2eb 0%, #f6d365 100%);
+    color: #2d3748;
+}
+
+.progress-bar.bg-danger {
+    background: linear-gradient(135deg, #ffa8c5 0%, #ffd3a5 100%);
+    color: #2d3748;
+}
+
+/* 5. 表单优化 */
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    padding: 0.65rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #a8b3ff;
+    box-shadow: 0 0 0 0.2rem rgba(168, 179, 255, 0.25);
+}
+
+/* 6. 徽章优化 */
+.badge {
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.badge.bg-primary {
+    background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%) !important;
+    color: #2d3748;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%) !important;
+    color: #2d3748;
+}
+
+.badge.bg-info {
+    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%) !important;
+    color: #2d3748;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #fbc2eb 0%, #f6d365 100%) !important;
+    color: #2d3748;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #ffa8c5 0%, #ffd3a5 100%) !important;
+    color: #2d3748;
+}
+
+/* 7. 表格优化 */
+.table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%);
+    color: #2d3748;
+    font-weight: 600;
+    border: none;
+    padding: 1rem;
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f7fafc;
+    transform: scale(1.01);
+}
+
+/* 8. 图表容器优化 */
+canvas {
+    border-radius: 12px;
+}
+
+/* 9. 导航栏优化 */
+.navbar {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.3rem;
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    margin: 0 0.25rem;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+/* 10. 警告框优化 */
+.alert {
+    border-radius: 12px;
+    border: none;
+    padding: 1rem 1.25rem;
+    animation: slideInDown 0.5s ease;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+    color: #22543d;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+    color: #1e3a8a;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #78350f;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #7f1d1d;
+}
+
+/* 11. 模态框优化 */
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%);
+    color: #2d3748;
+    border: none;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-footer {
+    border: none;
+    padding: 1.25rem 1.5rem;
+}
+
+/* 12. 开关按钮优化 */
+.form-check-input:checked {
+    background-color: #a8b3ff;
+    border-color: #a8b3ff;
+}
+
+.form-check-input:focus {
+    border-color: #a8b3ff;
+    box-shadow: 0 0 0 0.2rem rgba(168, 179, 255, 0.25);
+}
+
+/* 13. 时间范围按钮组优化 */
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.btn-group .btn:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
+.btn-outline-primary {
+    border-color: #a8b3ff;
+    color: #5568d3;
+    background: #ffffff;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary.active {
+    background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%);
+    border-color: #a8b3ff;
+    color: #2d3748;
+}
+
+/* 14. 页面加载动画 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.row > div {
+    animation: fadeInUp 0.6s ease;
+}
+
+.row > div:nth-child(1) { animation-delay: 0.1s; }
+.row > div:nth-child(2) { animation-delay: 0.2s; }
+.row > div:nth-child(3) { animation-delay: 0.3s; }
+
+/* 15. 响应式优化 */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+
+    #trafficCount {
+        font-size: 2.5rem;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* 16. 滚动条优化 */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #939fef 0%, #b4c3ff 100%);
+}
+
+/* 17. 图标动画 */
+.bi {
+    transition: transform 0.3s ease;
+}
+
+.card-header:hover .bi,
+button:hover .bi {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* 18. 输入框图标 */
+.input-group-text {
+    background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%);
+    color: #2d3748;
+    border: none;
+}
+
+/* 19. 图表线条颜色优化 */
+#trafficChart {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
