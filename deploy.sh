@@ -1,9 +1,4 @@
 #!/bin/bash
-
-# ==============================================================================
-# fuck_njfu_lib 一键部署脚本 (适用于 Debian/Ubuntu) - 最终健壮版 v3
-# ==============================================================================
-
 # --- 配置信息 ---
 GITHUB_REPO="https://github.com/keggin-CHN/fuck_njfu_lib.git"
 INSTALL_DIR="/opt/fuck_njfu_lib"
