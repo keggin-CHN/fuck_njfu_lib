@@ -60,6 +60,28 @@ login_manager.login_view = 'login'
 login_manager.login_message = '请先登录'
 scheduler.app = app
 
+# 在应用上下文中初始化数据库和调度器
+# 这样做可以确保无论通过 `python app.py` 还是 `gunicorn` 启动，初始化都会执行
+with app.app_context():
+    db.create_all()
+    # 数据库和管理员初始化
+    if User.query.count() == 0:
+        logger.info("数据库为空，进行初始化设置...")
+        
+        # 初始化系统设置
+        if not SystemSetting.query.filter_by(key='invite_code_required').first():
+            SystemSetting.set_setting(
+                'invite_code_required',
+                True,
+                '是否启用邀请码注册模式'
+            )
+            logger.info("已初始化邀请码模式设置为启用")
+        
+        logger.info("数据库初始化完成，等待第一个用户注册成为管理员")
+
+# 启动调度器
+setup_scheduler(app)
+
 
 # 管理员权限装饰器
 def admin_required(f):
@@ -154,26 +176,6 @@ def inject_now():
 def load_user(user_id):
     """加载用户函数"""
     return User.query.get(int(user_id))
-
-
-def create_tables_and_admin():
-    """创建数据库表、重置用户ID顺序，并检查是否存在管理员"""
-    with app.app_context():
-        db.create_all()
-        reset_user_ids()
-        
-        # 初始化系统设置
-        if not SystemSetting.query.filter_by(key='invite_code_required').first():
-            SystemSetting.set_setting(
-                'invite_code_required',
-                True,
-                '是否启用邀请码注册模式'
-            )
-            logger.info("已初始化邀请码模式设置为启用")
-
-        
-        if User.query.filter_by(is_admin=True).first() is None:
-            logger.info("数据库初始化完成，等待第一个用户注册成为管理员")
 
 
 @app.context_processor
@@ -1590,25 +1592,6 @@ def cancel_user_reservation(uuid):
     return redirect(url_for('dashboard'))
 
 
-def run_with_scheduler(app, host='0.0.0.0', port=5000, debug=False):
-    """以适当的方式运行Flask应用，避免调度器重复初始化"""
-    if debug:
-        import os
-        if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-            with app.app_context():
-                create_tables_and_admin()
-                setup_scheduler(app)
-        else:
-            with app.app_context():
-                create_tables_and_admin()
-        app.run(host=host, port=port, debug=debug)
-    else:
-        with app.app_context():
-            create_tables_and_admin()
-            setup_scheduler(app)
-        app.run(host=host, port=port)
-
-
 if __name__ == '__main__':
-    run_with_scheduler(app, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
 
