@@ -241,7 +241,7 @@
 
     <main class="main-content">
         {% if current_user.is_authenticated %}
-        <button class="sidebar-toggler d-inline-flex d-md-none" type="button" aria-label="打开菜单" title="菜单" onclick="window.__openSidebar && window.__openSidebar()">
+        <button class="sidebar-toggler" type="button" aria-label="打开菜单">
             <i class="bi bi-list"></i>
         </button>
         {% endif %}
@@ -524,32 +524,7 @@ if(document.getElementById('particles-js')){
 }
 </script>
 
-<!-- 移动端公告兜底：确保所有页面在手机上以浏览器弹窗提醒（每次页面加载至少弹一次） -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // 仅在移动端执行
-    var isMobile = window.matchMedia('(max-width: 768px)').matches;
-    if (!isMobile) return;
-
-    // 防止重复弹出（页面级别）
-    if (window.__announcementHandled) return;
-
-    fetch('/api/announcement')
-      .then(function (response) { return response.json(); })
-      .then(function (data) {
-          if (data && data.success && data.content && data.content.trim()) {
-              var announcementTime = data.updated_at || '';
-              var msg = data.content.trim() + (announcementTime ? '\n\n更新时间: ' + announcementTime : '');
-              // 以浏览器原生 alert 弹窗形式提示
-              alert(msg);
-              window.__announcementHandled = true;
-          }
-      })
-      .catch(function (err) {
-          console.error('移动端公告弹窗失败:', err);
-      });
-});
-</script>
+<!-- 移动端公告兜底已移除，统一使用站内公告弹窗 showAnnouncementModal -->
 
 {% block extra_js %}{% endblock %}
 </body>
