@@ -216,3 +216,31 @@ form + form {
 .row.match-height > [class*="col-"] > .dashboard-card {
     flex-grow: 1;
 }
+
+/* 侧边栏样式 */
+.sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+body.sidebar-open .sidebar {
+    transform: translateX(0);
+}
+
+body.sidebar-open .overlay {
+    display: block;
+    opacity: 1;
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040; /* 确保在侧边栏和主内容之间 */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
