@@ -209,12 +209,13 @@
     </style>
     <!-- 新的布局样式 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/refactor.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}" media="(max-width: 768px)">
 </head>
 <body class="{% if not current_user.is_authenticated %}auth-page{% endif %}">
 <!-- 粒子背景 -->
 <div id="particles-js"></div>
 
-<div class="overlay"></div>
+<div class="overlay" style="display:none"></div>
 <div class="app-container">
     {% if current_user.is_authenticated %}
     <aside class="sidebar">
@@ -238,7 +239,7 @@
 
     <main class="main-content">
         {% if current_user.is_authenticated %}
-        <button class="sidebar-toggler" type="button">
+        <button class="sidebar-toggler d-none" type="button" aria-label="打开菜单">
             <i class="bi bi-list"></i>
         </button>
         {% endif %}
