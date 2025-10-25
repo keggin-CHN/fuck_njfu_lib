@@ -211,7 +211,7 @@
     </style>
     <!-- 新的布局样式 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/refactor.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}" media="(max-width: 768px)">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
 </head>
 <body class="{% if not current_user.is_authenticated %}auth-page{% endif %}">
 <!-- 粒子背景 -->
@@ -241,7 +241,7 @@
 
     <main class="main-content">
         {% if current_user.is_authenticated %}
-        <button class="sidebar-toggler d-none" type="button" aria-label="打开菜单" title="菜单">
+        <button class="sidebar-toggler d-inline-flex d-md-none" type="button" aria-label="打开菜单" title="菜单" onclick="window.__openSidebar && window.__openSidebar()">
             <i class="bi bi-list"></i>
         </button>
         {% endif %}
@@ -524,33 +524,25 @@ if(document.getElementById('particles-js')){
 }
 </script>
 
-<!-- 移动端公告兜底：确保所有页面在手机上以浏览器弹窗提醒 -->
+<!-- 移动端公告兜底：确保所有页面在手机上以浏览器弹窗提醒（每次页面加载至少弹一次） -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // 避免与页面内重复执行
-    if (window.__announcementHandled) return;
-
     // 仅在移动端执行
     var isMobile = window.matchMedia('(max-width: 768px)').matches;
     if (!isMobile) return;
+
+    // 防止重复弹出（页面级别）
+    if (window.__announcementHandled) return;
 
     fetch('/api/announcement')
       .then(function (response) { return response.json(); })
       .then(function (data) {
           if (data && data.success && data.content && data.content.trim()) {
-              var closed = localStorage.getItem('announcementClosed');
-              var lastTime = localStorage.getItem('lastAnnouncementTime');
               var announcementTime = data.updated_at || '';
-              var needShow = (!closed || lastTime !== announcementTime);
-
-              if (needShow) {
-                  var msg = data.content.trim() + (announcementTime ? '\n\n更新时间: ' + announcementTime : '');
-                  alert(msg);
-                  // 与站内弹窗保持一致的关闭记录
-                  localStorage.setItem('announcementClosed', 'true');
-                  localStorage.setItem('lastAnnouncementTime', announcementTime);
-                  window.__announcementHandled = true;
-              }
+              var msg = data.content.trim() + (announcementTime ? '\n\n更新时间: ' + announcementTime : '');
+              // 以浏览器原生 alert 弹窗形式提示
+              alert(msg);
+              window.__announcementHandled = true;
           }
       })
       .catch(function (err) {
