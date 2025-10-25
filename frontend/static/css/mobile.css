@@ -1,0 +1,78 @@
+/* 仅用于移动端（通过<link media="(max-width: 768px)">按条件加载），
+   不影响桌面端原有布局与逻辑。 */
+
+/* 基础：防止横向滚动条 */
+html, body {
+  overflow-x: hidden;
+}
+
+/* 汉堡按钮：默认在桌面通过 d-none 隐藏；本文件会强制在移动端显示 */
+.sidebar-toggler {
+  display: flex !important;          /* 覆盖 d-none */
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #00d4ff;
+  background: rgba(0, 212, 255, 0.14);
+  color: #00d4ff;
+  z-index: 1050;                      /* 高于内容，低于公告弹窗(9999)和Bootstrap模态(>=1050) */
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+}
+
+/* 侧边栏：移动端改为抽屉，默认收起 */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transform: translateX(-100%);
+  transition: transform 0.28s ease;
+  width: 260px;                       /* 与桌面一致 */
+  z-index: 1060;                      /* 高于遮罩 */
+}
+
+/* 打开抽屉态 */
+body.sidebar-open .sidebar {
+  transform: translateX(0);
+}
+
+/* 遮罩层：默认隐藏，打开时显示；层级低于模态与公告弹窗，避免遮挡 */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1040;                      /* 低于 .sidebar(1060)，也低于 Bootstrap 模态(>=1050) 与公告(9999) */
+  display: none;
+}
+
+body.sidebar-open .overlay {
+  display: block;
+}
+
+/* 主内容在移动端为顶部按钮挪出空间 */
+.main-content {
+  padding: 60px 16px 16px 16px;
+}
+
+/* 表格在移动端的可读性优化（可选，小幅微调） */
+.table-mobile th,
+.table-mobile td {
+  white-space: nowrap;
+}
+.table-mobile td[data-title]::before {
+  content: attr(data-title) "：";
+  color: #00d4ff;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+/* 防止粒子背景、卡片阴影等覆盖抽屉交互 */
+#particles-js {
+  pointer-events: none;
+}
