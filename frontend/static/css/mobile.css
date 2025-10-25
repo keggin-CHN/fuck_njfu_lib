@@ -76,3 +76,34 @@ body.sidebar-open .overlay {
 #particles-js {
   pointer-events: none;
 }
+/* 强化移动端左上角菜单按钮的可见性与可点击性（仅移动端样式文件中生效） */
+.sidebar-toggler {
+  border: 2px solid #00d4ff;
+  background: linear-gradient(135deg, rgba(0,212,255,0.28), rgba(0,140,255,0.2));
+  box-shadow: 0 0 18px rgba(0, 212, 255, 0.45);
+  font-size: 26px; /* 图标稍大 */
+  color: #00d4ff;
+  cursor: pointer;
+}
+.sidebar-toggler:hover {
+  background: linear-gradient(135deg, rgba(0,212,255,0.38), rgba(0,140,255,0.3));
+  box-shadow: 0 0 22px rgba(0, 212, 255, 0.6);
+}
+
+/* 在按钮右侧显示“菜单”文字提示，便于用户理解点击即可打开 */
+.sidebar-toggler::after {
+  content: "菜单";
+  position: absolute;
+  left: 56px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #00d4ff;
+  font-weight: 600;
+  font-size: 14px;
+  text-shadow: 0 0 8px rgba(0,212,255,0.6);
+}
+
+/* 抽屉打开时，按钮保持在最上方以便随时关闭（可选） */
+body.sidebar-open .sidebar-toggler {
+  z-index: 1065;
+}
