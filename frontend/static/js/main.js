@@ -26,40 +26,25 @@ document.addEventListener('DOMContentLoaded', function () {
 function initMobileSidebarDrawer() {
     const btn = document.querySelector('.sidebar-toggler');
     const sidebar = document.querySelector('.sidebar');
-    let overlay = document.querySelector('.overlay');
+    const overlay = document.querySelector('.overlay');
 
-    if (!sidebar) return;
+    if (!btn || !sidebar || !overlay) return;
 
-    // 若不存在遮罩则动态创建（确保所有页面可用）
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'overlay';
-        overlay.style.display = 'none';
-        document.body.prepend(overlay);
-    }
-
-    function open() {
+    const openDrawer = () => {
         document.body.classList.add('sidebar-open');
-        overlay.style.display = 'block';
-    }
-    function close() {
+    };
+
+    const closeDrawer = () => {
         document.body.classList.remove('sidebar-open');
-        overlay.style.display = 'none';
-    }
+    };
 
-    // 全局兜底方法（按钮或其它地方可直接调用）
-    window.__openSidebar = open;
-    window.__closeSidebar = close;
+    btn.addEventListener('click', openDrawer);
+    overlay.addEventListener('click', closeDrawer);
 
-    // 点击按钮打开
-    if (btn) {
-        btn.addEventListener('click', open);
-    }
-
-    // 点击遮罩或 ESC 关闭
-    overlay.addEventListener('click', close);
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') close();
+        if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+            closeDrawer();
+        }
     });
 }
 
