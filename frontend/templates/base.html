@@ -214,6 +214,7 @@
 <!-- 粒子背景 -->
 <div id="particles-js"></div>
 
+<div class="overlay"></div>
 <div class="app-container">
     {% if current_user.is_authenticated %}
     <aside class="sidebar">
@@ -236,6 +237,11 @@
     {% endif %}
 
     <main class="main-content">
+        {% if current_user.is_authenticated %}
+        <button class="sidebar-toggler" type="button">
+            <i class="bi bi-list"></i>
+        </button>
+        {% endif %}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="alert alert-info">
