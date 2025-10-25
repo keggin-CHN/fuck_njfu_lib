@@ -18,27 +18,37 @@ document.addEventListener('DOMContentLoaded', function () {
     // 验证码处理
     initCaptchaHandling();
 
-    // 移动端侧边栏切换
-    initSidebarToggler();
+    // 移动端抽屉侧边栏（仅在按钮存在时启用）
+    initMobileSidebarDrawer();
 });
 
-// 初始化侧边栏切换
-function initSidebarToggler() {
-    const sidebar = document.querySelector('.sidebar');
-    const sidebarToggler = document.querySelector('.sidebar-toggler');
+// 移动端抽屉侧边栏
+function initMobileSidebarDrawer() {
+    const btn = document.querySelector('.sidebar-toggler');
     const overlay = document.querySelector('.overlay');
+    const sidebar = document.querySelector('.sidebar');
 
-    if (sidebar && sidebarToggler && overlay) {
-        sidebarToggler.addEventListener('click', function () {
-            sidebar.classList.toggle('is-open');
-            overlay.classList.toggle('is-visible');
-        });
+    if (!btn || !overlay || !sidebar) return;
 
-        overlay.addEventListener('click', function () {
-            sidebar.classList.remove('is-open');
-            overlay.classList.remove('is-visible');
-        });
-    }
+    // 打开
+    btn.addEventListener('click', () => {
+        document.body.classList.add('sidebar-open');
+        overlay.style.display = 'block';
+    });
+
+    // 关闭（点击遮罩）
+    overlay.addEventListener('click', () => {
+        document.body.classList.remove('sidebar-open');
+        overlay.style.display = 'none';
+    });
+
+    // 关闭（ESC）
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.body.classList.remove('sidebar-open');
+            overlay.style.display = 'none';
+        }
+    });
 }
 
 // 初始化座位验证
