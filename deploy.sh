@@ -1,12 +1,16 @@
 #!/bin/bash
 
+# ==============================================================================
+# fuck_njfu_lib 一键部署脚本 (适用于 Debian/Ubuntu)
+# ==============================================================================
+
 # --- 配置信息 ---
 GITHUB_REPO="https://github.com/keggin-CHN/fuck_njfu_lib.git"
 INSTALL_DIR="/opt/fuck_njfu_lib"
 SERVICE_NAME="fuck_njfu_lib"
 APP_DIR_NAME="backend"
 VENV_DIR=".venv"
-# 关键修复：正确获取执行 sudo 的用户名
+APP_PORT=5000 # 定义端口变量
 USER_WHO_RUNS=${SUDO_USER:-$(whoami)}
 GROUP_WHO_RUNS=$(id -gn "$USER_WHO_RUNS")
 # ----------------
@@ -33,11 +37,21 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # 2. 安装系统依赖
-print_info "正在更新软件包列表并安装依赖 (git, python3, python3-venv)..."
+print_info "正在更新软件包列表并安装依赖 (git, python3, python3-venv, lsof)..."
 apt-get update -y &>/dev/null || print_error "更新软件包列表失败。"
-apt-get install -y git python3 python3-venv || print_error "安装依赖失败。"
+apt-get install -y git python3 python3-venv lsof || print_error "安装依赖失败。"
 
-# 3. 克隆或更新项目代码
+# 3. 清理已占用的端口
+print_info "正在检查并清理端口 ${APP_PORT}..."
+# 使用 fuser 或者 lsof 来杀掉进程
+if command -v fuser &>/dev/null; then
+    fuser -k -n tcp ${APP_PORT} || true
+else
+    kill $(lsof -t -i:${APP_PORT}) || true
+fi
+sleep 1 # 等待进程被终止
+
+# 4. 克隆或更新项目代码
 if [ -d "$INSTALL_DIR" ]; then
     print_info "项目目录 $INSTALL_DIR 已存在,正在拉取最新代码..."
     cd "$INSTALL_DIR" || print_error "无法进入目录 $INSTALL_DIR"
@@ -49,28 +63,26 @@ fi
 
 cd "$INSTALL_DIR" || print_error "无法进入项目目录 $INSTALL_DIR"
 
-# 4. 创建虚拟环境并安装 Python 依赖
+# 5. 创建虚拟环境并安装 Python 依赖
 print_info "正在创建 Python 虚拟环境..."
 python3 -m venv "$VENV_DIR" || print_error "创建虚拟环境失败。"
 
 print_info "正在激活虚拟环境并安装项目依赖 (包括 gunicorn)..."
 source "${VENV_DIR}/bin/activate"
 pip install --upgrade pip &>/dev/null
-# 确保从最新的 requirements.txt 安装
 pip install -r "${APP_DIR_NAME}/requirements.txt" || print_error "安装 Python 依赖失败。"
 deactivate
 
-# 5. 修正文件权限
+# 6. 修正文件权限
 print_info "正在修正项目目录权限，所有者: ${USER_WHO_RUNS}:${GROUP_WHO_RUNS}"
 chown -R "$USER_WHO_RUNS:$GROUP_WHO_RUNS" "$INSTALL_DIR"
 
-# 6. 创建 systemd 服务
+# 7. 创建 systemd 服务
 print_info "正在创建 systemd 服务 (使用 gunicorn)..."
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 APP_DIR="${INSTALL_DIR}/${APP_DIR_NAME}"
 GUNICORN_EXEC="${INSTALL_DIR}/${VENV_DIR}/bin/gunicorn"
 
-# 使用 cat 和 EOF 创建服务文件
 cat > "$SERVICE_FILE" << EOF
 [Unit]
 Description=Gunicorn instance to serve fuck_njfu_lib
@@ -80,8 +92,7 @@ After=network.target
 User=${USER_WHO_RUNS}
 Group=${GROUP_WHO_RUNS}
 WorkingDirectory=${APP_DIR}
-# 关键修复：使用 gunicorn 启动
-ExecStart=${GUNICORN_EXEC} --workers 3 --bind 0.0.0.0:5000 app:app
+ExecStart=${GUNICORN_EXEC} --workers 3 --bind 0.0.0.0:${APP_PORT} app:app
 Restart=always
 RestartSec=10
 
@@ -91,18 +102,15 @@ EOF
 
 print_info "systemd 服务文件已成功创建于 ${SERVICE_FILE}"
 
-# 7. 启动并启用服务
+# 8. 启动并启用服务
 print_info "正在重载 systemd, 启用并启动服务..."
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}"
-systemctl restart "${SERVICE_NAME}" # 使用 restart 确保应用最新的配置
+systemctl restart "${SERVICE_NAME}"
 
-# 8. 显示最终状态
+# 9. 显示最终状态
 print_info "等待服务启动..."
 sleep 3
-systemctl status "${SERVICE_NAME}" --no-pager
-
-echo
 if systemctl is-active --quiet "${SERVICE_NAME}"; then
     print_success "部署成功！"
     print_info "服务 '${SERVICE_NAME}' 已通过 gunicorn 启动并在后台运行。"
@@ -112,3 +120,4 @@ else
     print_error "服务启动失败！请检查日志以获取详细信息。"
     print_info "运行 'sudo journalctl -u ${SERVICE_NAME}' 查看完整日志。"
 fi
+
