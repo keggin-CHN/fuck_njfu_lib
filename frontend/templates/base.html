@@ -176,7 +176,11 @@
     <script>
         // 页面加载时检查公告
         document.addEventListener('DOMContentLoaded', function() {
-            // 这个函数将在各个页面中重写
+            const announcementContent = '{{ announcement.content | e | default("", true) }}';
+            const announcementTime = '{{ announcement.updated_at.strftime("%Y-%m-%d %H:%M:%S") if announcement else "" }}';
+            if (announcementContent) {
+                showAnnouncementModal(announcementContent, announcementTime);
+            }
         });
     </script>
     {% endblock %}
