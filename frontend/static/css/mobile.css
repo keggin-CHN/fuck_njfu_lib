@@ -1,14 +1,13 @@
-/* 仅用于移动端（通过<link media="(max-width: 768px)">按条件加载），
-   不影响桌面端原有布局与逻辑。 */
+/* 移动端样式：默认将侧边栏转为抽屉，桌面端通过媒体查询恢复 */
 
 /* 基础：防止横向滚动条 */
 html, body {
   overflow-x: hidden;
 }
 
-/* 汉堡按钮：默认在桌面通过 d-none 隐藏；本文件会强制在移动端显示 */
+/* 汉堡按钮：移动端显示，固定左上角 */
 .sidebar-toggler {
-  display: flex !important;          /* 覆盖 d-none */
+  display: flex;
   align-items: center;
   justify-content: center;
   position: fixed;
@@ -18,92 +17,81 @@ html, body {
   height: 44px;
   border-radius: 50%;
   border: 1px solid #00d4ff;
-  background: rgba(0, 212, 255, 0.14);
+  background: rgba(10, 25, 47, 0.85);
   color: #00d4ff;
-  z-index: 1050;                      /* 高于内容，低于公告弹窗(9999)和Bootstrap模态(>=1050) */
-  backdrop-filter: blur(6px);
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+  z-index: 1050; /* 高于内容，低于公告(9999) */
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.sidebar-toggler:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 18px rgba(0, 212, 255, 0.5);
 }
 
-/* 侧边栏：移动端改为抽屉，默认收起 */
+
+/* 侧边栏：默认转为抽屉，隐藏在左侧 */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100%;
   transform: translateX(-100%);
-  transition: transform 0.28s ease;
-  width: 260px;                       /* 与桌面一致 */
-  z-index: 1060;                      /* 高于遮罩 */
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  width: 260px;
+  z-index: 1060; /* 高于遮罩 */
+  border-right: 1px solid #00d4ff; /* 移动端也保留右边框 */
 }
 
 /* 打开抽屉态 */
-body.sidebar-open .sidebar {
+body.sidebar-open .sidebar,
+.sidebar.is-open {
   transform: translateX(0);
 }
 
-/* 遮罩层：默认隐藏，打开时显示；层级低于模态与公告弹窗，避免遮挡 */
+/* 遮罩层：默认隐藏，打开时显示 */
 .overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1040;                      /* 低于 .sidebar(1060)，也低于 Bootstrap 模态(>=1050) 与公告(9999) */
+  z-index: 1040; /* 低于侧边栏 */
   display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 body.sidebar-open .overlay {
   display: block;
+  opacity: 1;
 }
 
-/* 主内容在移动端为顶部按钮挪出空间 */
+/* 主内容区：为顶部按钮留出空间 */
 .main-content {
-  padding: 60px 16px 16px 16px;
+  padding-top: 70px;
 }
 
-/* 表格在移动端的可读性优化（可选，小幅微调） */
-.table-mobile th,
-.table-mobile td {
-  white-space: nowrap;
-}
-.table-mobile td[data-title]::before {
-  content: attr(data-title) "：";
-  color: #00d4ff;
-  font-weight: 600;
-  margin-right: 6px;
-}
+/* 桌面端(min-width: 769px)布局恢复 */
+@media (min-width: 769px) {
+  /* 隐藏汉堡按钮 */
+  .sidebar-toggler {
+    display: none !important;
+  }
 
-/* 防止粒子背景、卡片阴影等覆盖抽屉交互 */
-#particles-js {
-  pointer-events: none;
-}
-/* 强化移动端左上角菜单按钮的可见性与可点击性（仅移动端样式文件中生效） */
-.sidebar-toggler {
-  border: 2px solid #00d4ff;
-  background: linear-gradient(135deg, rgba(0,212,255,0.28), rgba(0,140,255,0.2));
-  box-shadow: 0 0 18px rgba(0, 212, 255, 0.45);
-  font-size: 26px; /* 图标稍大 */
-  color: #00d4ff;
-  cursor: pointer;
-}
-.sidebar-toggler:hover {
-  background: linear-gradient(135deg, rgba(0,212,255,0.38), rgba(0,140,255,0.3));
-  box-shadow: 0 0 22px rgba(0, 212, 255, 0.6);
-}
+  /* 恢复侧边栏为静态布局 */
+  .sidebar {
+    position: static;
+    transform: none;
+    transition: none;
+  }
 
-/* 在按钮右侧显示“菜单”文字提示，便于用户理解点击即可打开 */
-.sidebar-toggler::after {
-  content: "菜单";
-  position: absolute;
-  left: 56px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #00d4ff;
-  font-weight: 600;
-  font-size: 14px;
-  text-shadow: 0 0 8px rgba(0,212,255,0.6);
-}
+  /* 恢复主内容区内边距 */
+  .main-content {
+    padding: 30px;
+  }
 
-/* 抽屉打开时，按钮保持在最上方以便随时关闭（可选） */
-body.sidebar-open .sidebar-toggler {
-  z-index: 1065;
+  /* 隐藏遮罩层 */
+  .overlay {
+    display: none !important;
+  }
 }
