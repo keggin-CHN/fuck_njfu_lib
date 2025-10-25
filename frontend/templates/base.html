@@ -31,6 +31,8 @@
 
     <!-- 使用本地 Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <!-- Bootstrap Icons（仅用于显示汉堡图标等bi图标） -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <!-- 保留你自己的 main.css -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <!-- 霓虹风格样式 -->
@@ -239,7 +241,7 @@
 
     <main class="main-content">
         {% if current_user.is_authenticated %}
-        <button class="sidebar-toggler d-none" type="button" aria-label="打开菜单">
+        <button class="sidebar-toggler d-none" type="button" aria-label="打开菜单" title="菜单">
             <i class="bi bi-list"></i>
         </button>
         {% endif %}
@@ -520,6 +522,41 @@ if(document.getElementById('particles-js')){
         retina_detect: true
     });
 }
+</script>
+
+<!-- 移动端公告兜底：确保所有页面在手机上以浏览器弹窗提醒 -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // 避免与页面内重复执行
+    if (window.__announcementHandled) return;
+
+    // 仅在移动端执行
+    var isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (!isMobile) return;
+
+    fetch('/api/announcement')
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+          if (data && data.success && data.content && data.content.trim()) {
+              var closed = localStorage.getItem('announcementClosed');
+              var lastTime = localStorage.getItem('lastAnnouncementTime');
+              var announcementTime = data.updated_at || '';
+              var needShow = (!closed || lastTime !== announcementTime);
+
+              if (needShow) {
+                  var msg = data.content.trim() + (announcementTime ? '\n\n更新时间: ' + announcementTime : '');
+                  alert(msg);
+                  // 与站内弹窗保持一致的关闭记录
+                  localStorage.setItem('announcementClosed', 'true');
+                  localStorage.setItem('lastAnnouncementTime', announcementTime);
+                  window.__announcementHandled = true;
+              }
+          }
+      })
+      .catch(function (err) {
+          console.error('移动端公告弹窗失败:', err);
+      });
+});
 </script>
 
 {% block extra_js %}{% endblock %}
