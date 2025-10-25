@@ -206,3 +206,57 @@ body:has(.auth-page) .app-container {
         transform: translateY(0);
     }
 }
+.sidebar-toggler {
+    display: none; /* 默认在桌面上隐藏 */
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1050;
+    background: rgba(0, 212, 255, 0.2);
+    border: 1px solid #00d4ff;
+    color: #00d4ff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 24px;
+    line-height: 1;
+}
+
+/* 移动端响应式布局 */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: -260px; /* 默认隐藏在左侧 */
+        top: 0;
+        height: 100%;
+        transition: left 0.3s ease-in-out;
+    }
+
+    .sidebar.is-open {
+        left: 0; /* 显示侧边栏 */
+    }
+
+    .sidebar-toggler {
+        display: block; /* 在移动端显示 */
+    }
+
+    .main-content {
+        padding: 70px 15px 15px 15px; /* 调整内边距，为切换按钮留出空间 */
+    }
+
+    /* 当侧边栏打开时，可以添加一个遮罩层 */
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: none;
+    }
+
+    .overlay.is-visible {
+        display: block;
+    }
+}
