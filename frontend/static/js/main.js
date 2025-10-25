@@ -17,7 +17,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 验证码处理
     initCaptchaHandling();
+
+    // 移动端侧边栏切换
+    initSidebarToggler();
 });
+
+// 初始化侧边栏切换
+function initSidebarToggler() {
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarToggler = document.querySelector('.sidebar-toggler');
+    const overlay = document.querySelector('.overlay');
+
+    if (sidebar && sidebarToggler && overlay) {
+        sidebarToggler.addEventListener('click', function () {
+            sidebar.classList.toggle('is-open');
+            overlay.classList.toggle('is-visible');
+        });
+
+        overlay.addEventListener('click', function () {
+            sidebar.classList.remove('is-open');
+            overlay.classList.remove('is-visible');
+        });
+    }
+}
 
 // 初始化座位验证
 function initSeatValidation() {
