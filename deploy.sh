@@ -1,16 +1,14 @@
 #!/bin/bash
 
-# ==============================================================================
-# fuck_njfu_lib 一键部署脚本 (适用于 Debian/Ubuntu)
-# ==============================================================================
-
 # --- 配置信息 ---
 GITHUB_REPO="https://github.com/keggin-CHN/fuck_njfu_lib.git"
 INSTALL_DIR="/opt/fuck_njfu_lib"
 SERVICE_NAME="fuck_njfu_lib"
 APP_DIR_NAME="backend"
-APP_FILE="app.py"
 VENV_DIR=".venv"
+# 关键修复：正确获取执行 sudo 的用户名
+USER_WHO_RUNS=${SUDO_USER:-$(whoami)}
+GROUP_WHO_RUNS=$(id -gn "$USER_WHO_RUNS")
 # ----------------
 
 # --- 辅助函数 ---
@@ -55,36 +53,37 @@ cd "$INSTALL_DIR" || print_error "无法进入项目目录 $INSTALL_DIR"
 print_info "正在创建 Python 虚拟环境..."
 python3 -m venv "$VENV_DIR" || print_error "创建虚拟环境失败。"
 
-print_info "正在激活虚拟环境并安装项目依赖..."
+print_info "正在激活虚拟环境并安装项目依赖 (包括 gunicorn)..."
 source "${VENV_DIR}/bin/activate"
 pip install --upgrade pip &>/dev/null
+# 确保从最新的 requirements.txt 安装
 pip install -r "${APP_DIR_NAME}/requirements.txt" || print_error "安装 Python 依赖失败。"
 deactivate
 
-# 5. 创建 systemd 服务
-print_info "正在创建 systemd 服务..."
+# 5. 修正文件权限
+print_info "正在修正项目目录权限，所有者: ${USER_WHO_RUNS}:${GROUP_WHO_RUNS}"
+chown -R "$USER_WHO_RUNS:$GROUP_WHO_RUNS" "$INSTALL_DIR"
+
+# 6. 创建 systemd 服务
+print_info "正在创建 systemd 服务 (使用 gunicorn)..."
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 APP_DIR="${INSTALL_DIR}/${APP_DIR_NAME}"
-PYTHON_EXEC="${INSTALL_DIR}/${VENV_DIR}/bin/python"
-APP_ENTRY="${APP_DIR}/${APP_FILE}"
-LOG_FILE="${INSTALL_DIR}/service.log"
-ERR_FILE="${INSTALL_DIR}/service.err"
+GUNICORN_EXEC="${INSTALL_DIR}/${VENV_DIR}/bin/gunicorn"
 
 # 使用 cat 和 EOF 创建服务文件
 cat > "$SERVICE_FILE" << EOF
 [Unit]
-Description=fuck_njfu_lib Service
+Description=Gunicorn instance to serve fuck_njfu_lib
 After=network.target
 
 [Service]
-User=$(logname)
-Group=$(id -gn "$(logname)")
+User=${USER_WHO_RUNS}
+Group=${GROUP_WHO_RUNS}
 WorkingDirectory=${APP_DIR}
-ExecStart=${PYTHON_EXEC} ${APP_ENTRY}
+# 关键修复：使用 gunicorn 启动
+ExecStart=${GUNICORN_EXEC} --workers 3 --bind 0.0.0.0:5000 app:app
 Restart=always
 RestartSec=10
-StandardOutput=file:${LOG_FILE}
-StandardError=file:${ERR_FILE}
 
 [Install]
 WantedBy=multi-user.target
@@ -92,20 +91,24 @@ EOF
 
 print_info "systemd 服务文件已成功创建于 ${SERVICE_FILE}"
 
-# 6. 启动并启用服务
+# 7. 启动并启用服务
 print_info "正在重载 systemd, 启用并启动服务..."
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}"
-systemctl start "${SERVICE_NAME}"
+systemctl restart "${SERVICE_NAME}" # 使用 restart 确保应用最新的配置
 
-# 7. 显示最终状态
+# 8. 显示最终状态
 print_info "等待服务启动..."
 sleep 3
 systemctl status "${SERVICE_NAME}" --no-pager
 
 echo
-print_success "部署完成！"
-print_info "服务 '${SERVICE_NAME}' 已启动并在后台运行。"
-print_info "您可以使用 'sudo systemctl status ${SERVICE_NAME}' 来查看其状态。"
-print_info "服务日志位于: ${LOG_FILE}"
-print_info "错误日志位于: ${ERR_FILE}"
+if systemctl is-active --quiet "${SERVICE_NAME}"; then
+    print_success "部署成功！"
+    print_info "服务 '${SERVICE_NAME}' 已通过 gunicorn 启动并在后台运行。"
+    print_info "您可以使用 'sudo systemctl status ${SERVICE_NAME}' 来查看其状态。"
+    print_info "要查看实时日志，请运行 'sudo journalctl -u ${SERVICE_NAME} -f'"
+else
+    print_error "服务启动失败！请检查日志以获取详细信息。"
+    print_info "运行 'sudo journalctl -u ${SERVICE_NAME}' 查看完整日志。"
+fi
