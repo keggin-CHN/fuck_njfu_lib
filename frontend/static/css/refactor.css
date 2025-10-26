@@ -312,3 +312,36 @@ body:has(.auth-page) .app-container {
     color: #fff !important;
     border: 1px solid #fff !important;
 }
+
+.modal-content {
+    background-color: #1a1a1a;
+    border-color: #333;
+    color: #fff;
+}
+
+/* 确保模态框和遮罩在最顶层，覆盖可能的冲突样式 */
+.modal-backdrop {
+    z-index: 1050;
+}
+.modal {
+    z-index: 1060;
+}
+
+/* 修复：系统公告模态框按钮无法点击 —— 背景遮罩覆盖并拦截事件 */
+.modal-backdrop {
+  pointer-events: none !important; /* 禁用遮罩的点击拦截，让事件传递到模态框内容 */
+}
+
+/* 保障模态框内部任何元素可点击 */
+.modal.show .modal-dialog,
+.modal-content {
+  pointer-events: auto !important;
+}
+
+/* 提升层级，避免其他叠层（侧边栏/粒子/自定义卡片）覆盖 */
+.modal {
+  z-index: 2000 !important;
+}
+.modal-backdrop {
+  z-index: 1990 !important;
+}
