@@ -81,20 +81,26 @@ class LibraryTrafficMonitor:
 
                 # 如果从 span 中找到了至少两个数字，直接使用
                 if len(nums) >= 2:
-                    count = int(nums[0])
-                    total_seats = int(nums[1])
+                    num1 = int(nums)
+                    num2 = int(nums)
                 else:
                     # 回退：在整个 HTML 中查找数字（更宽容）
                     all_nums = re.findall(r'\d+', response.text)
                     if len(all_nums) >= 2:
-                        count = int(all_nums[0])
-                        total_seats = int(all_nums[1])
+                        num1 = int(all_nums)
+                        num2 = int(all_nums)
                     else:
                         logger.error("流量监控：未能从页面中解析到足够的数字信息")
                         return None
+                
+                # 总座位数应该是较大的数字，剩余座位数是较小的数字
+                total_seats = max(num1, num2)
+                remaining_seats = min(num1, num2)
 
-                remaining_seats = total_seats - count
-                logger.debug(f"流量监控：解析到在馆人数: {count}, 总座位: {total_seats}")
+                # 在馆人数 = 总座位 - 剩余座位
+                count = total_seats - remaining_seats
+
+                logger.debug(f"流量监控：解析到在馆人数: {count}, 总座位: {total_seats}, 剩余座位: {remaining_seats}")
             except Exception as e:
                 logger.error(f"流量监控：解析数字失败 - {e}", exc_info=True)
                 return None
