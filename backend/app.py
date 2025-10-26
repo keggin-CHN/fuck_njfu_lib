@@ -9,7 +9,7 @@ from multiprocessing import Pool, cpu_count, freeze_support
 from functools import partial
 from sqlalchemy import create_engine, text
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, Response, stream_with_context
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 from models import db, User, ReservationSetting, ReservationHistory, InviteCode, SystemSetting, Log, Traffic
 from utils.auth_manager import encrypt_password, decrypt_password, AuthManager, LibraryAuthenticator, HttpClient
@@ -1331,9 +1331,9 @@ def query_traffic_data_chunk(date_range, db_uri):
 @login_required
 @admin_required
 def export_traffic_csv():
-    """导出流量数据为CSV文件（仅管理员），使用多进程加速"""
+    """导出流量数据为CSV文件（仅管理员），采用流式响应避免超时/内存峰值"""
     try:
-        # 1. 确定数据时间范围
+        # 1. 检查是否有数据
         min_ts_result = db.session.query(db.func.min(Traffic.timestamp)).scalar()
         max_ts_result = db.session.query(db.func.max(Traffic.timestamp)).scalar()
 
@@ -1341,64 +1341,63 @@ def export_traffic_csv():
             flash('没有流量数据可导出', 'warning')
             return redirect(url_for('admin'))
 
-        start_dt = datetime.fromtimestamp(min_ts_result)
-        end_dt = datetime.fromtimestamp(max_ts_result)
-
-        # 2. 按月分割时间范围
-        date_ranges = []
-        current_dt = start_dt
-        while current_dt <= end_dt:
-            next_month = (current_dt.replace(day=28) + timedelta(days=4)).replace(day=1)
-            start_ts = int(current_dt.timestamp())
-            end_ts = int(next_month.timestamp())
-            date_ranges.append((start_ts, end_ts))
-            current_dt = next_month
-        
-        # 3. 使用多进程并行查询
-        num_processes = min(cpu_count(), len(date_ranges))
-        
-        # 构造数据库文件的绝对路径URI，确保子进程能找到正确的文件
+        # 2. 构造数据库文件绝对路径并建立连接（使用 Core 游标迭代以便流式输出）
         db_filename = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
         db_path = os.path.join(app.instance_path, db_filename)
         db_uri = f'sqlite:///{db_path}'
-        
-        with Pool(processes=num_processes) as pool:
-            # 使用 partial 传递固定的 db_uri 参数
-            func = partial(query_traffic_data_chunk, db_uri=db_uri)
-            results = pool.map(func, date_ranges)
+        engine = create_engine(db_uri)
+        connection = engine.connect()
 
-        # 4. 合并并处理数据
-        all_traffic_data = [item for sublist in results for item in sublist]
-        
-        if not all_traffic_data:
-            flash('没有流量数据可导出', 'warning')
-            return redirect(url_for('admin'))
+        total_capacity = 2749
 
-        # 使用pandas进行数据处理和CSV生成
-        df = pd.DataFrame(all_traffic_data)
-        df['日期时间'] = pd.to_datetime(df['timestamp'], unit='s').dt.tz_localize('UTC').dt.tz_convert(Config.TIMEZONE)
-        df['在馆人数'] = df['count']
-        df['总容量'] = 2749
-        df['占用率(%)'] = round((df['在馆人数'] / df['总容量']) * 100, 2)
-        df = df.rename(columns={'timestamp': '时间戳'})
-        
-        # 重新排序并选择最终列
-        df = df[['时间戳', '日期时间', '在馆人数', '总容量', '占用率(%)']].sort_values(by='时间戳', ascending=False)
+        @stream_with_context
+        def generate():
+            try:
+                # 写入 BOM 与表头
+                yield '\ufeff'
+                header_buf = io.StringIO()
+                header_writer = csv.writer(header_buf)
+                header_writer.writerow(['时间戳', '日期时间', '在馆人数', '总容量', '占用率(%)'])
+                yield header_buf.getvalue()
+                header_buf.close()
 
-        # 5. 生成响应
-        output = io.StringIO()
-        df.to_csv(output, index=False, encoding='utf-8-sig')
-        csv_data = output.getvalue()
+                # 按时间戳降序流式写出数据
+                query = text("SELECT timestamp, count FROM traffic ORDER BY timestamp DESC")
+                result = connection.execute(query)
+
+                for row in result:
+                    ts = row.timestamp
+                    count = row.count
+
+                    # 转换为本地时区字符串，避免 pandas 依赖与复杂 tz 转换
+                    try:
+                        dt_local = datetime.fromtimestamp(ts, tz=Config.TIMEZONE)
+                        dt_str = dt_local.strftime('%Y-%m-%d %H:%M:%S')
+                    except Exception:
+                        # 兜底：无 tz 的本地时间
+                        dt_str = datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+                    occ = round((count / total_capacity) * 100, 2)
+
+                    buf = io.StringIO()
+                    writer = csv.writer(buf)
+                    writer.writerow([ts, dt_str, count, total_capacity, occ])
+                    yield buf.getvalue()
+                    buf.close()
+            finally:
+                # 确保连接关闭
+                connection.close()
 
         response = Response(
-            csv_data.encode('utf-8-sig'), # 必须使用 utf-8-sig 编码以包含BOM，确保Excel兼容性
+            generate(),
             mimetype='text/csv',
             headers={
-                'Content-Disposition': f'attachment; filename=library_traffic_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+                'Content-Disposition': f'attachment; filename=library_traffic_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv',
+                'Cache-Control': 'no-store, no-transform'
             }
         )
 
-        add_log(f"管理员 {current_user.username} 导出流量数据 (并行模式)", user=current_user)
+        add_log(f"管理员 {current_user.username} 导出流量数据 (流式模式)", user=current_user)
         return response
 
     except Exception as e:
