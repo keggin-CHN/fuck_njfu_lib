@@ -444,6 +444,14 @@
     from { box-shadow: 0 0 18px rgba(0, 212, 255, 0.35); }
     to   { box-shadow: 0 0 28px rgba(0, 212, 255, 0.6); }
 }
+/* Ubuntu/Firefox 兜底：防止Backdrop拦截点击并统一层级 */
+.modal-backdrop {
+    pointer-events: none !important;
+    z-index: 1990 !important;
+}
+#announcementModal {
+    z-index: 2000 !important;
+}
 </style>
 
 <!-- Modals -->
@@ -579,6 +587,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Use a hidden button to trigger the modal to avoid JS context issues
             document.getElementById('announcementModalTrigger').click();
+
+            // 兜底修复（跨平台）：确保 backdrop 不拦截点击并提升层级
+            const handleBackdrop = () => {
+                document.querySelectorAll('.modal-backdrop').forEach(el => {
+                    el.style.pointerEvents = 'none';
+                    el.style.zIndex = '1990';
+                });
+                modalElement.style.zIndex = '2000';
+            };
+            modalElement.addEventListener('shown.bs.modal', handleBackdrop, { once: true });
+            // 额外触发一次，防止某些浏览器事件未及时触发
+            setTimeout(handleBackdrop, 50);
 
             // 监听弹窗关闭事件，记录已读
             modalElement.addEventListener('hidden.bs.modal', function () {
