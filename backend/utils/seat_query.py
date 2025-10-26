@@ -5,29 +5,8 @@
 import logging
 from datetime import datetime, timedelta
 from utils.auth_manager import HttpClient
-from multiprocessing import Pool, Manager
 
 logger = logging.getLogger(__name__)
-
-
-def query_area_worker(args):
-    """
-    多进程工作函数，用于查询单个区域的座位数据
-    """
-    area_name, config, authenticator, date_str = args
-    try:
-        seats_data = SeatQueryService.get_seats_data(authenticator, config['roomId'], date_str)
-        stats = SeatQueryService.analyze_seats(seats_data)
-        return area_name, {
-            'floor': config['floor'],
-            'area': config['area'],
-            'roomId': config['roomId'],
-            'stats': stats,
-            'seats': seats_data or []
-        }
-    except Exception as e:
-        logger.error(f"查询区域 {area_name} 时出错: {e}", exc_info=True)
-        return area_name, None
 
 
 class SeatQueryService:
