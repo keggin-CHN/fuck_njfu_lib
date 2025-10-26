@@ -81,14 +81,14 @@ class LibraryTrafficMonitor:
 
                 # 如果从 span 中找到了至少两个数字，直接使用
                 if len(nums) >= 2:
-                    num1 = int(nums)
-                    num2 = int(nums)
+                    num1 = int(nums[0])
+                    num2 = int(nums[1])
                 else:
                     # 回退：在整个 HTML 中查找数字（更宽容）
                     all_nums = re.findall(r'\d+', response.text)
                     if len(all_nums) >= 2:
-                        num1 = int(all_nums)
-                        num2 = int(all_nums)
+                        num1 = int(all_nums[0])
+                        num2 = int(all_nums[1])
                     else:
                         logger.error("流量监控：未能从页面中解析到足够的数字信息")
                         return None
