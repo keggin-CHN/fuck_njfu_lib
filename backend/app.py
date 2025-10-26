@@ -17,7 +17,7 @@ from utils.reservation import SeatReservation
 from utils.date_utils import get_today_date, normalize_time_format, get_tomorrow_date
 from utils.logger_utils import add_log
 from utils.notification import NotificationService
-from scheduler import setup_scheduler, scheduler, schedule_late_protection
+from scheduler import setup_scheduler, scheduler, schedule_late_protection, schedule_late_check_task
 from config import Config
 from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
@@ -67,6 +67,41 @@ query_progress = {}
 # 这样做可以确保无论通过 `python app.py` 还是 `gunicorn` 启动，初始化都会执行
 with app.app_context():
     db.create_all()
+
+    # 迁移/补充列：为 ReservationSetting 添加 auto_find_seat 列（SQLite）
+    try:
+        db_path = os.path.join(app.instance_path, app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''))
+        if os.path.isfile(db_path):
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("PRAGMA table_info(reservation_setting)")
+                cols = [row['name'] for row in cursor.fetchall()]
+                if 'auto_find_seat' not in cols:
+                    logger.info("检测到缺少列 auto_find_seat，正在迁移数据库架构...")
+                    cursor.execute("ALTER TABLE reservation_setting ADD COLUMN auto_find_seat BOOLEAN DEFAULT 0")
+                    conn.commit()
+                    logger.info("已添加列 auto_find_seat")
+    except Exception as e:
+        logger.error(f"检查/迁移 auto_find_seat 列失败: {str(e)}")
+    
+    # 迁移/补充列：为 ReservationHistory 添加 is_auto_find 列（SQLite）
+    try:
+        db_path = os.path.join(app.instance_path, app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''))
+        if os.path.isfile(db_path):
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("PRAGMA table_info(reservation_history)")
+                cols = [row['name'] for row in cursor.fetchall()]
+                if 'is_auto_find' not in cols:
+                    logger.info("检测到缺少列 is_auto_find，正在迁移数据库架构...")
+                    cursor.execute("ALTER TABLE reservation_history ADD COLUMN is_auto_find BOOLEAN DEFAULT 0")
+                    conn.commit()
+                    logger.info("已添加列 is_auto_find")
+    except Exception as e:
+        logger.error(f"检查/迁移 is_auto_find 列失败: {str(e)}")
+    
     # 数据库和管理员初始化
     if User.query.count() == 0:
         logger.info("数据库为空，进行初始化设置...")
@@ -422,6 +457,7 @@ def update_reservation_settings():
     end_time = request.form.get('end_time')
     auto_reserve = 'auto_reserve' in request.form
     prevent_late = 'prevent_late' in request.form
+    auto_find_seat = 'auto_find_seat' in request.form
 
     if not validate_reservation_params(area, seat_number, start_time, end_time):
         return redirect(url_for('dashboard'))
@@ -439,6 +475,7 @@ def update_reservation_settings():
         setting.end_time = end_time
         setting.auto_reserve = auto_reserve
         setting.prevent_late = prevent_late
+        setting.auto_find_seat = auto_find_seat
     else:
         setting = ReservationSetting(
             user_id=current_user.id,
@@ -447,7 +484,8 @@ def update_reservation_settings():
             start_time=start_time,
             end_time=end_time,
             auto_reserve=auto_reserve,
-            prevent_late=prevent_late
+            prevent_late=prevent_late,
+            auto_find_seat=auto_find_seat
         )
         db.session.add(setting)
 
@@ -499,16 +537,17 @@ def validate_reservation_params(area, seat_number, start_time, end_time):
 @app.route('/immediate_reserve', methods=['POST'])
 @login_required
 def immediate_reserve():
-    """立即预约"""
+    """快速预约（仅支持今天/明天），已移除“立刻签到”模式"""
     setting = ReservationSetting.query.filter_by(user_id=current_user.id).first()
-    reserve_date = request.form.get('reserve_date', 'tomorrow')
+    # 默认今天
+    reserve_date = request.form.get('reserve_date', 'today')
 
     if not setting:
         message = '请先设置预约信息'
         flash(message)
-        add_log(f"用户 {current_user.username} 尝试立刻签到失败: {message}", user=current_user, response_code=400)
+        add_log(f"用户 {current_user.username} 尝试快速预约失败: {message}", user=current_user, response_code=400)
         history = ReservationHistory(
-            user_id=current_user.id, status='失败', message=f'立刻签到失败: {message}',
+            user_id=current_user.id, status='失败', message=f'预约失败: {message}',
             reserve_date=datetime.now(Config.TIMEZONE).date()
         )
         db.session.add(history)
@@ -519,9 +558,9 @@ def immediate_reserve():
     if not seat_id:
         message = f'无效的区域或座位号 ({setting.area} - {setting.seat_number}号)'
         flash(message)
-        add_log(f"用户 {current_user.username} 尝试立刻签到失败: {message}", user=current_user, response_code=400)
+        add_log(f"用户 {current_user.username} 尝试快速预约失败: {message}", user=current_user, response_code=400)
         history = ReservationHistory(
-            user_id=current_user.id, status='失败', message=f'立刻签到失败: {message}',
+            user_id=current_user.id, status='失败', message=f'预约失败: {message}',
             reserve_date=datetime.now(Config.TIMEZONE).date(),
             area=setting.area, seat_number=setting.seat_number
         )
@@ -529,15 +568,14 @@ def immediate_reserve():
         db.session.commit()
         return redirect(url_for('dashboard'))
 
-    # 获取认证器
     authenticator = AuthManager.get_authenticator(current_user)
     if not authenticator:
         message = '认证失败，请检查图书馆账号密码'
         flash(message)
-        add_log(f"用户 {current_user.username} 尝试立刻签到失败: {message}", user=current_user, response_code=401)
+        add_log(f"用户 {current_user.username} 尝试快速预约失败: {message}", user=current_user, response_code=401)
         history = ReservationHistory(
             user_id=current_user.id, status=ReservationHistory.STATUS_AUTH_FAILED,
-            message=f'立刻签到失败: {message}',
+            message=f'预约失败: {message}',
             reserve_date=datetime.now(Config.TIMEZONE).date(),
             area=setting.area, seat_number=setting.seat_number, seat_id=seat_id
         )
@@ -547,14 +585,10 @@ def immediate_reserve():
 
     reservation = SeatReservation(current_user, authenticator=authenticator)
 
-    if reserve_date == 'immediate_check_in':
-        result = handle_three_minute_mode(reservation)
-        return redirect(url_for('dashboard'))
-
     start_time = normalize_time_format(setting.start_time)
     date_str = get_today_date() if reserve_date == 'today' else None
 
-    result = reservation.reserve_seat(
+    ok, message = reservation.reserve_seat(
         setting.area,
         setting.seat_number,
         seat_id,
@@ -562,183 +596,164 @@ def immediate_reserve():
         start_time=start_time
     )
 
-    flash(f'预约{"今天" if reserve_date == "today" else "明天"}座位{"成功！" if result else "失败，请查看日志了解详情"}')
+    # 自动寻座触发条件：开启开关且失败原因为设备在该时间段已被预约
+    if not ok and setting.auto_find_seat and message and ('已被预约' in message):
+        flash('目标座位在该时间段已被预约，已为您推荐同区域可用座位，请选择。')
+        return redirect(url_for('dashboard', suggest='1', date=reserve_date))
+
+    if ok and setting.prevent_late and reserve_date == 'today':
+        try:
+            begin_dt = datetime.strptime(f"{get_today_date()} {start_time}", "%Y-%m-%d %H:%M:%S")
+            schedule_late_check_task(current_user, begin_dt)
+        except Exception as e:
+            logger.error(f"为用户 {current_user.username} 调度迟到检查失败: {str(e)}")
+    flash(f'预约{"今天" if reserve_date == "today" else "明天"}座位{"成功！" if ok else "失败，请查看日志了解详情"}')
     return redirect(url_for('dashboard'))
 
 
-def handle_three_minute_mode(reservation):
-    """处理三分钟预约模式 - 使用当前时间+3分钟作为新预约时间"""
-    # 确保认证有效
-    if not reservation.ensure_authenticated():
-        flash('认证失败，请检查图书馆账号密码')
-        # 手动记录失败历史
-        history = ReservationHistory(
-            user_id=current_user.id,
-            status=ReservationHistory.STATUS_AUTH_FAILED,
-            message="立刻签到模式失败: 认证失败",
-            reserve_date=datetime.now(Config.TIMEZONE).date()
-        )
-        db.session.add(history)
-        db.session.commit()
-        return False
+# 已移除立刻签到模式相关函数
 
-    # 计算新的预约时间 - 当前时间后3分钟
-    now = datetime.now()
-    new_start_time = now + timedelta(minutes=3)
-    today_date = new_start_time.strftime("%Y-%m-%d")
-    start_time = new_start_time.strftime("%H:%M:%S")
+# === 自动寻座：同区域建议与自动分配 ===
 
-    logger.info(f"立刻签到模式: 当前时间: {now.strftime('%H:%M:%S')}, 新的预约时间: {start_time}")
+def _map_config_area_to_query_area(area_name: str) -> str:
+    """
+    将 Config.SEAT_AREAS 中的区域名称映射到 SeatQueryService.AREAS 的命名
+    规则：将“楼”统一替换为“层”，保持其余部分不变。
+    特例：七楼北侧/七楼南侧 -> 七层北侧/七层南侧；三楼夹层/四楼夹层 -> 三层夹层/四层夹层
+    """
+    if not area_name:
+        return area_name
+    name = area_name.replace('楼', '层')
+    return name
 
-    # 获取当前预约信息
-    today_reservations = reservation.get_reservations(begin_date=get_today_date(), end_date=get_today_date())
-    logger.info(f"立刻签到模式: 获取到 {len(today_reservations) if today_reservations else 0} 条今日预约信息")
+@app.route('/api/suggest_alternative_seats')
+@login_required
+def api_suggest_alternative_seats():
+    """
+    返回同区域在用户设定时段内可用的候选座位列表
+    参数：reserve_date = today | tomorrow
+    """
+    try:
+        from utils.seat_query import SeatQueryService
+        from utils.date_utils import get_today_date, get_tomorrow_date, normalize_time_format
 
-    # 如果没有今日预约信息，使用用户的保存设置
-    if not today_reservations:
-        logger.info("没有找到当前预约信息，使用用户保存的设置")
+        reserve_date = request.args.get('reserve_date', 'today')
+        days_offset = 0 if reserve_date == 'today' else 1
+
         setting = ReservationSetting.query.filter_by(user_id=current_user.id).first()
-
         if not setting:
-            flash('没有找到当前预约信息，也没有设置默认座位')
-            history = ReservationHistory(
-                user_id=current_user.id, status='失败',
-                message='立刻签到模式失败: 没有找到当前预约信息，也没有设置默认座位',
-                reserve_date=datetime.now(Config.TIMEZONE).date()
-            )
-            db.session.add(history)
-            db.session.commit()
-            return False
+            return jsonify({'success': False, 'message': '未找到预约设置'}), 400
 
-        seat_id = Config.get_seat_id(setting.area, setting.seat_number)
-        if not seat_id:
-            msg = f'无效的区域或座位号: {setting.area}, {setting.seat_number}'
-            flash(msg)
-            history = ReservationHistory(
-                user_id=current_user.id, area=setting.area, seat_number=setting.seat_number,
-                status='失败', message=f'立刻签到模式失败: {msg}',
-                reserve_date=datetime.now(Config.TIMEZONE).date()
-            )
-            db.session.add(history)
-            db.session.commit()
-            return False
+        authenticator = AuthManager.get_authenticator(current_user)
+        if not authenticator or not authenticator.is_valid():
+            return jsonify({'success': False, 'message': '认证失败，请重新登录'}), 401
 
-        logger.info(
-            f"立刻签到模式: 使用用户设置 - 区域: {setting.area}, 座位号: {setting.seat_number}, 开始时间: {start_time}")
+        query_area = _map_config_area_to_query_area(setting.area)
+        if query_area not in SeatQueryService.AREAS:
+            return jsonify({'success': False, 'message': f'区域映射失败：{setting.area} -> {query_area}'}), 400
 
-        # 使用用户设置进行预约
-        result, message = reservation.reserve_seat(
-            setting.area,
-            setting.seat_number,
-            seat_id,
-            date_str=today_date,
-            start_time=start_time,
-            is_late_protection=False
+        room_id = SeatQueryService.AREAS[query_area]['roomId']
+        date_str_query = SeatQueryService.get_date_string(days_offset)
+
+        # 获取该区域当天/明天的座位数据
+        seats_data = SeatQueryService.get_seats_data(authenticator, room_id, date_str_query)
+        if seats_data is None:
+            return jsonify({'success': False, 'message': '获取座位数据失败'}), 500
+
+        # 计算目标时间段（毫秒时间戳）
+        ymd = get_today_date() if days_offset == 0 else get_tomorrow_date()
+        start = normalize_time_format(setting.start_time)
+        end = normalize_time_format(setting.end_time)
+        begin_dt = datetime.strptime(f"{ymd} {start}", "%Y-%m-%d %H:%M:%S")
+        end_dt = datetime.strptime(f"{ymd} {end}", "%Y-%m-%d %H:%M:%S")
+        begin_ms = int(begin_dt.timestamp() * 1000)
+        end_ms = int(end_dt.timestamp() * 1000)
+
+        def no_conflict(reservations):
+            # 判断和任一已有预约是否重叠
+            for r in reservations or []:
+                s = r.get('startTime')
+                e = r.get('endTime')
+                if s is None or e is None:
+                    # 无效数据，保守认为有冲突，跳过该座位
+                    return False
+                # 重叠条件：not (end <= s or begin >= e)
+                if not (end_ms <= s or begin_ms >= e):
+                    return False
+            return True
+
+        alternatives = []
+        for seat in seats_data:
+            if no_conflict(seat.get('resvInfo', [])):
+                alternatives.append({
+                    'devId': seat.get('devId'),
+                    'devName': seat.get('devName')
+                })
+                if len(alternatives) >= 50:
+                    break
+
+        return jsonify({'success': True, 'alternatives': alternatives})
+    except Exception as e:
+        logger.error(f"获取同区域可用座位失败: {str(e)}")
+        return jsonify({'success': False, 'message': '内部错误'}), 500
+
+@app.route('/reserve_alternative', methods=['POST'])
+@login_required
+def reserve_alternative():
+    """
+    从建议列表中预约指定 devId 的座位
+    参数：devId, reserve_date = today|tomorrow
+    """
+    try:
+        from utils.date_utils import get_today_date, get_tomorrow_date, normalize_time_format
+
+        dev_id = request.form.get('devId', type=int)
+        reserve_date = request.form.get('reserve_date', 'today')
+
+        if not dev_id:
+            return jsonify({'success': False, 'message': '缺少参数 devId'}), 400
+
+        # 找到对应的区域与座位号（通过 Config.SEAT_AREAS 反推）
+        area_name = None
+        seat_number = None
+        for area, info in Config.SEAT_AREAS.items():
+            start_id = info['first_seat_id']
+            end_id = start_id + info['seats_count'] - 1
+            if start_id <= dev_id <= end_id:
+                area_name = area
+                seat_number = dev_id - start_id + 1
+                break
+
+        if not area_name or not seat_number:
+            return jsonify({'success': False, 'message': '无法根据 devId 识别区域与座位号'}), 400
+
+        setting = ReservationSetting.query.filter_by(user_id=current_user.id).first()
+        if not setting:
+            return jsonify({'success': False, 'message': '未找到预约设置'}), 400
+
+        authenticator = AuthManager.get_authenticator(current_user)
+        if not authenticator:
+            return jsonify({'success': False, 'message': '认证失败，请检查图书馆账号密码'}), 401
+
+        date_str = get_today_date() if reserve_date == 'today' else get_tomorrow_date()
+        start_time = normalize_time_format(setting.start_time)
+
+        reservation = SeatReservation(current_user, authenticator=authenticator)
+        ok, message = reservation.reserve_seat(
+            area_name, seat_number, dev_id, date_str=date_str, start_time=start_time, is_auto_find=True
         )
-
-        if result:
-            flash(f'立刻签到模式预约成功！预约时间: {start_time}，可立即签到')
-        else:
-            flash(f'立刻签到模式预约失败: {message}')
-            add_log(f"用户 {current_user.username} 立刻签到失败: {message}", user=current_user, response_code=400, error_message=message)
-
-        return result
-
-    # 以下是有当前预约情况下的处理逻辑
-    current_reservation = today_reservations
-
-    # 从当前预约中提取座位信息
-    dev_info_list = current_reservation.get("resvDevInfoList", [])
-    if not dev_info_list:
-        flash('无法从预约中提取座位信息')
-        history = ReservationHistory(
-            user_id=current_user.id, status='失败',
-            message='立刻签到模式失败: 无法从当前预约中提取座位信息',
-            reserve_date=datetime.now(Config.TIMEZONE).date()
-        )
-        db.session.add(history)
-        db.session.commit()
-        return False
-
-    # resvDevInfoList 是列表，取第一个元素（字典）再获取字段
-    dev_info = dev_info_list[0]
-    seat_id = dev_info.get("devId")  # 直接使用devId作为座位ID
-    kind_name = dev_info.get("kindName", "")  # 区域名称
-    dev_name = dev_info.get("devName", "")  # 座位名称
-
-    logger.info(f"立刻签到模式: 提取到座位ID: {seat_id}, 区域名称: {kind_name}, 座位名称: {dev_name}")
-
-    if not seat_id:
-        flash('无法从预约中提取座位ID')
-        history = ReservationHistory(
-            user_id=current_user.id, status='失败',
-            message='立刻签到模式失败: 无法从当前预约中提取座位ID',
-            reserve_date=datetime.now(Config.TIMEZONE).date()
-        )
-        db.session.add(history)
-        db.session.commit()
-        return False
-
-    # 确定区域和座位号
-    area = None
-    seat_number = None
-
-    # 尝试通过计算确定区域和座位号
-    for area_name, area_info in Config.SEAT_AREAS.items():
-        first_id = area_info["first_seat_id"]
-        seats_count = area_info["seats_count"]
-        if first_id <= int(seat_id) < first_id + seats_count:
-            area = area_name
-            seat_number = int(seat_id) - first_id + 1
-            logger.info(f"通过计算确定区域: {area}, 座位号: {seat_number}")
-            break
-
-    if not area:
-        flash(f'无法确定座位 {dev_name} 所属区域')
-        history = ReservationHistory(
-            user_id=current_user.id, status='失败',
-            message=f'立刻签到模式失败: 无法确定座位 {dev_name} 所属区域',
-            reserve_date=datetime.now(Config.TIMEZONE).date()
-        )
-        db.session.add(history)
-        db.session.commit()
-        return False
-
-    # 取消当前预约
-    current_uuid = current_reservation.get("uuid")
-    if current_uuid:
-        logger.info(f"立刻签到模式: 取消用户 {current_user.username} 的预约 {current_uuid}")
-        if not reservation.cancel_reservation(current_uuid):
-            flash('取消当前预约失败，请稍后再试')
-            history = ReservationHistory(
-                user_id=current_user.id, status='失败',
-                message='立刻签到模式失败: 取消当前预约失败',
-                reserve_date=datetime.now(Config.TIMEZONE).date()
-            )
-            db.session.add(history)
-            db.session.commit()
-            return False
-
-    # 预约新座位 - 使用三分钟后的时间
-    logger.info(
-        f"立刻签到模式: 为用户 {current_user.username} 预约座位ID {seat_id} ({dev_name})，区域: {area}，座位号: {seat_number}，时间: {start_time}")
-
-    result, message = reservation.reserve_seat(
-        area,
-        seat_number,
-        seat_id,
-        date_str=today_date,
-        start_time=start_time,
-        is_late_protection=False
-    )
-    
-    if result:
-        flash(f'立刻签到模式预约成功！预约时间: {start_time}，可立即签到')
-    else:
-        flash(f'立刻签到模式预约失败: {message}')
-        add_log(f"用户 {current_user.username} 立刻签到失败: {message}", user=current_user, response_code=400, error_message=message)
-
-    return result
+        
+        if ok and setting.prevent_late and reserve_date == 'today':
+            try:
+                begin_dt = datetime.strptime(f"{date_str} {start_time}", "%Y-%m-%d %H:%M:%S")
+                schedule_late_check_task(current_user, begin_dt)
+            except Exception as e:
+                logger.error(f"为用户 {current_user.username} 调度迟到检查失败: {str(e)}")
+        
+        return jsonify({'success': bool(ok), 'message': message})
+    except Exception as e:
+        logger.error(f"预约备选座位失败: {str(e)}")
+        return jsonify({'success': False, 'message': '内部错误'}), 500
 
 
 @app.route('/captcha')
