@@ -355,19 +355,27 @@ def process_today_reservations(user, reservation, today_reservations):
             resv_begin_time = datetime.datetime.fromtimestamp(resv_begin_time_ms / 1000)
             time_diff_minutes = (resv_begin_time - now).total_seconds() / 60
 
-            if 5 < time_diff_minutes <= 10:
-                logger.info(f"用户 {user.username} 预约时间 {resv_begin_time} 在5-10分钟内，可能迟到")
+            # 在开始时间前约20分钟进行检测
+            if 19 <= time_diff_minutes <= 21:
+                logger.info(f"用户 {user.username} 预约时间 {resv_begin_time} 在约20分钟前，进行迟到保护检测")
                 handle_potential_late_arrival(user, resv, reservation, get_today_date(), resv_begin_time)
             else:
                 logger.info(
                     f"用户 {user.username} 预约时间 {resv_begin_time} 不在检查范围内（差距 {time_diff_minutes:.1f} 分钟）")
-                if time_diff_minutes > 10:
+                if time_diff_minutes > 21:
                     schedule_late_check_task(user, resv_begin_time)
 
 
 def handle_potential_late_arrival(user, resv, reservation, today, resv_begin_time):
-    """处理可能迟到的情况，失败时尝试重新认证"""
+    """处理可能迟到的情况（开始前20分钟检测），失败时尝试重新认证；若已签到则不进行保护"""
     uuid = resv.get("uuid")
+
+    # 检查签到/使用状态：若已使用中或已签到则跳过保护
+    status_name = resv.get("statusName", "")
+    if status_name and ("使用" in status_name or "签到" in status_name):
+        logger.info(f"用户 {user.username} 当前预约状态为 {status_name}，已签到或使用中，跳过迟到保护")
+        return
+
     dev_info_list = resv.get("resvDevInfoList", [])
     if not dev_info_list:
         logger.error(f"无法获取预约 {uuid} 的座位详情")
@@ -470,10 +478,10 @@ def reschedule_seat_after_cancel(user, reservation, area_name, seat_number, dev_
 
         logger.info(f"迟到保护：用户 {user.username} 重新预约成功")
 
-        # 设置下一次检查时间（新预约时间前8分钟）
+        # 设置下一次检查时间（新预约时间前20分钟）
         new_check_time = (
                 datetime.datetime.strptime(f"{today} {new_start_time}", "%Y-%m-%d %H:%M:%S") -
-                datetime.timedelta(minutes=8)
+                datetime.timedelta(minutes=20)
         )
 
         now = datetime.datetime.now()
@@ -498,9 +506,9 @@ def schedule_specific_late_check(user, start_time, check_time):
 
 
 def schedule_late_check_task(user, resv_begin_time):
-    """调度迟到检查任务"""
+    """调度迟到检查任务（开始前20分钟）"""
     now = datetime.datetime.now()
-    check_time = resv_begin_time - datetime.timedelta(minutes=8)
+    check_time = resv_begin_time - datetime.timedelta(minutes=20)
 
     if check_time > now:
         schedule_specific_late_check(user, resv_begin_time.strftime('%H:%M:%S'), check_time)
