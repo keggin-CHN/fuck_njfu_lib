@@ -5,7 +5,7 @@ import io
 from datetime import datetime, timedelta
 import sqlite3
 import pandas as pd
-from multiprocessing import Pool, cpu_count, Manager
+from multiprocessing import Pool, cpu_count, Manager, freeze_support
 from functools import partial
 from sqlalchemy import create_engine, text
 from bs4 import BeautifulSoup
@@ -17,7 +17,7 @@ from utils.reservation import SeatReservation
 from utils.date_utils import get_today_date, normalize_time_format, get_tomorrow_date
 from utils.logger_utils import add_log
 from utils.notification import NotificationService
-from scheduler import setup_scheduler, scheduler, schedule_user_reservation, schedule_late_protection
+from scheduler import setup_scheduler, scheduler, schedule_late_protection
 from config import Config
 from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
@@ -61,7 +61,7 @@ login_manager.login_message = '请先登录'
 scheduler.app = app
 
 # 用于存储查询进度的全局变量
-query_progress = Manager().dict()
+query_progress = {}
 
 # 在应用上下文中初始化数据库和调度器
 # 这样做可以确保无论通过 `python app.py` 还是 `gunicorn` 启动，初始化都会执行
@@ -394,9 +394,10 @@ def dashboard():
     }
     if latest_traffic:
         from datetime import datetime as dt
+        used_capacity = 5000 - latest_traffic.count
         traffic_data.update({
-            'count': latest_traffic.count,
-            'percentage': round(latest_traffic.count / traffic_data['total'] * 100, 1),
+            'count': used_capacity,
+            'percentage': round(used_capacity / traffic_data['total'] * 100, 1),
             'updated_at': dt.fromtimestamp(latest_traffic.timestamp).strftime('%H:%M:%S')
         })
 
@@ -451,9 +452,6 @@ def update_reservation_settings():
         db.session.add(setting)
 
     db.session.commit()
-
-    if old_auto_reserve != auto_reserve:
-        schedule_user_reservation(current_user.id, auto_reserve)
 
     if old_prevent_late != prevent_late:
         schedule_late_protection(current_user.id, prevent_late)
@@ -984,9 +982,6 @@ def update_user(user_id):
             action_text = "授予" if not user.is_admin else "取消"
             user.is_admin = not user.is_admin
             db.session.commit()
-            setting = ReservationSetting.query.filter_by(user_id=user.id).first()
-            if setting and setting.auto_reserve:
-                schedule_user_reservation(user.id, True)
             add_log(f"管理员 {current_user.username} {action_text}了用户 {user.username} 的管理员权限", user=current_user)
             flash(f'已{action_text}{user.username}的管理员权限')
 
@@ -1229,18 +1224,19 @@ def check_invite_code_required():
 def get_latest_traffic():
     """获取最新流量数据（无需登录）"""
     latest = Traffic.get_latest()
-    total_capacity = int(SystemSetting.get_setting('total_capacity', 2749))
+    total_capacity = 2749
     if latest:
         from datetime import datetime
+        used_capacity = 5000 - latest.count
         time_str = datetime.fromtimestamp(latest.timestamp).strftime('%H:%M:%S')
         update_time = datetime.fromtimestamp(latest.timestamp).strftime('%Y-%m-%d %H:%M:%S')
         return jsonify({
             'success': True,
-            'current_count': latest.count,
+            'current_count': used_capacity,
             'total_capacity': total_capacity,
             'timestamp': latest.timestamp,
-            'count': latest.count,
-            'percentage': round(latest.count / total_capacity * 100, 1) if total_capacity > 0 else 0,
+            'count': used_capacity,
+            'percentage': round(used_capacity / total_capacity * 100, 1) if total_capacity > 0 else 0,
             'time': time_str,
             'updated_at': update_time
         })
@@ -1254,13 +1250,12 @@ def get_traffic_history():
     hours = request.args.get('hours', 24, type=int)
     traffic_list = Traffic.get_recent(hours=hours)
 
+    total_capacity = 2749
     data = [{
         'timestamp': t.timestamp,
-        'count': t.count,
+        'count': 5000 - t.count,
         'time': datetime.fromtimestamp(t.timestamp).strftime('%H:%M')
     } for t in traffic_list]
-
-    total_capacity = 2749
 
     return jsonify({
         'success': True,
@@ -1288,7 +1283,7 @@ def collect_traffic_now():
                     'message': '流量数据采集成功',
                     'data': {
                         'timestamp': latest.timestamp,
-                        'count': latest.count,
+                        'count': 5000 - latest.count,
                         'total': 2749
                     }
                 })
@@ -1382,7 +1377,7 @@ def export_traffic_csv():
         # 使用pandas进行数据处理和CSV生成
         df = pd.DataFrame(all_traffic_data)
         df['日期时间'] = pd.to_datetime(df['timestamp'], unit='s').dt.tz_localize('UTC').dt.tz_convert(Config.TIMEZONE)
-        df['在馆人数'] = df['count']
+        df['在馆人数'] = 5000 - df['count']
         df['总容量'] = 2749
         df['占用率(%)'] = round((df['在馆人数'] / df['总容量']) * 100, 2)
         df = df.rename(columns={'timestamp': '时间戳'})
@@ -1440,13 +1435,18 @@ def get_seats_summary():
         if not authenticator or not authenticator.is_valid():
             return jsonify({'success': False, 'message': '认证失败，请重新登录'}), 401
 
+        # 定义进度回调函数
+        def progress_callback(progress):
+            query_progress[current_user.id] = progress
+
         # 初始化进度
-        query_progress[current_user.id] = 0
+        progress_callback(0)
 
         # 获取所有区域的座位数据
         all_areas_summary = SeatQueryService.get_all_areas_summary(
             authenticator,
-            date_str
+            date_str,
+            progress_callback=progress_callback
         )
 
         # 按楼层汇总
@@ -1613,4 +1613,6 @@ def cancel_user_reservation(uuid):
 
 
 if __name__ == '__main__':
+    freeze_support()
+    query_progress = Manager().dict()
     app.run(host='0.0.0.0', port=5000, debug=False)

@@ -248,6 +248,11 @@ function renderTrafficChart(canvas, trafficData, totalCapacity) {
                 pointBackgroundColor: '#00D4FF',
                 pointHoverBackgroundColor: '#FFFFFF',
                 pointHoverBorderColor: '#00D4FF',
+                pointRadius: 3,
+                pointHoverRadius: 7,
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                pointHoverBorderWidth: 3,
                 fill: true,
                 tension: 0.4
             }]
@@ -278,7 +283,9 @@ function renderTrafficChart(canvas, trafficData, totalCapacity) {
                     padding: 10,
                     callbacks: {
                         label: function(context) {
-                            return ` 在馆人数: ${context.raw} 人`;
+                            const count = context.raw;
+                            const percentage = totalCapacity > 0 ? ((count / totalCapacity) * 100).toFixed(1) : 0;
+                            return `在馆人数: ${count} 人 (占用率: ${percentage}%)`;
                         }
                     }
                 }

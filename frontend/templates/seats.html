@@ -94,21 +94,6 @@
     </div>
 </div>
 
-<!-- 座位详情模态框 -->
-<div class="modal fade" id="seatDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">座位详情</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- 动态加载 -->
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 let currentDaysOffset = 0;
 let allAreasData = null;
@@ -145,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             loadSeatsData(1);
         }
     });
+
 });
 
 // 加载座位数据
@@ -446,5 +432,33 @@ function displaySeatDetails(seats) {
     border-radius: 10px;
     font-weight: bold;
 }
+
+/* 强制座位详情弹窗内容可滚动 - 最终修复 */
+#seatDetailModal .modal-dialog.modal-dialog-scrollable {
+    max-height: calc(100vh - 3.5rem) !important; /* 强制最大高度 */
+}
+#seatDetailModal .modal-content {
+    overflow: hidden !important; /* 隐藏容器的溢出 */
+}
+#seatDetailModal .modal-body {
+    overflow-y: auto !important; /* 仅在body上启用垂直滚动 */
+}
 </style>
+{% endblock %}
+
+{% block modals %}
+<!-- 座位详情模态框 -->
+<div class="modal fade" id="seatDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">座位详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 动态加载 -->
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

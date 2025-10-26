@@ -260,34 +260,6 @@ def record_auth_failure(user, action_type, setting=None):
         db.session.rollback()
 
 
-def schedule_user_reservation(user_id, auto_reserve):
-    """为用户调度预约任务"""
-    try:
-        job_id = f"user_{user_id}_reservation"
-        if job_id in [job.id for job in scheduler.get_jobs()]:
-            scheduler.remove_job(job_id)
-            logger.info(f"已移除用户 {user_id} 的预约任务")
-
-        if auto_reserve:
-            with scheduler.app.app_context():
-                user = User.query.get(user_id)
-                if user:
-                    execute_time = Config.USER_RESERVE_TIME
-                    if user.is_admin:
-                        execute_time = Config.ADMIN_RESERVE_TIME
-
-                    scheduler.add_job(
-                        func=with_app_context(lambda uid=user_id: reserve_for_user(User.query.get(uid))),
-                        trigger=CronTrigger(hour=execute_time.split(':')[0], minute=execute_time.split(':')[1]),
-                        id=job_id,
-                        name=f"User {user.username} daily reservation",
-                        replace_existing=True
-                    )
-                    logger.info(f"已为用户 {user.username} 添加预约任务，执行时间: {execute_time}")
-    except Exception as e:
-        logger.error(f"调度用户 {user_id} 预约任务时发生错误: {str(e)}")
-
-
 def schedule_late_protection(user_id, prevent_late):
     """调度用户的迟到保护任务"""
     try:

@@ -28,12 +28,11 @@
                     <div class="card-header">
                         <h5 class="mb-0"><i class="bi bi-cursor-fill me-2"></i>快速操作</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body d-flex flex-column justify-content-center">
                         {% if reservation_setting %}
                         <form action="{{ url_for('immediate_reserve') }}" method="post" id="reserveForm">
                             <div class="row align-items-end">
                                 <div class="col-md-6 mb-2 mb-md-0">
-                                    <label for="reserve_date" class="form-label">选择预约日期</label>
                                     <select class="form-select" id="reserve_date" name="reserve_date">
                                         <option value="immediate_check_in" selected>立刻签到</option>
                                         <option value="tomorrow">明天 ({{ tomorrow.strftime('%Y-%m-%d') }})</option>

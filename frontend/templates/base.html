@@ -474,6 +474,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- 使用本地 Bootstrap JS -->
 <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+{% block modals %}{% endblock %}
+
 <!-- 保留你自己的 main.js -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 

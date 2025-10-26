@@ -169,26 +169,37 @@ class SeatQueryService:
         }
 
     @staticmethod
-    def get_all_areas_summary(authenticator, date_str):
+    def get_all_areas_summary(authenticator, date_str, progress_callback=None):
         """
-        获取所有区域的座位摘要信息 (并行处理)
+        获取所有区域的座位摘要信息 (串行处理)
 
         Args:
             authenticator: 认证器实例
             date_str: 日期字符串
+            progress_callback: 进度回调函数
 
         Returns:
             所有区域的统计数据
         """
-        tasks = [(area_name, config, authenticator, date_str) for area_name, config in SeatQueryService.AREAS.items()]
-        
         summary = {}
-        with Pool(processes=len(tasks)) as pool:
-            results = pool.map(query_area_worker, tasks)
+        total_areas = len(SeatQueryService.AREAS)
         
-        for area_name, data in results:
-            if data:
-                summary[area_name] = data
+        for i, (area_name, config) in enumerate(SeatQueryService.AREAS.items()):
+            try:
+                seats_data = SeatQueryService.get_seats_data(authenticator, config['roomId'], date_str)
+                stats = SeatQueryService.analyze_seats(seats_data)
+                summary[area_name] = {
+                    'floor': config['floor'],
+                    'area': config['area'],
+                    'roomId': config['roomId'],
+                    'stats': stats,
+                    'seats': seats_data or []
+                }
+            except Exception as e:
+                logger.error(f"查询区域 {area_name} 时出错: {e}", exc_info=True)
+            
+            if progress_callback:
+                progress_callback((i + 1) / total_areas)
 
         return summary
 

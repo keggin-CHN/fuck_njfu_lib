@@ -416,7 +416,7 @@ canvas {
 }
 
 /* 滚动条霓虹效果 */
-::-webkit-scrollbar {
+/* ::-webkit-scrollbar {
     width: 12px;
     height: 12px;
 }
@@ -435,7 +435,7 @@ canvas {
 ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, var(--neon-pink), var(--neon-purple));
     box-shadow: 0 0 15px var(--neon-pink);
-}
+} */
 
 /* 文本颜色 */
 body, p, span, div, label {
