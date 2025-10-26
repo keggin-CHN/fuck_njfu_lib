@@ -394,7 +394,7 @@ def dashboard():
     }
     if latest_traffic:
         from datetime import datetime as dt
-        used_capacity = 5000 - latest_traffic.count
+        used_capacity = latest_traffic.count
         traffic_data.update({
             'count': used_capacity,
             'percentage': round(used_capacity / traffic_data['total'] * 100, 1),
@@ -1227,7 +1227,7 @@ def get_latest_traffic():
     total_capacity = 2749
     if latest:
         from datetime import datetime
-        used_capacity = 5000 - latest.count
+        used_capacity = latest.count
         time_str = datetime.fromtimestamp(latest.timestamp).strftime('%H:%M:%S')
         update_time = datetime.fromtimestamp(latest.timestamp).strftime('%Y-%m-%d %H:%M:%S')
         return jsonify({
