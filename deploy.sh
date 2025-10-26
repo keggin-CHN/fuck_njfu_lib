@@ -101,7 +101,7 @@ After=network.target
 User=${REAL_USER}
 Group=${REAL_GROUP}
 WorkingDirectory=${APP_DIR}
-ExecStart=${GUNICORN_EXEC} --workers 3 --worker-class gevent --threads 4 --bind 0.0.0.0:${APP_PORT} app:app
+ExecStart=${GUNICORN_EXEC} --workers 3 --worker-class gevent --bind 0.0.0.0:${APP_PORT} app:app
 Restart=always
 RestartSec=10
 
