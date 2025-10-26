@@ -1253,7 +1253,7 @@ def get_traffic_history():
     total_capacity = 2749
     data = [{
         'timestamp': t.timestamp,
-        'count': 5000 - t.count,
+        'count': t.count,
         'time': datetime.fromtimestamp(t.timestamp).strftime('%H:%M')
     } for t in traffic_list]
 
@@ -1283,7 +1283,7 @@ def collect_traffic_now():
                     'message': '流量数据采集成功',
                     'data': {
                         'timestamp': latest.timestamp,
-                        'count': 5000 - latest.count,
+                        'count': latest.count,
                         'total': 2749
                     }
                 })
@@ -1320,8 +1320,8 @@ def query_traffic_data_chunk(date_range, db_uri):
     result = connection.execute(query, {'start': start_ts, 'end': end_ts})
     
     chunk_data = [{
-        'timestamp': row,
-        'count': row
+        'timestamp': row.timestamp,
+        'count': row.count
     } for row in result]
     
     connection.close()
@@ -1377,7 +1377,7 @@ def export_traffic_csv():
         # 使用pandas进行数据处理和CSV生成
         df = pd.DataFrame(all_traffic_data)
         df['日期时间'] = pd.to_datetime(df['timestamp'], unit='s').dt.tz_localize('UTC').dt.tz_convert(Config.TIMEZONE)
-        df['在馆人数'] = 5000 - df['count']
+        df['在馆人数'] = df['count']
         df['总容量'] = 2749
         df['占用率(%)'] = round((df['在馆人数'] / df['总容量']) * 100, 2)
         df = df.rename(columns={'timestamp': '时间戳'})
