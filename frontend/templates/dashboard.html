@@ -34,9 +34,8 @@
                             <div class="row align-items-end">
                                 <div class="col-md-6 mb-2 mb-md-0">
                                     <select class="form-select" id="reserve_date" name="reserve_date">
-                                        <option value="immediate_check_in" selected>立刻签到</option>
+                                        <option value="today" selected>今天 ({{ now.strftime('%Y-%m-%d') }})</option>
                                         <option value="tomorrow">明天 ({{ tomorrow.strftime('%Y-%m-%d') }})</option>
-                                        <option value="today">今天 ({{ now.strftime('%Y-%m-%d') }})</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -45,7 +44,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <small class="form-text text-muted mt-2 d-block">"立刻签到"模式将取消当前预约并为您重新预约，以便立即签到。</small>
+                            <small class="form-text text-muted mt-2 d-block">此操作将按您保存的设置为今天或明天预约座位（默认今天）。</small>
                         </form>
                         {% else %}
                         <div class="alert alert-warning mb-0">
@@ -148,6 +147,11 @@
                                 <input class="form-check-input" type="checkbox" id="prevent_late" name="prevent_late" {% if reservation_setting and reservation_setting.prevent_late %}checked{% endif %}>
                                 <label class="form-check-label" for="prevent_late">开启预防迟到</label>
                                 <small class="text-muted d-block">将在您可能迟到时自动取消并重新预约座位</small>
+                            </div>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="auto_find_seat" name="auto_find_seat" {% if reservation_setting and reservation_setting.auto_find_seat %}checked{% endif %}>
+                                <label class="form-check-label" for="auto_find_seat">开启自动寻座</label>
+                                <small class="text-muted d-block">当目标座位在该时间段已被预约时，自动推荐同区域空座</small>
                             </div>
                             <hr>
                             <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>保存设置</button>
@@ -491,62 +495,59 @@
 </div>
 {% endfor %}
 
-<div class="modal fade" id="immediateCheckInModal" tabindex="-1" aria-labelledby="immediateCheckInModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<!-- 自动寻座建议座位 Modal -->
+<div class="modal fade" id="alternativeSeatsModal" tabindex="-1" aria-labelledby="alternativeSeatsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="immediateCheckInModalLabel">确认使用立刻签到模式</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="alternativeSeatsModalLabel"><i class="bi bi-search me-2"></i>同区域可用座位推荐</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <strong>警告：</strong> 此操作会立即尝试为您预约，且一旦成功将无法取消！
+                <div id="altSeatsLoading" class="text-center my-3" style="display:none;">
+                    <span class="spinner-border"></span>
                 </div>
-                <p>该操作会：</p>
-                <ul>
-                    <li><strong>取消</strong>您今天当前的座位预约（如果有）。</li>
-                    <li>以<strong>当前时间</strong>为您重新预约同一个座位。</li>
-                    <li>让您可以<strong>立即签到</strong>。</li>
-                </ul>
-                <p>确定要继续吗？</p>
+                <div id="altSeatsCountdown" class="text-end text-muted" style="display:none;">
+                    将在 30s 后自动为您随机分配一个空座...
+                </div>
+                <div id="altSeatsEmpty" class="alert alert-warning" style="display:none;">
+                    当前时间段该区域没有可用座位，请前往“座位查询”自行查找空座。
+                </div>
+                <div id="altSeatsTableWrap" class="table-responsive" style="display:none;">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>座位</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="altSeatsTbody">
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" id="confirmImmediateCheckIn">确认预约</button>
+                <a href="{{ url_for('seats_query') }}" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i>前往座位查询</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
             </div>
         </div>
     </div>
 </div>
+
 
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // 立即预约按钮逻辑
+    // 立即预约按钮逻辑（移除“立刻签到”模式）
     const reserveButton = document.getElementById('reserveButton');
-    if (reserveButton) {
-        const reserveForm = document.getElementById('reserveForm');
-        const reserveDateSelect = document.getElementById('reserve_date');
-        const immediateCheckInModalElement = document.getElementById('immediateCheckInModal');
-        if (reserveForm && reserveDateSelect && immediateCheckInModalElement) {
-            const immediateCheckInModal = new bootstrap.Modal(immediateCheckInModalElement);
-            const confirmButton = document.getElementById('confirmImmediateCheckIn');
-            reserveButton.addEventListener('click', function (event) {
-                event.preventDefault();
-                if (reserveDateSelect.value === 'immediate_check_in') {
-                    immediateCheckInModal.show();
-                } else {
-                    reserveForm.submit();
-                }
-            });
-            if (confirmButton) {
-                confirmButton.addEventListener('click', function () {
-                    reserveForm.submit();
-                });
-            }
-        }
+    const reserveForm = document.getElementById('reserveForm');
+    if (reserveButton && reserveForm) {
+        reserveButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            reserveForm.submit();
+        });
     }
 
     // 验证码刷新
@@ -690,6 +691,142 @@ document.addEventListener('DOMContentLoaded', function () {
     // 立即加载一次，然后设置定时器
     loadRealtimeTraffic();
     setInterval(loadRealtimeTraffic, 30000); // 30秒刷新一次
+
+    // 自动寻座：根据URL参数触发推荐弹窗并加载数据
+    const urlParams = new URLSearchParams(window.location.search);
+    const suggest = urlParams.get('suggest');
+    const date = urlParams.get('date') || 'today';
+    const altModalEl = document.getElementById('alternativeSeatsModal');
+    if (suggest === '1' && altModalEl) {
+        const altModal = new bootstrap.Modal(altModalEl);
+        const loading = document.getElementById('altSeatsLoading');
+        const emptyDiv = document.getElementById('altSeatsEmpty');
+        const tableWrap = document.getElementById('altSeatsTableWrap');
+        const tbody = document.getElementById('altSeatsTbody');
+
+        // 打开弹窗
+        altModal.show();
+        loading.style.display = 'block';
+        emptyDiv.style.display = 'none';
+        tableWrap.style.display = 'none';
+        tbody.innerHTML = '';
+
+        // 自动寻座：30秒未选择则随机分配
+        const countdownEl = document.getElementById('altSeatsCountdown');
+        let autoAssignTimer = null;
+        let countdownInterval = null;
+
+        function clearAutoTimers() {
+            if (autoAssignTimer) {
+                clearTimeout(autoAssignTimer);
+                autoAssignTimer = null;
+            }
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            if (countdownEl) {
+                countdownEl.style.display = 'none';
+                countdownEl.textContent = '';
+            }
+        }
+
+        function doReserve(devId, reserveDate) {
+            clearAutoTimers();
+            const formData = new URLSearchParams();
+            formData.append('devId', devId);
+            formData.append('reserve_date', reserveDate);
+            fetch('/reserve_alternative', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            }).then(resp => resp.json())
+              .then(r => {
+                  if (r.success) {
+                      alert('预约成功！');
+                      window.location.href = '/dashboard';
+                  } else {
+                      alert('预约失败：' + (r.message || '未知错误'));
+                  }
+              }).catch(err => {
+                  alert('请求失败：' + err);
+              });
+        }
+
+        function startAutoAssign(alternatives) {
+            if (!alternatives || alternatives.length === 0 || !countdownEl) return;
+            let remaining = 30;
+            countdownEl.style.display = '';
+            countdownEl.textContent = `将在 ${remaining}s 后自动为您随机分配一个空座...`;
+
+            countdownInterval = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                    return;
+                }
+                countdownEl.textContent = `将在 ${remaining}s 后自动为您随机分配一个空座...`;
+            }, 1000);
+
+            autoAssignTimer = setTimeout(() => {
+                try {
+                    const choice = alternatives[Math.floor(Math.random() * alternatives.length)];
+                    if (choice && choice.devId) {
+                        doReserve(choice.devId, date);
+                    }
+                } catch (e) {
+                    console.error('自动分配失败:', e);
+                }
+            }, 30000);
+        }
+
+        function bindReserveButtons() {
+            document.querySelectorAll('.reserve-alt-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    clearAutoTimers();
+                    const devId = this.getAttribute('data-devid');
+                    const reserveDate = this.getAttribute('data-date');
+                    doReserve(devId, reserveDate);
+                });
+            });
+        }
+
+        // 当弹窗关闭时清理计时器
+        altModalEl.addEventListener('hide.bs.modal', function () {
+            clearAutoTimers();
+        });
+
+        fetch(`/api/suggest_alternative_seats?reserve_date=${encodeURIComponent(date)}`)
+            .then(resp => resp.json())
+            .then(data => {
+                loading.style.display = 'none';
+                if (data.success && data.alternatives && data.alternatives.length > 0) {
+                    tableWrap.style.display = 'block';
+                    tbody.innerHTML = data.alternatives.map(item => `
+                        <tr>
+                            <td>${item.devName}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary reserve-alt-btn" data-devid="${item.devId}" data-date="${date}">
+                                    预约此座位
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+
+                    bindReserveButtons();
+                    // 启动30秒自动分配倒计时
+                    startAutoAssign(data.alternatives);
+                } else {
+                    emptyDiv.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                loading.style.display = 'none';
+                emptyDiv.style.display = 'block';
+                console.error('加载备选座位失败:', err);
+            });
+    }
 });
 </script>
 {% endblock %}
