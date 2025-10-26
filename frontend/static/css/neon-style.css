@@ -329,6 +329,27 @@ body::before {
 .modal-footer {
     border-top: 1px solid rgba(0, 212, 255, 0.3);
 }
+.modal-body {
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
+}
+
+#seatDetailModal .table {
+    color: var(--text-primary);
+}
+
+#seatDetailModal .table thead th {
+    color: var(--text-primary);
+}
+
+#seatDetailModal .table tbody tr {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+#seatDetailModal .table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.1);
+}
 
 /* 分页霓虹效果 - 暗色 */
 .pagination .page-link {
