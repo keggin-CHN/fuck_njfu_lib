@@ -444,11 +444,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.content && data.content.trim()) {
-                    const closed = localStorage.getItem('announcementClosed');
-                    const lastTime = localStorage.getItem('lastAnnouncementTime');
-                    if (!closed || lastTime !== (data.updated_at || '')) {
-                        showAnnouncementModal(data.content, data.updated_at);
-                    }
+                    showAnnouncementModal(data.content, data.updated_at);
                 }
             }).catch(error => console.error('加载公告失败:', error));
     }
