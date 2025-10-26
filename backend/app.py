@@ -61,7 +61,7 @@ login_manager.login_message = '请先登录'
 scheduler.app = app
 
 # 用于存储查询进度的全局变量
-query_progress = {}
+query_progress = Manager().dict()
 
 # 在应用上下文中初始化数据库和调度器
 # 这样做可以确保无论通过 `python app.py` 还是 `gunicorn` 启动，初始化都会执行
@@ -1614,5 +1614,4 @@ def cancel_user_reservation(uuid):
 
 if __name__ == '__main__':
     freeze_support()
-    query_progress = Manager().dict()
     app.run(host='0.0.0.0', port=5000, debug=False)
