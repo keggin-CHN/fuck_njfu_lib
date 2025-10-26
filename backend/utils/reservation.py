@@ -55,7 +55,7 @@ class SeatReservation:
             return False
 
     @handle_exception
-    def reserve_seat(self, area, seat_number, seat_id, date_str=None, start_time=None, is_late_protection=False):
+    def reserve_seat(self, area, seat_number, seat_id, date_str=None, start_time=None, is_late_protection=False, is_auto_find=False):
         # 确保已认证
         if not self.ensure_authenticated():
             # 记录认证失败
@@ -110,7 +110,7 @@ class SeatReservation:
             logger.error(message)
             self._record_reservation_history(
                 area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
-                is_late_protection=is_late_protection
+                is_late_protection=is_late_protection, is_auto_find=is_auto_find
             )
             return False, message
 
@@ -118,10 +118,10 @@ class SeatReservation:
         full_end_time = f"{date_str} {end_time}"
 
         return self._do_reserve(area, seat_number, seat_id, begin_time, full_end_time, date_str, start_time, end_time,
-                                is_late_protection)
+                                is_late_protection, is_auto_find)
 
     def _do_reserve(self, area, seat_number, seat_id, begin_time, full_end_time, date_str, start_time, end_time,
-                    is_late_protection):
+                    is_late_protection, is_auto_find):
         reserve_url = HttpClient.get_lib_url("ic-web/reserve?vpn-12-libseat.njfu.edu.cn")
 
         api_headers = {
@@ -167,7 +167,7 @@ class SeatReservation:
 
                     self._record_reservation_history(
                         area, seat_number, seat_id, date_str, start_time, end_time, "成功", message,
-                        uuid=uuid, is_late_protection=is_late_protection
+                        uuid=uuid, is_late_protection=is_late_protection, is_auto_find=is_auto_find
                     )
                     return True, message
                 else:
@@ -175,7 +175,7 @@ class SeatReservation:
                     logger.error(f"用户 {self.user.username} {message}")
                     self._record_reservation_history(
                         area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
-                        is_late_protection=is_late_protection
+                        is_late_protection=is_late_protection, is_auto_find=is_auto_find
                     )
                     return False, message
             else:
@@ -184,7 +184,7 @@ class SeatReservation:
                 logger.error(f"用户 {self.user.username} {message}")
                 self._record_reservation_history(
                     area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
-                    is_late_protection=is_late_protection
+                    is_late_protection=is_late_protection, is_auto_find=is_auto_find
                 )
                 return False, message
 
@@ -193,12 +193,12 @@ class SeatReservation:
             logger.error(f"用户 {self.user.username} {message}")
             self._record_reservation_history(
                 area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
-                is_late_protection=is_late_protection
+                is_late_protection=is_late_protection, is_auto_find=is_auto_find
             )
             return False, message
 
     def _record_reservation_history(self, area, seat_number, seat_id, date_str, start_time, end_time, status,
-                                    message=None, uuid=None, is_late_protection=False):
+                                    message=None, uuid=None, is_late_protection=False, is_auto_find=False):
         try:
             reserve_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
@@ -213,7 +213,8 @@ class SeatReservation:
                 status=status,
                 message=message,
                 uuid=uuid,
-                is_late_protection=is_late_protection
+                is_late_protection=is_late_protection,
+                is_auto_find=is_auto_find
             )
             db.session.add(history)
             db.session.commit()
@@ -222,6 +223,23 @@ class SeatReservation:
             # 预约后立即发送通知
             from .notification import NotificationService
             NotificationService.send_single_reservation_notification(self.user, history)
+
+            # 若为“今天”的成功预约且用户开启了预防迟到，则统一在此调度开始前20分钟的迟到检查
+            try:
+                if status == ReservationHistory.STATUS_SUCCESS:
+                    # 查询用户设置，判断是否开启预防迟到
+                    from models import ReservationSetting
+                    setting = ReservationSetting.query.filter_by(user_id=self.user.id).first()
+                    # 判断预约日期是否为今天（字符串比较）
+                    is_today = (date_str == get_today_date())
+                    if setting and setting.prevent_late and is_today and start_time:
+                        begin_dt = datetime.datetime.strptime(f"{date_str} {start_time}", "%Y-%m-%d %H:%M:%S")
+                        # 延迟导入以避免循环依赖
+                        from scheduler import schedule_late_check_task
+                        schedule_late_check_task(self.user, begin_dt)
+                        logger.info(f"已为用户 {self.user.username} 调度开始前20分钟的迟到检查（开始时间 {begin_dt.strftime('%H:%M:%S')}）")
+            except Exception as se:
+                logger.error(f"调度迟到检查任务失败: {str(se)}")
             
         except Exception as e:
             logger.error(f"记录预约历史或发送通知时出错: {str(e)}")
@@ -346,7 +364,7 @@ class SeatReservation:
 
         return False
 
-    def reserve_today_seat(self, area, seat_number, seat_id, start_time, is_late_protection=True):
+    def reserve_today_seat(self, area, seat_number, seat_id, start_time, is_late_protection=True, is_auto_find=False):
         today = get_today_date()
         return self.reserve_seat(area, seat_number, seat_id, date_str=today, start_time=start_time,
-                                 is_late_protection=is_late_protection)
+                                 is_late_protection=is_late_protection, is_auto_find=is_auto_find)
