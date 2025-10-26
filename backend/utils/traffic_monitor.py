@@ -106,11 +106,7 @@ class LibraryTrafficMonitor:
                 return None
 
             logger.info(f"流量监控：当前在馆人数 {count}/{total_seats} (剩余{remaining_seats})")
-            return {
-                'count': count,
-                'total': total_seats,
-                'remaining': remaining_seats
-            }
+            return count
 
         except ValueError as e:
             logger.error(f"流量监控：数据解析失败 - {e}")
@@ -120,13 +116,12 @@ class LibraryTrafficMonitor:
             return None
 
     @staticmethod
-    def save_traffic_data(traffic_info):
+    def save_traffic_data(count):
         """保存流量数据到数据库"""
         try:
-            if not traffic_info:
+            if count is None:
                 return False
 
-            count = traffic_info['count']
             timestamp = int(datetime.now().timestamp())
 
             # 检查是否已存在相同时间戳的记录
@@ -139,7 +134,7 @@ class LibraryTrafficMonitor:
             db.session.add(traffic)
             db.session.commit()
 
-            logger.info(f"流量监控：数据已保存 - 时间戳={timestamp}, 人数={count}/{traffic_info['total']}")
+            logger.info(f"流量监控：数据已保存 - 时间戳={timestamp}, 人数={count}")
             return True
 
         except Exception as e:
@@ -150,9 +145,9 @@ class LibraryTrafficMonitor:
     @staticmethod
     def collect_and_save():
         """采集并保存流量数据"""
-        traffic_info = LibraryTrafficMonitor.get_current_traffic()
-        if traffic_info:
-            return LibraryTrafficMonitor.save_traffic_data(traffic_info)
+        count = LibraryTrafficMonitor.get_current_traffic()
+        if count is not None:
+            return LibraryTrafficMonitor.save_traffic_data(count)
         return False
 
     @staticmethod
