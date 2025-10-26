@@ -74,21 +74,49 @@ class NotificationService:
 
     @staticmethod
     def _build_message(user, history, format_type='wechat'):
-        """构建单次预约结果的通知消息内容"""
+        """构建单次预约结果的通知消息内容（区分迟到保护与自动寻座）"""
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         greeting = HitokotoService.generate_greeting()
-
+        
+        # 标记类型
+        is_late = getattr(history, 'is_late_protection', False)
+        is_auto = getattr(history, 'is_auto_find', False)
+        
+        # 构造标题前缀
+        prefixes = []
+        if is_late:
+            prefixes.append("迟到保护")
+        if is_auto:
+            prefixes.append("自动寻座")
+        
+        # 基础标题（按状态）
         if history.status == ReservationHistory.STATUS_SUCCESS:
-            title = "✅ 预约成功"
-            details = f"> **日期**: {history.reserve_date.strftime('%Y-%m-%d')}\n" \
-                      f"> **座位**: {history.area} {history.seat_number}号\n" \
-                      f"> **时间**: {history.start_time} - {history.end_time}"
+            base_title = "✅ 预约成功"
+        elif history.status == ReservationHistory.STATUS_AUTH_FAILED:
+            base_title = "❌ 认证失败"
         else:
-            title = f"❌ 预约失败"
-            details = f"> **日期**: {history.reserve_date.strftime('%Y-%m-%d')}\n" \
-                      f"> **座位**: {history.area} {history.seat_number}号\n" \
-                      f"> **时间**: {history.start_time} - {history.end_time}\n" \
-                      f"> **原因**: {history.message}"
+            base_title = "❌ 预约失败"
+        
+        title = base_title if not prefixes else f"{base_title[0:1]} {' · '.join(prefixes)} · {base_title[2:]}"
+        
+        # 详情内容，增加类型说明
+        extra = ""
+        if is_late:
+            extra += "> **类型**: 迟到保护\n> **说明**: 到达开始时间前未签到，系统自动取消并顺延重新预约\n"
+        if is_auto:
+            extra += "> **类型**: 自动寻座\n> **说明**: 初选座位已占用，系统推荐/自动分配可用座位完成预约\n"
+        
+        base_details = (
+            f"> **日期**: {history.reserve_date.strftime('%Y-%m-%d')}\n"
+            f"> **座位**: {history.area} {history.seat_number}号\n"
+            f"> **时间**: {history.start_time} - {history.end_time}\n"
+        )
+        
+        if history.status == ReservationHistory.STATUS_SUCCESS:
+            details = extra + base_details
+        else:
+            reason = history.message or "未知原因"
+            details = extra + base_details + f"> **原因**: {reason}"
 
         if format_type == 'wechat':
             return f"""## 图书馆预约结果通知
@@ -100,6 +128,8 @@ class NotificationService:
 {details}
 """
         else:  # Telegram
+            # 将详情适配 Telegram Markdown
+            tg_details = details.replace('> **', '• *').replace('**: ', '*: ').replace('\\n', '\\n')
             return f"""📚 *图书馆预约结果通知*
 👤 用户: `{user.username}`
 🕒 时间: {now}
@@ -107,7 +137,7 @@ class NotificationService:
 {greeting}
 
 *{title}*
-{details.replace('> **', '• *').replace('**: ', '*: ').replace('\\n', '\\n')}
+{tg_details}
 """
     
     @staticmethod
@@ -173,13 +203,15 @@ class NotificationService:
         
         auto_reserve_status = "✅ 开启" if setting.auto_reserve else "❌ 关闭"
         prevent_late_status = "✅ 开启" if setting.prevent_late else "❌ 关闭"
+        auto_find_seat_status = "✅ 开启" if getattr(setting, 'auto_find_seat', False) else "❌ 关闭"
 
         title = "⚙️ 预约设置更新"
         details = (
             f"> **座位**: {setting.area} {setting.seat_number}号\n"
             f"> **时间**: {setting.start_time} - {setting.end_time}\n"
             f"> **自动预约**: {auto_reserve_status}\n"
-            f"> **迟到保护**: {prevent_late_status}"
+            f"> **迟到保护**: {prevent_late_status}\n"
+            f"> **自动寻座**: {auto_find_seat_status}"
         )
         
         if user.notification_type == 'wechat':
