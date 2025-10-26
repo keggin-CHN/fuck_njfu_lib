@@ -35,6 +35,7 @@ class ReservationSetting(db.Model):
     end_time = db.Column(db.String(8), nullable=False)
     auto_reserve = db.Column(db.Boolean, default=False)
     prevent_late = db.Column(db.Boolean, default=False)
+    auto_find_seat = db.Column(db.Boolean, default=False)  # 自动寻座开关
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
 
@@ -51,6 +52,7 @@ class ReservationHistory(db.Model):
     message = db.Column(db.Text)
     uuid = db.Column(db.String(64))
     is_late_protection = db.Column(db.Boolean, default=False)
+    is_auto_find = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     # 状态常量
