@@ -59,8 +59,11 @@
             <!-- 图书馆实时流量 -->
             <div class="col-md-6 mb-4">
                 <div class="dashboard-card stat-card">
-                    <div class="card-header">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>图书馆实时流量</h5>
+                        <button class="btn traffic-refresh-btn" id="refreshTrafficBtn" title="刷新实时流量" aria-label="刷新实时流量">
+                            <i class="bi bi-arrow-clockwise refresh-icon me-1"></i><span class="refresh-label">刷新</span>
+                        </button>
                     </div>
                     <div class="card-body text-center d-flex flex-column justify-content-center">
                         <div id="trafficDataDisplay">
@@ -303,6 +306,146 @@
     </div>
 </div>
 
+<!-- Hidden button to trigger the modal programmatically -->
+<button id="announcementModalTrigger" type="button" class="d-none" data-bs-toggle="modal" data-bs-target="#announcementModal"></button>
+
+<!-- Announcement Modal -->
+<div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content neon-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="announcementModalLabel"><i class="bi bi-megaphone me-2"></i>系统公告</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="announcement-content">
+                    <p id="modalAnnouncementContent"></p>
+                    <small class="text-muted" id="modalAnnouncementTime"></small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary neon-btn" id="closeAnnouncementBtn" data-bs-dismiss="modal">我已阅读</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 霓虹公告弹窗优化 */
+.neon-modal {
+    background: linear-gradient(145deg, rgba(22, 33, 62, 0.96), rgba(26, 26, 46, 0.96));
+    border: 1px solid #00d4ff;
+    border-radius: 16px;
+    box-shadow: 0 0 24px rgba(0, 212, 255, 0.45), inset 0 0 12px rgba(0, 212, 255, 0.25);
+    color: #fff;
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+    animation: modalGlow 3s ease-in-out infinite alternate;
+}
+.neon-modal .modal-header {
+    border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+    color: #00d4ff;
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.75);
+    display: flex;
+    align-items: center;
+}
+.neon-modal .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+}
+.neon-modal .modal-title i {
+    font-size: 1.35rem;
+    filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.6));
+}
+.neon-modal .modal-body {
+    padding: 1.8rem;
+}
+.announcement-content {
+    background: linear-gradient(90deg, rgba(0, 212, 255, 0.08), rgba(255, 16, 240, 0.08));
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    position: relative;
+}
+.announcement-content::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #00d4ff, #ff10f0);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
+    border-radius: 4px 0 0 4px;
+}
+.announcement-content p {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #fff;
+}
+.neon-modal .modal-footer {
+    border-top: 1px solid rgba(0, 212, 255, 0.25);
+    justify-content: center;
+}
+.neon-btn {
+    background: linear-gradient(45deg, #00aaff, #0077ff);
+    border: 1px solid #00d4ff;
+    border-radius: 28px;
+    color: #fff;
+    padding: 12px 36px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    transition: all 0.25s ease;
+    box-shadow: 0 0 12px rgba(0, 170, 255, 0.65), inset 0 0 6px rgba(255, 255, 255, 0.35);
+}
+.neon-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 18px rgba(0, 212, 255, 0.85), inset 0 0 10px rgba(255, 255, 255, 0.45);
+    background: linear-gradient(45deg, #0077ff, #0055cc);
+}
+/* 刷新按钮图标增强 */
+/* 刷新按钮强化样式 */
+#refreshTrafficBtn.traffic-refresh-btn {
+    border-radius: 9999px;
+    background: linear-gradient(145deg, rgba(0, 212, 255, 0.18), rgba(0, 119, 255, 0.18));
+    border: 1px solid #00d4ff;
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.45);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 14px;
+}
+#refreshTrafficBtn .refresh-icon {
+    font-size: 1.7rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.6));
+    transition: transform 0.2s ease;
+}
+#refreshTrafficBtn .refresh-label {
+    font-weight: 600;
+    color: #fff;
+}
+#refreshTrafficBtn:hover .refresh-icon {
+    transform: rotate(-12deg) scale(1.1);
+}
+#refreshTrafficBtn.loading .refresh-icon {
+    animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+/* 细微发光动画 */
+@keyframes modalGlow {
+    from { box-shadow: 0 0 18px rgba(0, 212, 255, 0.35); }
+    to   { box-shadow: 0 0 28px rgba(0, 212, 255, 0.6); }
+}
+</style>
+
 <!-- Modals -->
 {% for history in histories %}
 <div class="modal fade" id="detailModal{{ history.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ history.id }}" aria-hidden="true">
@@ -422,40 +565,76 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // 加载公告
-    function loadAnnouncement() {
+    // 公告弹窗逻辑
+    function showAnnouncementModal(content, updatedAt) {
+        const lastSeenTimestamp = localStorage.getItem('announcement_seen_timestamp');
+        const modalElement = document.getElementById('announcementModal');
+
+        // 强制显示弹窗的条件：首次访问或公告更新
+        const forceShow = !lastSeenTimestamp || (updatedAt && new Date(lastSeenTimestamp) < new Date(updatedAt));
+
+        if (modalElement && content && content.trim() && forceShow) {
+            document.getElementById('modalAnnouncementContent').textContent = content;
+            document.getElementById('modalAnnouncementTime').textContent = '更新时间: ' + updatedAt;
+
+            // Use a hidden button to trigger the modal to avoid JS context issues
+            document.getElementById('announcementModalTrigger').click();
+
+            // 监听弹窗关闭事件，记录已读
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                localStorage.setItem('announcement_seen_timestamp', updatedAt);
+            }, { once: true });
+        }
+    }
+
+    // 加载并处理公告
+    function handleAnnouncements() {
         fetch('/api/announcement')
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.content && data.content.trim()) {
-                    document.getElementById('announcementContent').textContent = data.content;
-                    if (data.updated_at) {
-                        document.getElementById('announcementTime').textContent = '更新时间: ' + data.updated_at;
+                    const content = data.content;
+                    const updatedAt = data.updated_at;
+
+                    // 1. 更新顶部横幅
+                    document.getElementById('announcementContent').textContent = content;
+                    if (updatedAt) {
+                        document.getElementById('announcementTime').textContent = '更新时间: ' + updatedAt;
                     }
                     document.getElementById('announcementContainer').style.display = '';
-                }
-            }).catch(error => console.error('加载公告失败:', error));
-    }
-    loadAnnouncement();
 
-    // 检查公告弹窗
-    function checkAnnouncementModal() {
-        fetch('/api/announcement')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.content && data.content.trim()) {
-                    showAnnouncementModal(data.content, data.updated_at);
+                    // 2. 检查是否需要显示弹窗
+                    showAnnouncementModal(content, updatedAt);
                 }
             }).catch(error => console.error('加载公告失败:', error));
     }
-    checkAnnouncementModal();
+    handleAnnouncements();
+
+    // Explicitly handle announcement modal close button
+    const closeAnnouncementBtn = document.getElementById('closeAnnouncementBtn');
+    if (closeAnnouncementBtn) {
+        closeAnnouncementBtn.addEventListener('click', function () {
+            const modalEl = document.getElementById('announcementModal');
+            let modalInstance = null;
+            if (bootstrap.Modal.getOrCreateInstance) {
+                modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            } else {
+                modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            }
+            modalInstance.hide();
+        });
+    }
 
     // 加载实时人数
+    const refreshTrafficBtn = document.getElementById('refreshTrafficBtn');
     function loadRealtimeTraffic() {
         const displayDiv = document.getElementById('trafficDataDisplay');
-        // 可选：显示一个加载中的状态
-        document.getElementById('currentCount').textContent = '...';
-        document.getElementById('updateTime').textContent = '正在加载...';
+        const icon = refreshTrafficBtn ? refreshTrafficBtn.querySelector('i') : null;
+        
+                // 开始加载动画
+                refreshTrafficBtn.classList.add('loading');
+                document.getElementById('currentCount').textContent = '...';
+                document.getElementById('updateTime').textContent = '正在加载...';
 
         fetch('/api/traffic/latest')
             .then(response => response.json())
@@ -478,8 +657,16 @@ document.addEventListener('DOMContentLoaded', function () {
             }).catch(error => {
                 console.error('获取实时人数失败:', error);
                 displayDiv.innerHTML = `<div class="alert alert-danger text-center">获取实时数据失败，请检查网络连接。</div>`;
+            }).finally(() => {
+                // 停止加载动画
+                refreshTrafficBtn.classList.remove('loading');
             });
     }
+    
+    if (refreshTrafficBtn) {
+        refreshTrafficBtn.addEventListener('click', loadRealtimeTraffic);
+    }
+
     // 立即加载一次，然后设置定时器
     loadRealtimeTraffic();
     setInterval(loadRealtimeTraffic, 30000); // 30秒刷新一次
