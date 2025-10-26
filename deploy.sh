@@ -24,6 +24,22 @@ print_error() {
     echo -e "\e[31m[ERROR]\e[0m $1" >&2
 }
 
+# 端口检查与选择
+is_port_in_use() {
+    fuser -n tcp "$1" >/dev/null 2>&1
+}
+
+find_free_port() {
+    for i in $(seq 1 50); do
+        candidate=$(shuf -i 10000-60000 -n 1)
+        if ! is_port_in_use "$candidate"; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    echo ""
+    return 1
+}
 # --- 主逻辑 ---
 
 # 1. 检查权限和环境
@@ -42,20 +58,55 @@ print_info "正在更新软件包列表并安装依赖 (git, python3, python3-ve
 apt-get update -y &>/dev/null || print_error "更新软件包列表失败。"
 apt-get install -y git python3 python3-venv psmisc || print_error "安装依赖失败。"
 
-# 3. 停止旧服务并强力清理端口
-print_info "正在停止旧服务并清理端口 ${APP_PORT}..."
-systemctl stop "${SERVICE_NAME}" >/dev/null 2>&1 || true
-# 使用 fuser -k 强力杀死进程
-fuser -k -n tcp "${APP_PORT}" >/dev/null 2>&1 || true
-sleep 2 # 等待端口释放
+# 选择端口模式
+print_info "请选择端口模式："
+echo "  1) 清理并使用固定端口 5000"
+echo "  2) 自动选择一个未被占用的随机端口"
+read -p "请输入选择 (1/2) [默认: 1]: " PORT_MODE
+PORT_MODE=${PORT_MODE:-1}
 
-# 4. 确认端口是否已清理
-if fuser -n tcp "${APP_PORT}" >/dev/null 2>&1; then
-    print_error "无法清理端口 ${APP_PORT}，仍有进程在占用它。"
-    fuser -v -n tcp "${APP_PORT}"
+if [ "$PORT_MODE" = "1" ]; then
+    APP_PORT=5000
+    DO_CLEAN_PORT=1
+    print_info "已选择模式 1：将清理并使用端口 5000。"
+elif [ "$PORT_MODE" = "2" ]; then
+    APP_PORT=$(find_free_port)
+    if [ -z "$APP_PORT" ]; then
+        print_error "未能找到可用端口，请稍后重试。"
+        exit 1
+    fi
+    DO_CLEAN_PORT=0
+    print_info "已选择模式 2：随机选择可用端口 ${APP_PORT}。"
+else
+    print_error "无效选择: ${PORT_MODE}"
     exit 1
 fi
-print_success "端口 ${APP_PORT} 已清理干净。"
+# 3. 停止旧服务并按选择处理端口
+print_info "正在停止旧服务..."
+systemctl stop "${SERVICE_NAME}" >/dev/null 2>&1 || true
+
+if [ "${DO_CLEAN_PORT}" = "1" ]; then
+    print_info "正在清理端口 ${APP_PORT}..."
+    # 使用 fuser -k 强力杀死进程
+    fuser -k -n tcp "${APP_PORT}" >/dev/null 2>&1 || true
+    sleep 2 # 等待端口释放
+
+    # 4. 确认端口是否已清理
+    if fuser -n tcp "${APP_PORT}" >/dev/null 2>&1; then
+        print_error "无法清理端口 ${APP_PORT}，仍有进程在占用它。"
+        fuser -v -n tcp "${APP_PORT}"
+        exit 1
+    fi
+    print_success "端口 ${APP_PORT} 已清理干净。"
+else
+    # 模式 2 下确保所选端口未被占用
+    if fuser -n tcp "${APP_PORT}" >/dev/null 2>&1; then
+        print_error "随机选择的端口 ${APP_PORT} 被占用，请重试。"
+        exit 1
+    fi
+    print_success "随机端口 ${APP_PORT} 可用，无需清理。"
+fi
+
 
 # 5. 克隆或更新项目代码
 if [ -d "$INSTALL_DIR" ]; then
