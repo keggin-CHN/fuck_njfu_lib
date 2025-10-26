@@ -6,8 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 密码修改表单验证
     initPasswordFormValidation();
 
-    // 立即预约和三分钟模式
-    initImmediateReservation();
+    // 已移除立刻签到相关脚本
 
     // 我的预约功能
     initMyReservations();
@@ -106,41 +105,6 @@ function initPasswordFormValidation() {
     }
 }
 
-// 初始化立即预约功能
-function initImmediateReservation() {
-    // 获取表单和按钮元素
-    const reserveForm = document.getElementById('reserveForm');
-    const reserveButton = document.getElementById('reserveButton');
-    const confirmThreeMinuteButton = document.getElementById('confirmThreeMinute');
-    const reserveDateSelect = document.getElementById('reserve_date');
-
-    // 如果元素不存在，则退出
-    if (!reserveForm || !reserveButton || !reserveDateSelect) return;
-
-    // 三分钟模式确认弹窗
-    const threeMinuteModalElement = document.getElementById('threeMinuteModal');
-    const threeMinuteModal = threeMinuteModalElement ? new bootstrap.Modal(threeMinuteModalElement) : null;
-
-    // 点击预约按钮
-    reserveButton.addEventListener('click', function () {
-        if (reserveDateSelect.value === 'three_minutes' && threeMinuteModal) {
-            // 如果是三分钟模式，显示确认弹窗
-            threeMinuteModal.show();
-        } else {
-            // 其他模式直接提交表单
-            reserveForm.submit();
-        }
-    });
-
-    // 确认三分钟模式
-    if (confirmThreeMinuteButton && threeMinuteModal) {
-        confirmThreeMinuteButton.addEventListener('click', function () {
-            // 隐藏弹窗并提交表单
-            threeMinuteModal.hide();
-            reserveForm.submit();
-        });
-    }
-}
 
 // 初始化我的预约功能
 function initMyReservations() {
