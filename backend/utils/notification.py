@@ -94,6 +94,8 @@ class NotificationService:
             base_title = "✅ 预约成功"
         elif history.status == ReservationHistory.STATUS_AUTH_FAILED:
             base_title = "❌ 认证失败"
+        elif hasattr(ReservationHistory, 'STATUS_CANCELED') and history.status == ReservationHistory.STATUS_CANCELED:
+            base_title = "⚠️ 预约取消"
         else:
             base_title = "❌ 预约失败"
         
@@ -106,10 +108,30 @@ class NotificationService:
         if is_auto:
             extra += "> **类型**: 自动寻座\n> **说明**: 初选座位已占用，系统推荐/自动分配可用座位完成预约\n"
         
+        # 处理可能为 None 的开始/结束时间
+        start_time_val = getattr(history, 'start_time', '') or ''
+        end_time_val = getattr(history, 'end_time', '') or ''
+        # 如果是 datetime/time 对象，格式化为字符串
+        try:
+            if hasattr(start_time_val, 'strftime'):
+                start_time_val = start_time_val.strftime('%H:%M:%S')
+        except Exception:
+            pass
+        try:
+            if hasattr(end_time_val, 'strftime'):
+                end_time_val = end_time_val.strftime('%H:%M:%S')
+        except Exception:
+            pass
+
+        if not start_time_val:
+            start_time_val = '--:--'
+        if not end_time_val:
+            end_time_val = '--:--'
+
         base_details = (
             f"> **日期**: {history.reserve_date.strftime('%Y-%m-%d')}\n"
             f"> **座位**: {history.area} {history.seat_number}号\n"
-            f"> **时间**: {history.start_time} - {history.end_time}\n"
+            f"> **时间**: {start_time_val} - {end_time_val}\n"
         )
         
         if history.status == ReservationHistory.STATUS_SUCCESS:
