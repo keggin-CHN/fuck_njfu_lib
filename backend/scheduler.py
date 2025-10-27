@@ -179,6 +179,9 @@ def reserve_for_user(user):
             f"用户 {user.username} 的座位区域或座位号无效: {reservation_setting.area} - {reservation_setting.seat_number}")
         return
 
+    # 是否已尝试过重新认证并重试预约（避免在短时间内重复调用预约接口）
+    retried = False
+
     # 先获取认证器
     authenticator = AuthManager.get_authenticator(user)
     if not authenticator:
@@ -196,8 +199,8 @@ def reserve_for_user(user):
         start_time=reservation_setting.start_time
     )
 
-    # 如果失败，尝试重新认证后再次预约
-    if not result:
+    # 如果失败，且还未重试过，则尝试重新认证后再次预约（仅重试一次）
+    if not result and not retried:
         logger.info(f"用户 {user.username} 预约失败，尝试重新认证")
         # 清除旧认证
         AuthManager.clear_authenticator(user.id)
@@ -221,9 +224,15 @@ def reserve_for_user(user):
         else:
             logger.error(f"用户 {user.username} 重新认证失败，无法预约")
             record_auth_failure(user, "reserve", reservation_setting)
+        retried = True
     else:
-        logger.info(
-            f"用户 {user.username} 预约成功: {reservation_setting.area} 区域 {reservation_setting.seat_number} 号座位")
+        if result:
+            logger.info(
+                f"用户 {user.username} 预约成功: {reservation_setting.area} 区域 {reservation_setting.seat_number} 号座位")
+        else:
+            # 已经重试过且仍失败，记录失败（防止被重复触发重试）
+            logger.error(f"用户 {user.username} 预约失败且已重试，放弃本次预约")
+            record_auth_failure(user, "reserve", reservation_setting)
 
 
 def record_auth_failure(user, action_type, setting=None):
@@ -392,7 +401,7 @@ def handle_potential_late_arrival(user, resv, reservation, today, resv_begin_tim
         return
 
     # 尝试取消预约
-    cancel_result = reservation.cancel_reservation(uuid)
+    cancel_result, cancel_message = reservation.cancel_reservation(uuid)
     if not cancel_result:
         # 如果取消失败，尝试重新认证
         logger.info(f"用户 {user.username} 取消预约失败，尝试重新认证")
@@ -401,7 +410,7 @@ def handle_potential_late_arrival(user, resv, reservation, today, resv_begin_tim
         if authenticator:
             logger.info(f"用户 {user.username} 重新认证成功，再次尝试取消预约")
             reservation = SeatReservation(user, authenticator=authenticator)
-            cancel_result = reservation.cancel_reservation(uuid)
+            cancel_result, cancel_message = reservation.cancel_reservation(uuid)
             if not cancel_result:
                 logger.error(f"用户 {user.username} 重新认证后取消预约仍然失败")
                 return
@@ -409,8 +418,11 @@ def handle_potential_late_arrival(user, resv, reservation, today, resv_begin_tim
             logger.error(f"用户 {user.username} 重新认证失败，取消迟到保护")
             return
 
-    logger.info(f"已取消用户 {user.username} 的预约 {uuid}")
-    reschedule_seat_after_cancel(user, reservation, area_name, seat_number, dev_id, today, resv_begin_time)
+        logger.info(f"已取消用户 {user.username} 的预约 {uuid}")
+        # 重新预约
+        reschedule_result = reschedule_seat_after_cancel(user, reservation, area_name, seat_number, dev_id, today, resv_begin_time)
+        if not reschedule_result:
+            logger.error(f"用户 {user.username} 重新预约失败")
 
 
 def extract_seat_info(user, dev_name, uuid):
@@ -444,7 +456,7 @@ def extract_seat_info(user, dev_name, uuid):
 
 
 def reschedule_seat_after_cancel(user, reservation, area_name, seat_number, dev_id, today, resv_begin_time):
-    """取消预约后重新预约座位，失败时尝试重新认证"""
+    """取消预约后重新预约座位，失败时尝试重新认证, 返回 True/False"""
     # 计算新的开始时间（推迟1小时）
     new_start_time = (resv_begin_time + datetime.timedelta(hours=1)).strftime("%H:%M:%S")
     logger.info(f"迟到保护: 原预约时间 {resv_begin_time.strftime('%H:%M:%S')}, 新预约时间 {new_start_time}")
@@ -459,7 +471,7 @@ def reschedule_seat_after_cancel(user, reservation, area_name, seat_number, dev_
     if duration >= 2:
         logger.info(f"为用户 {user.username} 预约 {area_name} {seat_number}号 新时间 {new_start_time}")
         # 尝试预约
-        reserve_result = reservation.reserve_today_seat(area_name, seat_number, dev_id, new_start_time)
+        reserve_result, reserve_message = reservation.reserve_today_seat(area_name, seat_number, dev_id, new_start_time)
         if not reserve_result:
             # 如果预约失败，尝试重新认证
             logger.info(f"用户 {user.username} 重新预约失败，尝试重新认证")
@@ -468,7 +480,7 @@ def reschedule_seat_after_cancel(user, reservation, area_name, seat_number, dev_
             if authenticator:
                 logger.info(f"用户 {user.username} 重新认证成功，再次尝试预约")
                 reservation = SeatReservation(user, authenticator=authenticator)
-                reserve_result = reservation.reserve_today_seat(area_name, seat_number, dev_id, new_start_time)
+                reserve_result, reserve_message = reservation.reserve_today_seat(area_name, seat_number, dev_id, new_start_time)
                 if not reserve_result:
                     logger.error(f"用户 {user.username} 重新认证后预约仍然失败")
                     return
