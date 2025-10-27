@@ -403,7 +403,7 @@ def handle_potential_late_arrival(user, resv, reservation, today, resv_begin_tim
     # 尝试取消预约
     cancel_result, cancel_message = reservation.cancel_reservation(uuid)
     if not cancel_result:
-        # 如果取消失败，尝试重新认证
+        # 如果取消失败，尝试重新认证并再次取消
         logger.info(f"用户 {user.username} 取消预约失败，尝试重新认证")
         AuthManager.clear_authenticator(user.id)
         authenticator = AuthManager.get_authenticator(user)
@@ -418,11 +418,33 @@ def handle_potential_late_arrival(user, resv, reservation, today, resv_begin_tim
             logger.error(f"用户 {user.username} 重新认证失败，取消迟到保护")
             return
 
-        logger.info(f"已取消用户 {user.username} 的预约 {uuid}")
-        # 重新预约
-        reschedule_result = reschedule_seat_after_cancel(user, reservation, area_name, seat_number, dev_id, today, resv_begin_time)
-        if not reschedule_result:
-            logger.error(f"用户 {user.username} 重新预约失败")
+    # 到这里表示取消已成功
+    logger.info(f"已取消用户 {user.username} 的预约 {uuid}")
+
+    # 发送取消预约通知（迟到保护触发）
+    try:
+        NotificationService.send_single_reservation_notification(
+            user,
+            ReservationHistory(
+                user_id=user.id,
+                area=area_name,
+                seat_number=seat_number,
+                seat_id=dev_id,
+                reserve_date=datetime.datetime.strptime(today, "%Y-%m-%d").date(),
+                start_time=resv_begin_time.strftime("%H:%M:%S"),
+                end_time=None,
+                status=ReservationHistory.STATUS_CANCELED,
+                message=f"迟到保护：已取消预约",
+                is_late_protection=True
+            )
+        )
+    except Exception as e:
+        logger.error(f"发送取消通知时出错: {e}")
+
+    # 重新预约
+    reschedule_result = reschedule_seat_after_cancel(user, reservation, area_name, seat_number, dev_id, today, resv_begin_time)
+    if not reschedule_result:
+        logger.error(f"用户 {user.username} 重新预约失败")
 
 
 def extract_seat_info(user, dev_name, uuid):
