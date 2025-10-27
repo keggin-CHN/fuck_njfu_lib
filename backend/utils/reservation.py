@@ -303,66 +303,70 @@ class SeatReservation:
 
     @handle_exception
     def cancel_reservation(self, uuid):
-        if not uuid:
-            message = "取消预约失败：没有提供预约UUID"
-            logger.error(message)
-            from .logger_utils import add_log
-            add_log(message, user=self.user, response_code=400, error_message=message)
-            return False
-
-        if not self.ensure_authenticated():
-            self.record_auth_failure("cancel")
-            return False
-
-        url = HttpClient.get_lib_url("ic-web/reserve/delete")
-
-        params = {
-            "vpn-12-libseat.njfu.edu.cn": ""
-        }
-
-        api_headers = {
-            "content-type": "application/json;charset=UTF-8",
-            "token": self.authenticator.token,
-            "lan": "1",
-        }
-
-        payload = {
-            "uuid": uuid
-        }
-
-        try:
-            logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
-            from .logger_utils import add_log
-            add_log(f"用户尝试取消预约 UUID: {uuid}", user=self.user)
-            response = HttpClient.post(
-                url,
-                headers=api_headers,
-                params=params,
-                cookies={"my_client_ticket": self.authenticator.my_client_ticket},
-                json_data=payload
-            )
-
-            if response and response.status_code == 200:
-                result = response.json()
-                if result.get("code") == 0:
-                    logger.info(f"用户 {self.user.username} 成功取消预约")
-                    add_log(f"成功取消预约 UUID: {uuid}", user=self.user)
-                    return True
-                else:
-                    message = f"取消预约失败: {result.get('message', '未知错误')}"
-                    logger.error(message)
-                    add_log(message, user=self.user, response_code=500, error_message=message)
-            else:
-                status = response.status_code if response else "请求失败"
-                message = f"取消预约请求失败，状态码：{status}"
+            if not uuid:
+                message = "取消预约失败：没有提供预约UUID"
                 logger.error(message)
-                add_log(message, user=self.user, response_code=status or 500, error_message=message)
-        except Exception as e:
-            message = f"取消预约过程出错: {str(e)}"
-            logger.error(message)
-            add_log(message, user=self.user, response_code=500, error_message=message)
-
-        return False
+                from .logger_utils import add_log
+                add_log(message, user=self.user, response_code=400, error_message=message)
+                return False, message
+    
+            if not self.ensure_authenticated():
+                message = "取消预约失败：认证失效"
+                self.record_auth_failure("cancel")
+                return False, message
+    
+            url = HttpClient.get_lib_url("ic-web/reserve/delete")
+    
+            params = {
+                "vpn-12-libseat.njfu.edu.cn": ""
+            }
+    
+            api_headers = {
+                "content-type": "application/json;charset=UTF-8",
+                "token": self.authenticator.token,
+                "lan": "1",
+            }
+    
+            payload = {
+                "uuid": uuid
+            }
+    
+            try:
+                logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
+                from .logger_utils import add_log
+                add_log(f"用户尝试取消预约 UUID: {uuid}", user=self.user)
+                response = HttpClient.post(
+                    url,
+                    headers=api_headers,
+                    params=params,
+                    cookies={"my_client_ticket": self.authenticator.my_client_ticket},
+                    json_data=payload
+                )
+    
+                if response and response.status_code == 200:
+                    result = response.json()
+                    if result.get("code") == 0:
+                        logger.info(f"用户 {self.user.username} 成功取消预约")
+                        add_log(f"成功取消预约 UUID: {uuid}", user=self.user)
+                        return True, "取消预约成功"
+                    else:
+                        message = f"取消预约失败: {result.get('message', '未知错误')}"
+                        logger.error(message)
+                        add_log(message, user=self.user, response_code=500, error_message=message)
+                        return False, message
+                else:
+                    status = response.status_code if response else "请求失败"
+                    message = f"取消预约请求失败，状态码：{status}"
+                    logger.error(message)
+                    add_log(message, user=self.user, response_code=status or 500, error_message=message)
+                    return False, message
+            except Exception as e:
+                message = f"取消预约过程出错: {str(e)}"
+                logger.error(message)
+                add_log(message, user=self.user, response_code=500, error_message=message)
+                return False, message
+    
+            return False, "取消预约失败"
 
     def reserve_today_seat(self, area, seat_number, seat_id, start_time, is_late_protection=True, is_auto_find=False):
         today = get_today_date()
