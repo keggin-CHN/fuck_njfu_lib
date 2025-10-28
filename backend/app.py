@@ -17,7 +17,7 @@ from utils.reservation import SeatReservation
 from utils.date_utils import get_today_date, normalize_time_format, get_tomorrow_date
 from utils.logger_utils import add_log
 from utils.notification import NotificationService
-from scheduler import setup_scheduler, scheduler, schedule_late_protection, schedule_late_check_task
+from scheduler import setup_scheduler, scheduler, schedule_late_protection
 from config import Config
 from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
@@ -119,6 +119,41 @@ with app.app_context():
 
 # 启动调度器
 setup_scheduler(app)
+
+
+@app.context_processor
+def inject_now():
+    """为所有模板提供now变量和明天的日期"""
+    now = datetime.now(Config.TIMEZONE)
+    tomorrow = now + timedelta(days=1)
+    return {'now': now, 'tomorrow': tomorrow}
+
+
+@with_app_context
+def schedule_late_check_task(user, begin_dt):
+    """调度用户的迟到检查任务"""
+    try:
+        user_id = user.id
+        job_id = f"late_check_{user_id}_{begin_dt.strftime('%Y%m%d%H%M')}"
+
+        # 移除已存在的同ID任务
+        if scheduler.get_job(job_id):
+            scheduler.remove_job(job_id)
+
+        # 调度新的检查任务
+        scheduler.add_job(
+            func=check_late_protection_with_context,
+            trigger='date',
+            run_date=begin_dt,
+            args=[user_id],
+            id=job_id,
+            name=f"Late check for user {user.username} at {begin_dt.strftime('%Y-%m-%d %H:%M')}",
+            replace_existing=True
+        )
+        logger.info(f"为用户 {user.username} 调度了迟到检查任务: {begin_dt.strftime('%Y-%m-%d %H:%M')}")
+
+    except Exception as e:
+        logger.error(f"调度用户 {user.username} 迟到检查任务失败: {str(e)}")
 
 
 # 管理员权限装饰器
