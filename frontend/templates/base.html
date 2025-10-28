@@ -29,36 +29,33 @@
     {% endblock %}
 
     <style>
-        /* 登录/注册页面的随机背景 */
-        body.auth-page {
+        /* 全局随机背景 */
+        body {
             background-image: url('https://www.dmoe.cc/random.php');
             background-size: cover;
             background-position: center;
-            background-repeat: no-repeat;
+            background-attachment: fixed; /* 固定背景，滚动时不移动 */
             position: relative;
-        }
-
-        body.auth-page::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5); /* 深色遮罩层以保证可读性 */
-            z-index: 1;
-        }
-
-        .app-container {
-            position: relative;
-            z-index: 2;
-        }
-
-        /* 保持页脚在底部，即使内容不足 */
-        body {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+        }
+
+        /* 粒子动画容器 */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1; /* 确保在背景图之上 */
+        }
+
+        /* 应用容器，确保在粒子动画之上 */
+        .app-container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
         }
 
         main {
@@ -85,10 +82,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/refactor.css') }}">
 </head>
 <body class="{% if not current_user.is_authenticated %}auth-page{% endif %}">
-<!-- 粒子背景, 仅在认证后页面显示 -->
-{% if current_user.is_authenticated %}
+<!-- 粒子背景 -->
 <div id="particles-js"></div>
-{% endif %}
 
 <div class="overlay"></div>
 <div class="app-container">
