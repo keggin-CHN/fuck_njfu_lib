@@ -115,8 +115,9 @@ class LibraryTrafficMonitor:
     def save_traffic_data(count):
         """保存流量数据到数据库"""
         try:
-            if count is None:
-                return False
+            with app.app.app_context():
+                if count is None:
+                    return False
 
             timestamp = int(datetime.now().timestamp())
 
