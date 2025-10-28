@@ -129,7 +129,6 @@ def inject_now():
     return {'now': now, 'tomorrow': tomorrow}
 
 
-@with_app_context
 def schedule_late_check_task(user, begin_dt):
     """调度用户的迟到检查任务"""
     try:
