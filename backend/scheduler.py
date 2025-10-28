@@ -341,4 +341,3 @@ def check_late_protection_for_user(user):
             else:
                 logger.error(f"用户 {user.username} 重新认证失败，跳过迟到保护检查")
                 record_auth_failure(user, "protect", setting)
-            
