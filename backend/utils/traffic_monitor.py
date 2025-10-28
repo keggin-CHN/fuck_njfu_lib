@@ -115,9 +115,8 @@ class LibraryTrafficMonitor:
     def save_traffic_data(count):
         """保存流量数据到数据库"""
         try:
-            with app.app.app_context():
-                if count is None:
-                    return False
+            if count is None:
+                return False
 
             timestamp = int(datetime.now().timestamp())
 
@@ -136,7 +135,8 @@ class LibraryTrafficMonitor:
 
         except Exception as e:
             logger.error(f"流量监控：数据库操作失败 - {e}")
-            db.session.rollback()
+            with app.app.app_context():
+                db.session.rollback()
             return False
 
     @staticmethod
