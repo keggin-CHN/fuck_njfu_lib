@@ -1,6 +1,7 @@
 import datetime
 import logging
 from .auth_manager import HttpClient, AuthManager, handle_exception
+import time
 from .date_utils import get_today_date, get_tomorrow_date, normalize_time_format, is_friday, get_end_time
 from models import db, ReservationHistory
 
@@ -55,7 +56,7 @@ class SeatReservation:
             return False
 
     @handle_exception
-    def reserve_seat(self, area, seat_number, seat_id, date_str=None, start_time=None, is_late_protection=False, is_auto_find=False):
+    def reserve_seat(self, area, seat_number, seat_id, date_str=None, start_time=None, is_late_protection=False, is_auto_find=False, max_retries=3):
         # 确保已认证
         if not self.ensure_authenticated():
             # 记录认证失败
@@ -118,10 +119,10 @@ class SeatReservation:
         full_end_time = f"{date_str} {end_time}"
 
         return self._do_reserve(area, seat_number, seat_id, begin_time, full_end_time, date_str, start_time, end_time,
-                                is_late_protection, is_auto_find)
+                                is_late_protection, is_auto_find, max_retries)
 
     def _do_reserve(self, area, seat_number, seat_id, begin_time, full_end_time, date_str, start_time, end_time,
-                    is_late_protection, is_auto_find):
+                    is_late_protection, is_auto_find, max_retries):
         reserve_url = HttpClient.get_lib_url("ic-web/reserve?vpn-12-libseat.njfu.edu.cn")
 
         api_headers = {
@@ -152,7 +153,9 @@ class SeatReservation:
                 reserve_url,
                 headers=api_headers,
                 cookies={"my_client_ticket": self.authenticator.my_client_ticket},
-                json_data=payload
+                json_data=payload,
+                timeout=20,
+                max_retries=max_retries
             )
 
             if response and response.status_code == 200:
@@ -270,7 +273,9 @@ class SeatReservation:
                 url,
                 headers=api_headers,
                 params=params,
-                cookies={"my_client_ticket": self.authenticator.my_client_ticket}
+                cookies={"my_client_ticket": self.authenticator.my_client_ticket},
+                timeout=3,
+                max_retries=3
             )
 
             if response and response.status_code == 200:
@@ -303,70 +308,73 @@ class SeatReservation:
 
     @handle_exception
     def cancel_reservation(self, uuid):
-            if not uuid:
-                message = "取消预约失败：没有提供预约UUID"
-                logger.error(message)
-                from .logger_utils import add_log
-                add_log(message, user=self.user, response_code=400, error_message=message)
-                return False, message
+        if not uuid:
+            message = "取消预约失败：没有提供预约UUID"
+            logger.error(message)
+            from .logger_utils import add_log
+            add_log(message, user=self.user, response_code=400, error_message=message)
+            return False, message
     
-            if not self.ensure_authenticated():
-                message = "取消预约失败：认证失效"
-                self.record_auth_failure("cancel")
-                return False, message
+        if not self.ensure_authenticated():
+            message = "取消预约失败：认证失效"
+            self.record_auth_failure("cancel")
+            return False, message
     
-            url = HttpClient.get_lib_url("ic-web/reserve/delete")
+        url = HttpClient.get_lib_url("ic-web/reserve/delete")
     
-            params = {
-                "vpn-12-libseat.njfu.edu.cn": ""
-            }
+        params = {
+            "vpn-12-libseat.njfu.edu.cn": ""
+        }
     
-            api_headers = {
-                "content-type": "application/json;charset=UTF-8",
-                "token": self.authenticator.token,
-                "lan": "1",
-            }
+        api_headers = {
+            "content-type": "application/json;charset=UTF-8",
+            "token": self.authenticator.token,
+            "lan": "1",
+        }
     
-            payload = {
-                "uuid": uuid
-            }
+        payload = {
+            "uuid": uuid
+        }
     
-            try:
-                logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
-                from .logger_utils import add_log
-                add_log(f"用户尝试取消预约 UUID: {uuid}", user=self.user)
-                response = HttpClient.post(
-                    url,
-                    headers=api_headers,
-                    params=params,
-                    cookies={"my_client_ticket": self.authenticator.my_client_ticket},
-                    json_data=payload
-                )
+        try:
+            logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
+            from .logger_utils import add_log
+            add_log(f"用户尝试取消预约 UUID: {uuid}", user=self.user)
+            response = HttpClient.post(
+                url,
+                headers=api_headers,
+                params=params,
+                cookies={"my_client_ticket": self.authenticator.my_client_ticket},
+                json_data=payload,
+                timeout=20,
+                max_retries=3
+            )
     
-                if response and response.status_code == 200:
-                    result = response.json()
-                    if result.get("code") == 0:
-                        logger.info(f"用户 {self.user.username} 成功取消预约")
-                        add_log(f"成功取消预约 UUID: {uuid}", user=self.user)
-                        return True, "取消预约成功"
-                    else:
-                        message = f"取消预约失败: {result.get('message', '未知错误')}"
-                        logger.error(message)
-                        add_log(message, user=self.user, response_code=500, error_message=message)
-                        return False, message
+            if response and response.status_code == 200:
+                result = response.json()
+                if result.get("code") == 0:
+                    logger.info(f"用户 {self.user.username} 成功取消预约")
+                    add_log(f"成功取消预约 UUID: {uuid}", user=self.user)
+                    return True, "取消预约成功"
                 else:
-                    status = response.status_code if response else "请求失败"
-                    message = f"取消预约请求失败，状态码：{status}"
+                    message = f"取消预约失败: {result.get('message', '未知错误')}"
                     logger.error(message)
-                    add_log(message, user=self.user, response_code=status or 500, error_message=message)
+                    add_log(message, user=self.user, response_code=500, error_message=message)
                     return False, message
-            except Exception as e:
-                message = f"取消预约过程出错: {str(e)}"
+            else:
+                status = response.status_code if response else "请求失败"
+                message = f"取消预约请求失败，状态码：{status}"
                 logger.error(message)
-                add_log(message, user=self.user, response_code=500, error_message=message)
+                add_log(message, user=self.user, response_code=status or 500, error_message=message)
                 return False, message
-    
-            return False, "取消预约失败"
+        except Exception as e:
+            message = f"取消预约过程出错: {str(e)}"
+            logger.error(message)
+            from .logger_utils import add_log
+            add_log(message, user=self.user, response_code=500, error_message=message)
+            return False, message
+
+        return False, "取消预约失败"
 
     def reserve_today_seat(self, area, seat_number, seat_id, start_time, is_late_protection=True, is_auto_find=False):
         today = get_today_date()
