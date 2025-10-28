@@ -8,7 +8,7 @@ from models import db, User, ReservationSetting, ReservationHistory, Traffic
 from utils.auth_manager import AuthManager, handle_exception
 from utils.reservation import SeatReservation
 from utils.date_utils import get_today_date, get_tomorrow_date
-from utils.traffic_monitor import LibraryTrafficMonitor
+from utils.traffic_monitor import LibraryTrafficMonitor, collect_traffic_data, cleanup_traffic_data
 from utils.notification import NotificationService
 from config import Config
 
@@ -53,7 +53,7 @@ def setup_scheduler(app):
             scheduler.start()
             atexit.register(lambda: scheduler.shutdown(wait=False))
             scheduler_initialized = True
-            check_late_protection_for_all_users()
+            check_late_protection_for_user()
             log_scheduled_jobs()
 
 
