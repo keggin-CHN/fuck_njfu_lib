@@ -8,7 +8,7 @@ from models import db, User, ReservationSetting, ReservationHistory, Traffic
 from utils.auth_manager import AuthManager, handle_exception
 from utils.reservation import SeatReservation
 from utils.date_utils import get_today_date, get_tomorrow_date
-from utils.traffic_monitor import LibraryTrafficMonitor, collect_traffic_data, cleanup_traffic_data
+from utils.traffic_monitor import LibraryTrafficMonitor
 from utils.notification import NotificationService
 from config import Config
 
@@ -101,7 +101,7 @@ def add_scheduler_jobs():
 
     # 流量监控任务 - 每5分钟采集一次（全天24小时，无休息）
     scheduler.add_job(
-        func=collect_traffic_data,
+        func=LibraryTrafficMonitor.collect_and_save,
         trigger="interval",
         minutes=5,
         id="collect_traffic_data",
@@ -112,7 +112,7 @@ def add_scheduler_jobs():
 
     # 流量数据清理任务 - 每天凌晨2点清理7天前的数据
     scheduler.add_job(
-        func=cleanup_traffic_data,
+        func=LibraryTrafficMonitor.cleanup_old_data,
         trigger=CronTrigger(hour="2", minute="0"),
         id="cleanup_traffic_data",
         name="Cleanup old traffic data daily",
