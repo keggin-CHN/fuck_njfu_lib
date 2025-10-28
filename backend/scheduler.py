@@ -53,7 +53,6 @@ def setup_scheduler(app):
             scheduler.start()
             atexit.register(lambda: scheduler.shutdown(wait=False))
             scheduler_initialized = True
-            check_late_protection_for_user()
             log_scheduled_jobs()
 
 
