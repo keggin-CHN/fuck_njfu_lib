@@ -93,7 +93,7 @@ def add_scheduler_jobs():
 
     # 迟到保护检查任务
     scheduler.add_job(
-        func=check_late_protection_for_all_users,
+        func=check_late_protection_for_user,
         trigger=CronTrigger(hour="7", minute="10"),
         id="check_late_protection_morning",
         name="Check late protection for all users in the morning",
@@ -303,7 +303,7 @@ def check_late_protection_with_context(user_id):
             if user:
                 check_late_protection_for_user(user)
             else:
-                logger.error(f"未找到ID为{user_id}的用户")
+                logger.error(f"未找到ID为 {user_id} 的用户")
         except Exception as e:
             logger.error(f"执行迟到保护检查时出错: {str(e)}")
 
