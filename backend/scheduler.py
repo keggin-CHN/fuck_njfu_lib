@@ -17,17 +17,6 @@ logger = logging.getLogger(__name__)
 scheduler = BackgroundScheduler(timezone=Config.TIMEZONE)
 scheduler_initialized = False
 
-
-# 装饰器：在应用上下文中执行函数
-def with_app_context(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        with scheduler.app.app_context():
-            return func(*args, **kwargs)
-
-    return wrapper
-
-
 def get_users_with_setting(auto_reserve=None, prevent_late=None, is_admin=None):
     """获取符合条件的用户列表"""
     query = db.session.query(User).join(ReservationSetting)
@@ -129,37 +118,39 @@ def log_scheduled_jobs():
         logger.info(f"- {job.name}: 下次执行时间 {next_run}")
 
 
-@with_app_context
+# @with_app_context
 def auth_all_users():
     """为所有自动预约用户进行认证"""
     logger.info("开始为所有自动预约用户进行认证")
-    users = get_users_with_setting(auto_reserve=True)
+    with scheduler.app.app_context():
+        users = get_users_with_setting(auto_reserve=True)
 
-    for user in users:
-        AuthManager.clear_authenticator(user.id)
-        auth = AuthManager.get_authenticator(user)
-        if auth:
-            logger.info(f"用户 {user.username} 认证成功")
-        else:
-            logger.error(f"用户 {user.username} 认证失败")
+        for user in users:
+            AuthManager.clear_authenticator(user.id)
+            auth = AuthManager.get_authenticator(user)
+            if auth:
+                logger.info(f"用户 {user.username} 认证成功")
+            else:
+                logger.error(f"用户 {user.username} 认证失败")
 
     logger.info(f"已完成所有 {len(users)} 个用户的认证")
 
 
-@with_app_context
+# @with_app_context
 @handle_exception
 def reserve_for_users(admin_only=False):
     """为指定类型的用户预约座位"""
     user_type = "管理员" if admin_only else "普通用户"
     logger.info(f"开始为{user_type}预约座位")
-    users = get_users_with_setting(auto_reserve=True, is_admin=admin_only)
+    with scheduler.app.app_context():
+        users = get_users_with_setting(auto_reserve=True, is_admin=admin_only)
 
-    for user in users:
-        try:
-            logger.info(f"开始为{user_type} {user.username} 预约座位")
-            reserve_for_user(user)
-        except Exception as e:
-            logger.error(f"为{user_type} {user.username} 预约座位时发生错误: {str(e)}")
+        for user in users:
+            try:
+                logger.info(f"开始为{user_type} {user.username} 预约座位")
+                reserve_for_user(user)
+            except Exception as e:
+                logger.error(f"为{user_type} {user.username} 预约座位时发生错误: {str(e)}")
 
     logger.info(f"已完成所有 {len(users)} 个{user_type}的座位预约")
 
