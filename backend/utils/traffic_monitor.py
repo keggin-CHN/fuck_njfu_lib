@@ -5,9 +5,13 @@ from models import db, Traffic, User
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
-import app
+
 
 class LibraryTrafficMonitor:
+    """图书馆流量监控器"""
+
+    # 图书馆流量监控页面的webvpn URL
+    # 注意：这个URL是通过webvpn访问http://202.119.210.2:85/book/view的编码URL
     TRAFFIC_URL = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OA==/LjE0Ny4xMDEuMTUyLjEwMi4xMDEuMTAyLjE1Ny45Ny4xNTEuOTkuMTA0LjEwMi4xNTIuMTEyLjExMS4xNTM=/book/view"
     REQUEST_TIMEOUT = 15
 
@@ -16,9 +20,9 @@ class LibraryTrafficMonitor:
         """获取当前在馆人数（使用已认证的用户）"""
         try:
             from utils.auth_manager import AuthManager
-            with app.app.app_context():
-                # 优先使用管理员账户进行认证
-                user = User.query.filter_by(is_admin=True).first()
+
+            # 优先使用管理员账户进行认证
+            user = User.query.filter_by(is_admin=True).first()
             if not user:
                 user = User.query.first()
             
@@ -135,8 +139,7 @@ class LibraryTrafficMonitor:
 
         except Exception as e:
             logger.error(f"流量监控：数据库操作失败 - {e}")
-            with app.app.app_context():
-                db.session.rollback()
+            db.session.rollback()
             return False
 
     @staticmethod

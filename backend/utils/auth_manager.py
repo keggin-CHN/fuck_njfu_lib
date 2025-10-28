@@ -87,8 +87,8 @@ class HttpClient:
         return f"{HttpClient.BASE_URL_PREFIX}{HttpClient.EDU_URL_SUFFIX}/{path}"
 
     @staticmethod
-    def request(method, url, headers=None, cookies=None, params=None, data=None, json_data=None, timeout=20,
-                allow_redirects=True, max_retries=3):
+    def request(method, url, headers=None, cookies=None, params=None, data=None, json_data=None, timeout=10,
+                allow_redirects=True):
         """通用请求方法 - 保持原始参数名称 json_data 不变"""
         try:
             request_headers = {**HttpClient.DEFAULT_HEADERS}
@@ -101,13 +101,8 @@ class HttpClient:
                 verify=False  # 禁用SSL证书验证（webvpn使用）
             )
             return response
-        except requests.RequestException as e:
-            if max_retries > 0:
-                logger.warning(f"HTTP请求失败 [{method}] {url}: {str(e)}，剩余重试次数：{max_retries}")
-                time.sleep(1)
-                return HttpClient.request(method, url, headers, cookies, params, data, json_data, timeout, allow_redirects, max_retries - 1)
-            else:
-                logger.error(f"HTTP请求错误 [{method}] {url}: {str(e)}")
+        except Exception as e:
+            logger.error(f"HTTP请求错误 [{method}] {url}: {str(e)}")
             return None
 
     @staticmethod

@@ -280,26 +280,26 @@ function initMyReservations() {
                         'Content-Type': 'application/json',
                     },
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // 取消成功，重新加载预约列表
-                            loadMyReservations();
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 取消成功，重新加载预约列表
+                        loadMyReservations();
 
-                            // 显示成功提示
-                            alert('预约已成功取消');
-                        } else {
-                            // 取消失败
-                            throw new Error(data.message || '未知错误');
-                        }
-                    })
-                    .catch(error => {
-                        // 显示错误信息
-                        reservationsLoading.style.display = 'none';
-                        reservationsError.style.display = 'block';
-                        errorMessage.textContent = '取消预约失败: ' + error.message;
-                        console.error('取消预约出错:', error);
-                    });
+                        // 显示成功提示
+                        alert('预约已成功取消');
+                    } else {
+                        // 取消失败
+                        throw new Error(data.message || '未知错误');
+                    }
+                })
+                .catch(error => {
+                    // 显示错误信息
+                    reservationsLoading.style.display = 'none';
+                    reservationsError.style.display = 'block';
+                    errorMessage.textContent = '取消预约失败: ' + error.message;
+                    console.error('取消预约出错:', error);
+                });
             }
         });
     }
