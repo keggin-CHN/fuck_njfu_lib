@@ -49,6 +49,9 @@ def setup_scheduler(app):
     scheduler.app = app
     with app.app_context():
         if not scheduler.running:
+            logger.info("清除所有旧的定时任务...")
+            scheduler.remove_all_jobs()
+            logger.info("旧任务已清除，开始添加新任务...")
             add_scheduler_jobs()
             scheduler.start()
             atexit.register(lambda: scheduler.shutdown(wait=False))

@@ -29,33 +29,11 @@
     {% endblock %}
 
     <style>
-        /* 全局随机背景 */
+        /* 保持页脚在底部，即使内容不足 */
         body {
-            background-image: url('https://www.dmoe.cc/random.php');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed; /* 固定背景，滚动时不移动 */
-            position: relative;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-        }
-
-        /* 粒子动画容器 */
-        #particles-js {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1; /* 确保在背景图之上 */
-        }
-
-        /* 应用容器，确保在粒子动画之上 */
-        .app-container {
-            position: relative;
-            z-index: 2;
-            width: 100%;
         }
 
         main {

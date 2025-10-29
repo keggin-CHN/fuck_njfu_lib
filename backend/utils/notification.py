@@ -1,28 +1,18 @@
 import requests
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from models import ReservationHistory
 from utils.wenxin_service import HitokotoService
 
 logger = logging.getLogger(__name__)
 
-last_notification_time = {}  # 用于存储每个用户最后一次发送通知的时间
-
 
 class NotificationService:
     """通知推送服务"""
 
-    NOTIFICATION_INTERVAL = 20  # 20秒的推送间隔
-
     @staticmethod
     def send_wechat_notification(webhook_url, user, reservation_info):
         """发送企业微信通知"""
-        now = datetime.now()
-        last_time = last_notification_time.get(user.id)
-        if last_time and now - last_time < timedelta(seconds=NotificationService.NOTIFICATION_INTERVAL):
-            logger.info(f"用户 {user.username}  {NotificationService.NOTIFICATION_INTERVAL}秒内已发送过通知，本次取消发送")
-            return False, "发送过于频繁，已取消"
-
         try:
             # 构建消息内容
             message = NotificationService._build_message(user, reservation_info)
@@ -41,7 +31,6 @@ class NotificationService:
             result = response.json()
             if result.get('errcode') == 0:
                 logger.info(f"企业微信通知发送成功: 用户 {user.username}")
-                last_notification_time[user.id] = now  # 更新发送时间
                 return True, "发送成功"
             else:
                 error_msg = result.get('errmsg', '未知错误')
@@ -55,11 +44,6 @@ class NotificationService:
     @staticmethod
     def send_telegram_notification(webhook_url, user, reservation_info):
         """发送Telegram通知"""
-        now = datetime.now()
-        last_time = last_notification_time.get(user.id)
-        if last_time and now - last_time < timedelta(seconds=NotificationService.NOTIFICATION_INTERVAL):
-            logger.info(f"用户 {user.username}  {NotificationService.NOTIFICATION_INTERVAL}秒内已发送过通知，本次取消发送")
-            return False, "发送过于频繁，已取消"
         try:
             # 构建消息内容
             message = NotificationService._build_message(user, reservation_info, format_type='telegram')
@@ -78,7 +62,6 @@ class NotificationService:
             result = response.json()
             if result.get('ok'):
                 logger.info(f"Telegram通知发送成功: 用户 {user.username}")
-                last_notification_time[user.id] = now  # 更新发送时间
                 return True, "发送成功"
             else:
                 error_msg = result.get('description', '未知错误')
@@ -182,12 +165,6 @@ class NotificationService:
     @staticmethod
     def send_single_reservation_notification(user, history):
         """根据用户配置发送单次预约结果通知"""
-        now = datetime.now()
-        last_time = last_notification_time.get(user.id)
-        if last_time and now - last_time < timedelta(seconds=NotificationService.NOTIFICATION_INTERVAL):
-            logger.info(f"用户 {user.username}  {NotificationService.NOTIFICATION_INTERVAL}秒内已发送过通知，本次取消发送")
-            return False, "发送过于频繁，已取消"
-
         if user.notification_type == 'none' or not user.webhook_url:
             return False, "用户未配置通知"
 
@@ -211,7 +188,6 @@ class NotificationService:
             
             if is_success:
                 logger.info(f"向用户 {user.username} 发送预约通知成功")
-                last_notification_time[user.id] = now  # 更新发送时间
                 return True, "发送成功"
             else:
                 error_msg = result.get('errmsg') or result.get('description', '未知错误')
@@ -241,12 +217,6 @@ class NotificationService:
     @staticmethod
     def send_setting_update_notification(user, setting):
         """发送预约设置更新通知"""
-        now = datetime.now()
-        last_time = last_notification_time.get(user.id)
-        if last_time and now - last_time < timedelta(seconds=NotificationService.NOTIFICATION_INTERVAL):
-            logger.info(f"用户 {user.username}  {NotificationService.NOTIFICATION_INTERVAL}秒内已发送过通知，本次取消发送")
-            return False, "发送过于频繁，已取消"
-
         if user.notification_type == 'none' or not user.webhook_url:
             return False, "用户未配置通知"
 
@@ -294,7 +264,6 @@ class NotificationService:
             response = requests.post(user.webhook_url, json=data, timeout=10)
             response.raise_for_status()
             logger.info(f"向用户 {user.username} 发送设置更新通知成功")
-            last_notification_time[user.id] = now  # 更新发送时间
             return True, "发送成功"
         except requests.RequestException as e:
             logger.error(f"向用户 {user.username} 发送设置更新通知失败: {str(e)}")
