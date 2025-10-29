@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.env
+.venv/
+venv/
+
+# Flask / Database
+instance/
+*.db
+*.sqlite3
+backend/database.db
+
+# Logs & temp
+*.log
+*.tmp
+
+# Android
+android/.gradle/
+android/.idea/
+android/local.properties
+android/captures/
+android/app/build/
+android/build/
+*.iml
+*.apk
+*.aab
+
+# Node / Front-end artifacts
+frontend/static/vendor/**/*.map
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

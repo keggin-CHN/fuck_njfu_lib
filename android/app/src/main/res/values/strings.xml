@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">南林图书馆助手</string>
+    <string name="menu_reload">重新加载</string>
+    <string name="menu_change_server">切换服务器地址</string>
+    <string name="dialog_title_change_server">服务器地址</string>
+    <string name="dialog_hint_server_url">https://example.com</string>
+    <string name="dialog_action_save">保存</string>
+    <string name="dialog_action_cancel">取消</string>
+    <string name="message_invalid_url">请输入有效的服务器地址</string>
+    <string name="message_loading_error">页面加载失败，请检查网络后重试。</string>
+    <string name="message_updating_url">将要连接到:\n%s</string>
+</resources>
