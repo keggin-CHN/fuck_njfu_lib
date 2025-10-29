@@ -1,0 +1,12 @@
+# Node artifacts
+frontend/node_modules/
+frontend/dist/
+
+# Go build outputs
+backend/fucknjfu-server
+backend/data/
+backend/public/
+
+# Misc
+*.log
+.DS_Store
