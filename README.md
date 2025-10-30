@@ -47,6 +47,8 @@ android/   # Android WebView 客户端（APK 打包）
 
 打包完成后会在 `dist/` 目录下生成二进制文件（Windows 上为 `fuck_njfu_lib.exe`，其他平台为 `fuck_njfu_lib`）。首次运行时代码会在可执行文件所在目录创建 `static/`、`logs/` 和 `instance/` 目录，以保存静态资源、日志文件和 SQLite 数据库。
 
+> **多架构提示**：PyInstaller 只会针对当前运行平台生成可执行文件。若需要同时提供 x86_64 与 ARM64 版本，请分别在对应架构的环境中执行以上打包流程（或使用 Docker/QEMU 等跨平台工具构建）。
+
 ## Android APK 打包
 
 Android 客户端使用 WebView 将整个系统封装成原生应用，默认会连接到 `http://10.0.2.2:5000`（Android 模拟器访问本机服务使用的回环地址）。在应用内点击右上角菜单可切换到任意部署好的服务器地址。
