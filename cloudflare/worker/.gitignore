@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Wrangler
+.wrangler/
+wrangler.toml.backup
+
+# Environment variables
+.dev.vars
+.env
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

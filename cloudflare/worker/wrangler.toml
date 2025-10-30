@@ -1,0 +1,25 @@
+# Cloudflare Worker配置文件
+
+name = "library-info-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Worker类型
+workers_dev = true
+
+# 环境变量（通过wrangler secret设置）
+# 不要在这里直接写入敏感信息
+# 使用命令设置：
+# wrangler secret put USERNAME
+# wrangler secret put EDU_PASSWORD
+# wrangler secret put LIB_PASSWORD
+
+# 可选：自定义域名（部署后配置）
+# routes = [
+#   { pattern = "api.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]
+
+# 可选：KV命名空间（用于缓存）
+# kv_namespaces = [
+#   { binding = "CACHE", id = "your-kv-namespace-id" }
+# ]

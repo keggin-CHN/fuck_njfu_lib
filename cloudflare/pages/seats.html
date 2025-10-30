@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>座位查询 - 图书馆信息查询</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-book me-2"></i>图书馆信息查询
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                            <i class="bi bi-house"></i> 首页
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="traffic.html">
+                            <i class="bi bi-person-lines-fill"></i> 实时流量
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="seats.html">
+                            <i class="bi bi-grid-3x3"></i> 座位查询
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>
+                        <i class="bi bi-building me-2 text-primary"></i>
+                        图书馆座位查询
+                    </h2>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-primary active" id="todayBtn" onclick="loadSeatsData(0)">
+                            <i class="bi bi-calendar-day me-1"></i>今天
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="tomorrowBtn" onclick="loadSeatsData(1)">
+                            <i class="bi bi-calendar-plus me-1"></i>明天
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载提示 -->
+        <div id="loadingIndicator" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">加载中...</span>
+            </div>
+            <p class="mt-3 text-muted">正在获取座位数据，请稍候...</p>
+        </div>
+
+        <!-- 座位数据展示 -->
+        <div id="seatsDisplay" style="display: none;">
+            <!-- 总览统计 -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="bi bi-hash"></i> 总座位数
+                            </h6>
+                            <h3 class="card-title mb-0" id="totalSeats">-</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="bi bi-check-circle"></i> 空闲座位
+                            </h6>
+                            <h3 class="card-title mb-0 text-success" id="availableSeats">-</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card border-danger">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="bi bi-x-circle"></i> 已占用
+                            </h6>
+                            <h3 class="card-title mb-0 text-danger" id="occupiedSeats">-</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card border-info">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="bi bi-percent"></i> 占用率
+                            </h6>
+                            <h3 class="card-title mb-0 text-info" id="occupiedRate">-</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 楼层筛选 -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="btn-group flex-wrap" role="group" id="floorFilter">
+                        <button type="button" class="btn btn-outline-secondary active" onclick="filterByFloor('all')">
+                            全部楼层
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 楼层和区域信息 -->
+            <div class="row" id="areasContainer">
+                <!-- 动态加载 -->
+            </div>
+        </div>
+
+        <!-- 错误提示 -->
+        <div id="errorDisplay" class="alert alert-danger" style="display: none;">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="errorMessage"></span>
+        </div>
+    </div>
+
+    <!-- 座位详情模态框 -->
+    <div class="modal fade" id="seatDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">座位详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-4 bg-light">
+        <div class="container text-center text-muted">
+            <p class="mb-0">
+                <i class="bi bi-code-slash me-1"></i>
+                基于 Cloudflare Workers & Pages 构建
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./assets/js/config.js"></script>
+    <script src="./assets/js/seats.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+# 本地开发环境变量示例
+# 复制此文件为 .dev.vars 并填入真实的账号密码
+# 注意：.dev.vars 已在 .gitignore 中，不会被提交到代码仓库
+
+USERNAME=your-username
+EDU_PASSWORD=your-edu-password
+LIB_PASSWORD=your-lib-password
