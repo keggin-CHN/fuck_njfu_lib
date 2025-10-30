@@ -285,7 +285,8 @@ class LibraryAuthenticator:
                     login_url,
                     headers=api_headers,
                     cookies={"my_client_ticket": self.my_client_ticket},
-                    json_data=payload  # 保持使用 json_data 参数
+                    json_data=payload,  # 保持使用 json_data 参数
+                    timeout=15
                 )
 
                 if response and response.status_code == 200:
@@ -351,7 +352,7 @@ class LibraryAuthenticator:
                 headers=api_headers,
                 params=params,
                 cookies={"my_client_ticket": self.my_client_ticket},
-                timeout=3
+                timeout=10
             )
 
             valid = response and response.status_code == 200 and response.json().get("code") == 0
