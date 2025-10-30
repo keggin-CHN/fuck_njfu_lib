@@ -174,13 +174,13 @@ def reserve_for_user(user):
     reservation_setting = ReservationSetting.query.filter_by(user_id=user.id).first()
     if not reservation_setting:
         logger.warning(f"用户 {user.username} 没有预约设置，跳过")
-        return
+        return False, "缺少预约设置"
 
     seat_id = Config.get_seat_id(reservation_setting.area, reservation_setting.seat_number)
     if not seat_id:
         logger.error(
             f"用户 {user.username} 的座位区域或座位号无效: {reservation_setting.area} - {reservation_setting.seat_number}")
-        return
+        return False, "座位配置无效"
 
     # 是否已尝试过重新认证并重试预约（避免在短时间内重复调用预约接口）
     retried = False
@@ -190,52 +190,44 @@ def reserve_for_user(user):
     if not authenticator:
         logger.error(f"用户 {user.username} 初始认证失败，无法预约")
         record_auth_failure(user, "reserve", reservation_setting)
-        return
+        return False, "认证失败"
 
     # 创建预约对象并尝试预约
     reservation = SeatReservation(user, authenticator=authenticator)
-    result = reservation.reserve_seat(
-        reservation_setting.area,
-        reservation_setting.seat_number,
-        seat_id,
-        date_str=None,
-        start_time=reservation_setting.start_time
-    )
 
-    # 如果失败，且还未重试过，则尝试重新认证后再次预约（仅重试一次）
-    if not result and not retried:
-        logger.info(f"用户 {user.username} 预约失败，尝试重新认证")
-        # 清除旧认证
-        AuthManager.clear_authenticator(user.id)
-        # 重新获取认证器
-        authenticator = AuthManager.get_authenticator(user)
-        if authenticator:
-            logger.info(f"用户 {user.username} 重新认证成功，再次尝试预约")
-            reservation = SeatReservation(user, authenticator=authenticator)
-            result = reservation.reserve_seat(
-                reservation_setting.area,
-                reservation_setting.seat_number,
-                seat_id,
-                date_str=None,
-                start_time=reservation_setting.start_time
-            )
-            if result:
-                logger.info(f"用户 {user.username} 重新认证后预约成功")
-            else:
-                logger.error(f"用户 {user.username} 重新认证后预约仍然失败")
-                record_auth_failure(user, "reserve", reservation_setting)
-        else:
-            logger.error(f"用户 {user.username} 重新认证失败，无法预约")
-            record_auth_failure(user, "reserve", reservation_setting)
-        retried = True
-    else:
-        if result:
+    while True:
+        success, message = reservation.reserve_seat(
+            reservation_setting.area,
+            reservation_setting.seat_number,
+            seat_id,
+            date_str=None,
+            start_time=reservation_setting.start_time
+        )
+
+        if success:
             logger.info(
                 f"用户 {user.username} 预约成功: {reservation_setting.area} 区域 {reservation_setting.seat_number} 号座位")
-        else:
-            # 已经重试过且仍失败，记录失败（防止被重复触发重试）
-            logger.error(f"用户 {user.username} 预约失败且已重试，放弃本次预约")
+            return True, message
+
+        message = message or "预约失败"
+
+        if retried:
+            logger.error(
+                f"用户 {user.username} 预约失败（已尝试重新认证）: {message}")
+            return False, message
+
+        logger.warning(f"用户 {user.username} 预约失败，尝试重新认证: {message}")
+        retried = True
+
+        AuthManager.clear_authenticator(user.id)
+        authenticator = AuthManager.get_authenticator(user)
+        if not authenticator:
+            logger.error(f"用户 {user.username} 重新认证失败，无法预约")
             record_auth_failure(user, "reserve", reservation_setting)
+            return False, "认证失败"
+
+        logger.info(f"用户 {user.username} 重新认证成功，再次尝试预约")
+        reservation = SeatReservation(user, authenticator=authenticator)
 
 
 def record_auth_failure(user, action_type, setting=None):
