@@ -1,4 +1,6 @@
 import os
+import sys
+import shutil
 import logging
 import csv
 import io
@@ -23,17 +25,36 @@ from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
 
 # --- Path setup ---
-# Get the absolute path of the directory where this file is located (backend)
-backend_dir = os.path.abspath(os.path.dirname(__file__))
-root_dir = os.path.dirname(backend_dir)
+IS_FROZEN = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+runtime_dir = None
+instance_dir = None
 
-template_folder = os.path.join(root_dir, 'frontend', 'templates')
-static_folder = os.path.join(root_dir, 'frontend', 'static')
-logs_dir = os.path.join(backend_dir, 'logs')
+if IS_FROZEN:
+    root_dir = sys._MEIPASS
+    runtime_dir = os.path.dirname(sys.executable)
+    backend_dir = os.path.join(root_dir, 'backend')
+    template_folder = os.path.join(root_dir, 'frontend', 'templates')
+    bundled_static = os.path.join(root_dir, 'frontend', 'static')
+    static_folder = os.path.join(runtime_dir, 'static')
+    if os.path.isdir(bundled_static):
+        shutil.copytree(bundled_static, static_folder, dirs_exist_ok=True)
+    else:
+        os.makedirs(static_folder, exist_ok=True)
+    logs_dir = os.path.join(runtime_dir, 'logs')
+    instance_dir = os.path.join(runtime_dir, 'instance')
+else:
+    backend_dir = os.path.abspath(os.path.dirname(__file__))
+    root_dir = os.path.dirname(backend_dir)
+    template_folder = os.path.join(root_dir, 'frontend', 'templates')
+    static_folder = os.path.join(root_dir, 'frontend', 'static')
+    logs_dir = os.path.join(backend_dir, 'logs')
 
 # 创建必要目录
+os.makedirs(static_folder, exist_ok=True)
 os.makedirs(os.path.join(static_folder, 'captcha'), exist_ok=True)
 os.makedirs(logs_dir, exist_ok=True)
+if instance_dir:
+    os.makedirs(instance_dir, exist_ok=True)
 
 # 配置日志
 log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -49,7 +70,14 @@ logging.basicConfig(level=logging.INFO, handlers=handlers)
 logger = logging.getLogger(__name__)
 
 # 初始化应用
-app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+flask_kwargs = {
+    'template_folder': template_folder,
+    'static_folder': static_folder
+}
+if instance_dir:
+    flask_kwargs['instance_path'] = instance_dir
+
+app = Flask(__name__, **flask_kwargs)
 app.config.from_object(Config)
 db.init_app(app)
 

@@ -29,6 +29,24 @@ android/   # Android WebView 客户端（APK 打包）
 
 部署生产环境可使用仓库根目录下的 `deploy.sh`。
 
+## 构建可执行二进制
+
+如需将后端打包成单个可执行文件，可按以下步骤操作：
+
+1. 创建虚拟环境并安装依赖：
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r backend/requirements.txt
+   pip install pyinstaller
+   ```
+2. 执行打包脚本：
+   ```bash
+   python build_executable.py
+   ```
+
+打包完成后会在 `dist/` 目录下生成二进制文件（Windows 上为 `fuck_njfu_lib.exe`，其他平台为 `fuck_njfu_lib`）。首次运行时代码会在可执行文件所在目录创建 `static/`、`logs/` 和 `instance/` 目录，以保存静态资源、日志文件和 SQLite 数据库。
+
 ## Android APK 打包
 
 Android 客户端使用 WebView 将整个系统封装成原生应用，默认会连接到 `http://10.0.2.2:5000`（Android 模拟器访问本机服务使用的回环地址）。在应用内点击右上角菜单可切换到任意部署好的服务器地址。
