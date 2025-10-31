@@ -53,12 +53,14 @@ class ReservationHistory(db.Model):
     uuid = db.Column(db.String(64))
     is_late_protection = db.Column(db.Boolean, default=False)
     is_auto_find = db.Column(db.Boolean, default=False)
+    notification_sent = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     # 状态常量
     STATUS_SUCCESS = '成功'
     STATUS_FAILED = '失败'
     STATUS_AUTH_FAILED = 'auth_failed'
+    STATUS_CANCELED = '已取消'
 
 
 class InviteCode(db.Model):

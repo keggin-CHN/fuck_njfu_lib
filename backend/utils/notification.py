@@ -164,7 +164,12 @@ class NotificationService:
     
     @staticmethod
     def send_single_reservation_notification(user, history):
-        """根据用户配置发送单次预约结果通知"""
+        """根据用户配置发送单次预约结果通知（防重复）"""
+        # 检查是否已发送过通知（仅对已持久化的对象检查）
+        if hasattr(history, 'id') and history.id and getattr(history, 'notification_sent', False):
+            logger.info(f"用户 {user.username} 的预约历史 ID={history.id} 已发送过通知，跳过")
+            return False, "通知已发送"
+        
         if user.notification_type == 'none' or not user.webhook_url:
             return False, "用户未配置通知"
 
@@ -188,6 +193,11 @@ class NotificationService:
             
             if is_success:
                 logger.info(f"向用户 {user.username} 发送预约通知成功")
+                # 标记通知已发送（仅对已持久化的对象）
+                if hasattr(history, 'id') and history.id:
+                    from models import db
+                    history.notification_sent = True
+                    db.session.commit()
                 return True, "发送成功"
             else:
                 error_msg = result.get('errmsg') or result.get('description', '未知错误')
