@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书馆信息查询系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-book me-2"></i>图书馆信息查询
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">
+                            <i class="bi bi-house"></i> 首页
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="traffic.html">
+                            <i class="bi bi-person-lines-fill"></i> 实时流量
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="seats.html">
+                            <i class="bi bi-grid-3x3"></i> 座位查询
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12 text-center mb-5">
+                <h1 class="display-4">
+                    <i class="bi bi-book-half text-primary me-3"></i>
+                    图书馆信息查询系统
+                </h1>
+                <p class="lead text-muted mt-3">实时查询图书馆在馆人数和座位占用情况</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100 shadow-sm hover-card">
+                    <div class="card-body text-center p-5">
+                        <div class="feature-icon mb-4">
+                            <i class="bi bi-person-lines-fill text-primary" style="font-size: 4rem;"></i>
+                        </div>
+                        <h3 class="card-title">实时流量监控</h3>
+                        <p class="card-text text-muted">
+                            实时查看图书馆当前在馆人数和容量占用率
+                        </p>
+                        <a href="traffic.html" class="btn btn-primary btn-lg mt-3">
+                            <i class="bi bi-arrow-right-circle me-2"></i>查看流量
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card h-100 shadow-sm hover-card">
+                    <div class="card-body text-center p-5">
+                        <div class="feature-icon mb-4">
+                            <i class="bi bi-grid-3x3 text-success" style="font-size: 4rem;"></i>
+                        </div>
+                        <h3 class="card-title">座位查询</h3>
+                        <p class="card-text text-muted">
+                            查询图书馆各楼层、各区域的座位占用情况
+                        </p>
+                        <a href="seats.html" class="btn btn-success btn-lg mt-3">
+                            <i class="bi bi-arrow-right-circle me-2"></i>查询座位
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>系统说明</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>实时流量：</strong>显示图书馆当前在馆人数、总容量和占用率
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>座位查询：</strong>按楼层和区域查看座位占用情况，支持查看今天和明天的数据
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>详细信息：</strong>点击区域卡片可查看每个座位的详细预约情况
+                            </li>
+                            <li class="mb-0">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <strong>数据更新：</strong>所有数据实时从图书馆系统获取，保证准确性
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-4 bg-light">
+        <div class="container text-center text-muted">
+            <p class="mb-0">
+                <i class="bi bi-code-slash me-1"></i>
+                基于 Cloudflare Workers & Pages 构建
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

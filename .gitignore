@@ -32,6 +32,12 @@ android/build/
 # Node / Front-end artifacts
 frontend/static/vendor/**/*.map
 
+# Cloudflare
+cloudflare/worker/node_modules/
+cloudflare/worker/.wrangler/
+cloudflare/worker/.dev.vars
+cloudflare/worker/wrangler.toml.backup
+
 # OS / Editor
 .DS_Store
 Thumbs.db

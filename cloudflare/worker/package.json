@@ -1,0 +1,24 @@
+{
+  "name": "library-info-worker",
+  "version": "1.0.0",
+  "description": "图书馆实时流量和座位查询 Cloudflare Worker",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "library",
+    "seats",
+    "traffic"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
