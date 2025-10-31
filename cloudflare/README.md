@@ -1,5 +1,10 @@
 # 图书馆实时流量和座位查询系统 - Cloudflare版
 
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D16-brightgreen.svg)](https://nodejs.org/)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange.svg)](https://workers.cloudflare.com/)
+
 基于Cloudflare Workers和Pages构建的图书馆信息查询系统，提供实时流量监控和座位占用查询功能。
 
 ## 功能特性
@@ -38,7 +43,42 @@ cloudflare/
 └── README.md           # 本文档
 ```
 
-## 部署步骤
+## 🚀 一键部署
+
+**最简单的部署方式！** 选择以下任一方式：
+
+### 方式一：使用自动化脚本（推荐）⭐
+
+```bash
+cd cloudflare
+./deploy.sh
+```
+
+或使用Node.js脚本（跨平台）：
+
+```bash
+cd cloudflare
+npm install
+node deploy.js
+```
+
+**就这么简单！** 脚本会自动完成所有部署步骤。
+
+### 方式二：GitHub Actions自动部署
+
+推送代码自动部署，无需手动操作！详见：[ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md)
+
+### 方式三：Deploy to Cloudflare按钮
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/your-username/your-repo)
+
+**更多部署方式**：查看 [ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md) 获取详细说明。
+
+---
+
+## 手动部署步骤（高级用户）
+
+如果你想完全控制部署过程，可以按照以下步骤手动部署。
 
 ### 一、准备工作
 

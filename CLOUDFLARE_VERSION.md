@@ -10,13 +10,29 @@
 
 ## 🚀 快速开始
 
+### ⚡ 一键部署（最新！）
+
+**只需一条命令：**
+
 ```bash
 cd cloudflare
+./deploy.sh
 ```
 
-然后阅读以下文档之一：
+**或者使用Node.js脚本（跨平台）：**
+
+```bash
+cd cloudflare
+npm install
+node deploy.js
+```
+
+**就这么简单！** 脚本会自动完成所有部署步骤。
+
+### 📖 详细文档
 
 - **新手入门**：[START_HERE.md](./cloudflare/START_HERE.md) ⭐ 推荐首先阅读
+- **一键部署**：[ONE_CLICK_DEPLOY.md](./cloudflare/ONE_CLICK_DEPLOY.md) 🆕 详细部署指南
 - **快速部署**：[QUICKSTART.md](./cloudflare/QUICKSTART.md)
 - **完整文档**：[README.md](./cloudflare/README.md)
 - **项目概览**：[INDEX.md](./cloudflare/INDEX.md)
