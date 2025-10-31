@@ -45,34 +45,57 @@ cloudflare/
 
 ## 🚀 一键部署
 
-**最简单的部署方式！** 选择以下任一方式：
+**最简单、最快速的部署方式！**
 
-### 方式一：使用自动化脚本（推荐）⭐
+### 方式三：Fork + Deploy to Cloudflare 按钮 ⭐ **强烈推荐**
+
+这是最简单的部署方式，只需三步：
+
+#### 第一步：Fork 本项目
+1. 访问 https://github.com/keggin-CHN/fuck_njfu_lib
+2. 点击右上角 **"Fork"** 按钮
+3. 完成 Fork 到你的 GitHub 账号
+
+#### 第二步：部署 Worker 后端
+点击下方按钮一键部署（记得将URL中的 `你的用户名` 替换为你的 GitHub 用户名）：
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/你的用户名/fuck_njfu_lib/tree/main/cloudflare/worker)
+
+#### 第三步：部署 Pages 前端
+使用 Cloudflare Dashboard 连接你 Fork 的仓库，详见：[完整部署指南](./ONE_CLICK_DEPLOY.md#方式三fork--deploy-to-cloudflare-按钮--强烈推荐)
+
+**📖 详细图文教程**：
+- [ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md) - 所有部署方式详细说明
+- [DEPLOY_GUIDE.md](./DEPLOY_GUIDE.md) - 图文部署指南，含故障排查
+
+---
+
+### 其他部署方式
+
+#### 方式一：GitHub Actions 自动部署
+
+适合需要持续更新的用户。Fork 项目后，配置 GitHub Secrets，每次推送代码自动部署。
+
+[查看配置教程](./ONE_CLICK_DEPLOY.md#方式一github-actions-自动部署) →
+
+#### 方式二：本地脚本部署
+
+适合开发者，使用自动化脚本快速部署：
 
 ```bash
 cd cloudflare
-./deploy.sh
+./deploy.sh  # Linux/macOS
+# 或
+node deploy.js  # 跨平台
 ```
 
-或使用Node.js脚本（跨平台）：
+[查看详细说明](./ONE_CLICK_DEPLOY.md#方式二本地脚本部署) →
 
-```bash
-cd cloudflare
-npm install
-node deploy.js
-```
+#### 方式四：完全手动部署（源码部署）
 
-**就这么简单！** 脚本会自动完成所有部署步骤。
+适合高级用户，完全控制部署过程，便于自定义和调试。
 
-### 方式二：GitHub Actions自动部署
-
-推送代码自动部署，无需手动操作！详见：[ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md)
-
-### 方式三：Deploy to Cloudflare按钮
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/your-username/your-repo)
-
-**更多部署方式**：查看 [ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md) 获取详细说明。
+[查看源码部署教程](./ONE_CLICK_DEPLOY.md#方式四完全手动部署源码部署) →
 
 ---
 

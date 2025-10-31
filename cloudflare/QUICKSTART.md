@@ -2,13 +2,32 @@
 
 本文档提供最简化的部署步骤，帮助你快速上手。
 
+## ⭐ 推荐方式：Fork + 一键部署
+
+**最简单的部署方式！** 详见：[FORK_DEPLOY_GUIDE.md](./FORK_DEPLOY_GUIDE.md)
+
+1. Fork 本项目：https://github.com/keggin-CHN/fuck_njfu_lib
+2. 点击 Deploy 按钮一键部署 Worker
+3. 使用 Cloudflare Dashboard 部署 Pages
+
+**完整教程**：[ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md)
+
+---
+
 ## 前置要求
 
 - Cloudflare账号（免费注册）
 - Node.js 16+ 和 npm
 - 图书馆账号和密码
+- **已 Fork 本项目**（如需使用一键部署）
 
-## 5分钟快速部署
+## 5分钟快速部署（命令行方式）
+
+### 第0步：Fork 项目（推荐）
+
+如果你打算使用 GitHub + Cloudflare 集成部署，先 Fork 项目：
+1. 访问：https://github.com/keggin-CHN/fuck_njfu_lib
+2. 点击右上角 **"Fork"** 按钮
 
 ### 第1步：安装Wrangler
 

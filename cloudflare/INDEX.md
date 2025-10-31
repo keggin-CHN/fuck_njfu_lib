@@ -34,7 +34,24 @@
 
 ## 快速开始
 
-### 最简部署（5分钟）
+### ⭐ 推荐：Fork + 一键部署（最简单）
+
+**只需三步：**
+
+1. **Fork 本项目**：https://github.com/keggin-CHN/fuck_njfu_lib
+   - 点击右上角 "Fork" 按钮
+   
+2. **部署 Worker**：点击按钮一键部署
+   - 记得替换 URL 中的 `你的用户名`
+   
+3. **部署 Pages**：使用 Cloudflare Dashboard 连接你 Fork 的仓库
+
+**详细教程**：
+- 📖 [一键部署完整指南](./ONE_CLICK_DEPLOY.md)
+- 📸 [图文部署教程](./DEPLOY_GUIDE.md)
+- ⚡ [快速参考卡片](./FORK_DEPLOY_GUIDE.md)
+
+### 命令行部署（5分钟）
 
 ```bash
 # 1. 安装工具
@@ -62,11 +79,14 @@ wrangler pages deploy . --project-name=library-info
 ## 文档导航
 
 📖 **新手必读**
-- [快速开始指南](./QUICKSTART.md) - 5分钟快速部署
+- ⭐ [FORK_DEPLOY_GUIDE.md](./FORK_DEPLOY_GUIDE.md) - Fork + 一键部署速查指南
+- [ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md) - 所有部署方式详细说明
+- [DEPLOY_GUIDE.md](./DEPLOY_GUIDE.md) - 图文部署教程 + 故障排查
+- [QUICKSTART.md](./QUICKSTART.md) - 5分钟快速部署
 - [README.md](./README.md) - 完整部署和使用文档
 
 🏗️ **开发者文档**
-- [架构说明](./ARCHITECTURE.md) - 系统架构和技术细节
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - 系统架构和技术细节
 - Worker源码目录：`worker/src/`
 - Pages源码目录：`pages/`
 
