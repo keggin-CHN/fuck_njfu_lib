@@ -69,7 +69,9 @@ def add_scheduler_jobs():
         trigger=CronTrigger(hour=auth_time[0], minute=auth_time[1]),
         id="auth_all_users",
         name="Authenticate all users daily",
-        replace_existing=True
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1
     )
 
     # 管理员预约任务
@@ -80,7 +82,9 @@ def add_scheduler_jobs():
         id="reserve_for_admins",
         name="Reserve seats for admin users daily",
         kwargs={"admin_only": True},
-        replace_existing=True
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1
     )
 
     # 普通用户预约任务
@@ -91,7 +95,9 @@ def add_scheduler_jobs():
         id="reserve_for_normal_users",
         name="Reserve seats for normal users daily",
         kwargs={"admin_only": False},
-        replace_existing=True
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1
     )
 
     # 迟到保护检查任务
@@ -100,7 +106,9 @@ def add_scheduler_jobs():
         trigger=CronTrigger(hour="7", minute="10"),
         id="check_late_protection_morning",
         name="Check late protection for all users in the morning",
-        replace_existing=True
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1
     )
 
     # 流量监控任务 - 每5分钟采集一次（全天24小时，无休息）
@@ -111,7 +119,9 @@ def add_scheduler_jobs():
         id="collect_traffic_data",
         name="Collect library traffic data every 5 minutes",
         replace_existing=True,
-        next_run_time=datetime.datetime.now()  # 立即执行一次
+        next_run_time=datetime.datetime.now(),  # 立即执行一次
+        coalesce=True,
+        max_instances=1
     )
 
     # 流量数据清理任务 - 每天凌晨2点清理7天前的数据
@@ -120,7 +130,9 @@ def add_scheduler_jobs():
         trigger=CronTrigger(hour="2", minute="0"),
         id="cleanup_traffic_data",
         name="Cleanup old traffic data daily",
-        replace_existing=True
+        replace_existing=True,
+        coalesce=True,
+        max_instances=1
     )
 
 
@@ -189,48 +201,93 @@ def reserve_for_user(user):
     authenticator = AuthManager.get_authenticator(user)
     if not authenticator:
         logger.error(f"用户 {user.username} 初始认证失败，无法预约")
-        record_auth_failure(user, "reserve", reservation_setting)
+        record_auth_failure(user, "reserve", reservation_setting, send_notification=True)
         return False, "认证失败"
 
     # 创建预约对象并尝试预约
     reservation = SeatReservation(user, authenticator=authenticator)
 
     while True:
+        # 第一次尝试时不发送通知（因为可能需要重试），只在最终结果时发送
+        # 如果已经重试过，说明这是最后一次尝试，需要发送通知
+        send_notification_now = retried
+        
         success, message = reservation.reserve_seat(
             reservation_setting.area,
             reservation_setting.seat_number,
             seat_id,
             date_str=None,
-            start_time=reservation_setting.start_time
+            start_time=reservation_setting.start_time,
+            send_notification=send_notification_now
         )
 
         if success:
             logger.info(
                 f"用户 {user.username} 预约成功: {reservation_setting.area} 区域 {reservation_setting.seat_number} 号座位")
+            # 如果是第一次就成功了，需要发送成功通知
+            if not send_notification_now:
+                from utils.notification import NotificationService
+                from models import ReservationHistory
+                # 获取刚刚创建的历史记录并发送通知
+                latest_history = ReservationHistory.query.filter_by(
+                    user_id=user.id
+                ).order_by(ReservationHistory.created_at.desc()).first()
+                if latest_history:
+                    NotificationService.send_single_reservation_notification(user, latest_history)
             return True, message
 
         message = message or "预约失败"
 
-        if retried:
-            logger.error(
-                f"用户 {user.username} 预约失败（已尝试重新认证）: {message}")
+        # 检查是否需要重试：只在可能是认证问题时重试
+        # 不需要重试的情况：
+        # 1. 用户已有预约
+        # 2. 座位被占用/正在被预约（竞争失败）
+        # 3. 已经重试过一次
+        should_retry = False
+        if not retried:
+            message_lower = message.lower()
+            # 明确不需要重试的业务逻辑错误
+            no_retry_keywords = [
+                "已有预约", "有预约", "已预约", "already",
+                "正在被预约", "设备正在被预约",
+                "时长不足", "时间段",
+                "座位号无效", "配置无效"
+            ]
+            # 如果错误消息不包含明确的业务逻辑错误关键词，才考虑重试
+            if not any(keyword in message_lower for keyword in no_retry_keywords):
+                should_retry = True
+                logger.warning(f"用户 {user.username} 预约失败，尝试重新认证: {message}")
+            else:
+                logger.info(f"用户 {user.username} 预约失败（业务逻辑错误，不重试）: {message}")
+        
+        if not should_retry or retried:
+            if retried:
+                logger.error(f"用户 {user.username} 预约失败（已尝试重新认证）: {message}")
+            # 如果第一次尝试失败且不需要重试，需要发送通知
+            if not send_notification_now:
+                from utils.notification import NotificationService
+                from models import ReservationHistory
+                # 获取刚刚创建的历史记录并发送通知
+                latest_history = ReservationHistory.query.filter_by(
+                    user_id=user.id
+                ).order_by(ReservationHistory.created_at.desc()).first()
+                if latest_history:
+                    NotificationService.send_single_reservation_notification(user, latest_history)
             return False, message
 
-        logger.warning(f"用户 {user.username} 预约失败，尝试重新认证: {message}")
         retried = True
-
         AuthManager.clear_authenticator(user.id)
         authenticator = AuthManager.get_authenticator(user)
         if not authenticator:
             logger.error(f"用户 {user.username} 重新认证失败，无法预约")
-            record_auth_failure(user, "reserve", reservation_setting)
+            record_auth_failure(user, "reserve", reservation_setting, send_notification=True)
             return False, "认证失败"
 
         logger.info(f"用户 {user.username} 重新认证成功，再次尝试预约")
         reservation = SeatReservation(user, authenticator=authenticator)
 
 
-def record_auth_failure(user, action_type, setting=None):
+def record_auth_failure(user, action_type, setting=None, send_notification=True):
     """记录认证失败到历史记录"""
     try:
         action_desc = "预约座位" if action_type == "reserve" else "迟到保护"
@@ -259,6 +316,10 @@ def record_auth_failure(user, action_type, setting=None):
         db.session.add(history)
         db.session.commit()
         logger.info(f"已记录用户 {user.username} 的认证失败: {action_desc}")
+        
+        # 发送认证失败通知（如果启用）
+        if send_notification:
+            NotificationService.send_single_reservation_notification(user, history)
     except Exception as e:
         logger.error(f"记录认证失败时出错: {str(e)}")
         db.session.rollback()
