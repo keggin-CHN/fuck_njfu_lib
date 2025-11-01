@@ -102,6 +102,23 @@ with app.app_context():
     except Exception as e:
         logger.error(f"检查/迁移 is_auto_find 列失败: {str(e)}")
     
+    # 迁移/补充列：为 ReservationHistory 添加 notification_sent 列（SQLite）
+    try:
+        db_path = os.path.join(app.instance_path, app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''))
+        if os.path.isfile(db_path):
+            with sqlite3.connect(db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("PRAGMA table_info(reservation_history)")
+                cols = [row['name'] for row in cursor.fetchall()]
+                if 'notification_sent' not in cols:
+                    logger.info("检测到缺少列 notification_sent，正在迁移数据库架构...")
+                    cursor.execute("ALTER TABLE reservation_history ADD COLUMN notification_sent BOOLEAN DEFAULT 0")
+                    conn.commit()
+                    logger.info("已添加列 notification_sent")
+    except Exception as e:
+        logger.error(f"检查/迁移 notification_sent 列失败: {str(e)}")
+    
     # 数据库和管理员初始化
     if User.query.count() == 0:
         logger.info("数据库为空，进行初始化设置...")
