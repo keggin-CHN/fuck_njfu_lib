@@ -2,9 +2,35 @@
 
 > **这是什么？** 这是一个独立的Cloudflare版本，专注于实时流量监控和座位查询功能。
 
-## ⚡ 一键部署（最简单）🌟
+## ⭐ 推荐部署方式：Fork + 一键部署按钮
 
-**只需一条命令！**
+这是最简单、最快速的部署方式！
+
+### 第一步：Fork 本项目（必须！）
+
+1. 访问：https://github.com/keggin-CHN/fuck_njfu_lib
+2. 点击右上角 **"Fork"** 按钮
+3. 完成 Fork 到你的 GitHub 账号
+
+### 第二步：一键部署
+
+点击下方按钮部署（记得替换URL中的 `你的用户名`）：
+
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/你的用户名/fuck_njfu_lib/tree/main/cloudflare/worker)
+
+### 第三步：部署前端
+
+使用 Cloudflare Dashboard 连接你 Fork 的仓库部署 Pages。
+
+**📖 详细教程**：
+- [ONE_CLICK_DEPLOY.md](./ONE_CLICK_DEPLOY.md) - 完整的一键部署指南
+- [DEPLOY_GUIDE.md](./DEPLOY_GUIDE.md) - 图文部署教程
+
+---
+
+## 🖥️ 其他部署方式
+
+### 本地脚本部署
 
 ```bash
 cd cloudflare
