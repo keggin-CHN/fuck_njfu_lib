@@ -61,6 +61,24 @@ Android 客户端使用 WebView 将整个系统封装成原生应用，默认会
 
 > **提示**：发行包默认未签名，可使用 `apksigner` 或 Android Studio 的签名配置完成签名。
 
+## 一键打包 APK 与源码
+
+提供了脚本可一键编译 APK 并打包当前源码：
+
+```bash
+# 在仓库根目录执行
+# 可选环境变量：
+#   SERVER_URL  默认 http://10.0.2.2:5000
+#   BUILD_TYPE  debug 或 release，默认 debug
+SERVER_URL=https://your-server:5000 BUILD_TYPE=debug ./scripts/package_apk_and_source.sh
+```
+
+输出产物在 `dist/` 目录：
+- `dist/app-<build_type>.apk`
+- `dist/source-YYYYmmddHHMMSS.zip`
+
+如需将产物随仓库一并提交，已在 .gitignore 中放行了 `dist/` 下的 apk/zip 文件。
+
 ## 许可证
 
 本项目基于 [MIT License](LICENSE) 发布。

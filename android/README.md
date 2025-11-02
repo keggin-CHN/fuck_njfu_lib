@@ -32,8 +32,16 @@
 
 ## 自定义默认服务器
 
-- 在构建前修改 `app/build.gradle` 中的 `DEFAULT_SERVER_URL`。
-- 或者在应用运行后，点击右上角菜单中的「切换服务器地址」进行调整。
+- 方式一：构建时传入 Gradle 属性（推荐）：
+  ```bash
+  # 使用 Gradle Wrapper
+  ./gradlew assembleDebug -PSERVER_URL=http://your-host:5000
+  
+  # 或者全局 gradle
+  gradle assembleRelease -PSERVER_URL=https://example.com
+  ```
+- 方式二：在构建前修改 `app/build.gradle` 中的 `DEFAULT_SERVER_URL`。
+- 方式三：应用运行后，点击右上角菜单中的「切换服务器地址」进行调整。
 
 ## 常见问题
 

@@ -17,7 +17,8 @@ android {
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         vectorDrawables.useSupportLibrary = true
 
-        buildConfigField 'String', 'DEFAULT_SERVER_URL', '"http://10.0.2.2:5000"'
+        def serverUrl = project.hasProperty('SERVER_URL') ? project.property('SERVER_URL') : 'http://10.0.2.2:5000'
+        buildConfigField 'String', 'DEFAULT_SERVER_URL', "\"${serverUrl}\""
     }
 
     buildTypes {

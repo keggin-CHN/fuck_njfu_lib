@@ -44,3 +44,8 @@ cloudflare/worker/wrangler.toml.backup
 Thumbs.db
 .idea/
 .vscode/
+
+# Release artifacts (allow committing distributables when needed)
+!dist/
+!dist/*.apk
+!dist/*.zip
