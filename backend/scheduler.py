@@ -2,6 +2,8 @@ import datetime
 import logging
 import atexit
 import functools
+import os
+import fcntl
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from models import db, User, ReservationSetting, ReservationHistory, Traffic
@@ -16,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 scheduler = BackgroundScheduler(timezone=Config.TIMEZONE)
 scheduler_initialized = False
+scheduler_lock_file = None
 
 
 # 装饰器：在应用上下文中执行函数
@@ -41,23 +44,59 @@ def get_users_with_setting(auto_reserve=None, prevent_late=None, is_admin=None):
 
 
 def setup_scheduler(app):
-    """初始化任务调度器"""
-    global scheduler_initialized
+    """初始化任务调度器 - 使用文件锁确保只有一个进程运行调度器"""
+    global scheduler_initialized, scheduler_lock_file
     if scheduler_initialized:
         return
 
     scheduler.app = app
-    with app.app_context():
-        if not scheduler.running:
-            logger.info("清除所有旧的定时任务...")
-            scheduler.remove_all_jobs()
-            logger.info("旧任务已清除，开始添加新任务...")
-            add_scheduler_jobs()
-            scheduler.start()
-            atexit.register(lambda: scheduler.shutdown(wait=False))
-            scheduler_initialized = True
-            check_late_protection_for_all_users()
-            log_scheduled_jobs()
+    
+    # 创建锁文件目录
+    lock_dir = os.path.join(os.path.dirname(__file__), 'locks')
+    os.makedirs(lock_dir, exist_ok=True)
+    lock_file_path = os.path.join(lock_dir, 'scheduler.lock')
+    
+    try:
+        # 尝试获取文件锁
+        scheduler_lock_file = open(lock_file_path, 'w')
+        fcntl.flock(scheduler_lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        
+        # 成功获取锁，这个进程将运行调度器
+        logger.info("成功获取调度器锁，此进程将运行调度器")
+        
+        with app.app_context():
+            if not scheduler.running:
+                logger.info("清除所有旧的定时任务...")
+                scheduler.remove_all_jobs()
+                logger.info("旧任务已清除，开始添加新任务...")
+                add_scheduler_jobs()
+                scheduler.start()
+                
+                # 注册清理函数
+                def cleanup_scheduler():
+                    try:
+                        scheduler.shutdown(wait=False)
+                        if scheduler_lock_file:
+                            fcntl.flock(scheduler_lock_file.fileno(), fcntl.LOCK_UN)
+                            scheduler_lock_file.close()
+                            # 删除锁文件
+                            if os.path.exists(lock_file_path):
+                                os.remove(lock_file_path)
+                            logger.info("调度器已关闭并释放锁")
+                    except Exception as e:
+                        logger.error(f"清理调度器时出错: {str(e)}")
+                
+                atexit.register(cleanup_scheduler)
+                scheduler_initialized = True
+                check_late_protection_for_all_users()
+                log_scheduled_jobs()
+                
+    except (IOError, OSError) as e:
+        # 无法获取锁，说明另一个进程已经在运行调度器
+        logger.info(f"另一个进程已在运行调度器，此进程跳过调度器初始化 (原因: {type(e).__name__})")
+        if scheduler_lock_file:
+            scheduler_lock_file.close()
+            scheduler_lock_file = None
 
 
 def add_scheduler_jobs():

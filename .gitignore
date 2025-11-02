@@ -17,6 +17,7 @@ backend/database.db
 # Logs & temp
 *.log
 *.tmp
+backend/locks/
 
 # Android
 android/.gradle/
