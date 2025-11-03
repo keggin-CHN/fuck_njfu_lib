@@ -1,22 +1,17 @@
 import os
 import pytz
 
-
-# 基本配置
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'secret-key-for-library-reservation'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///database.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # 定时任务配置
-    AUTH_TIME = "06:55:00"  # 每天认证时间
-    ADMIN_RESERVE_TIME = "07:00:20"  # 管理员预约时间
-    USER_RESERVE_TIME = "07:03:20"  # 普通用户预约时间
+    AUTH_TIME = "06:55:00"
+    ADMIN_RESERVE_TIME = "07:00:20"
+    USER_RESERVE_TIME = "07:03:20"
 
-    # 时区设置
-    TIMEZONE = pytz.timezone('Asia/Shanghai')  # 东八区
+    TIMEZONE = pytz.timezone('Asia/Shanghai')
 
-    # 座位区域配置
     SEAT_AREAS = {
         "二层A区": {"first_seat_id": 100455361, "seats_count": 441},
         "二层B区": {"first_seat_id": 100455802, "seats_count": 96},
@@ -34,7 +29,7 @@ class Config:
 
     @staticmethod
     def get_seat_id(area, seat_number):
-        """根据区域和座位号计算实际的座位ID"""
+
         if area in Config.SEAT_AREAS and 1 <= seat_number <= Config.SEAT_AREAS[area]["seats_count"]:
             return Config.SEAT_AREAS[area]["first_seat_id"] + seat_number - 1
         return None

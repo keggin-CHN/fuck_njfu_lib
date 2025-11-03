@@ -1,18 +1,12 @@
-"""
-座位查询服务
-用于获取图书馆各楼层的座位占用情况
-"""
+
 import logging
 from datetime import datetime, timedelta
 from utils.auth_manager import HttpClient
 
 logger = logging.getLogger(__name__)
 
-
 class SeatQueryService:
-    """座位查询服务"""
 
-    # 所有区域配置
     AREAS = {
         '二层A区': {'roomId': 100455344, 'floor': 2, 'area': 'A'},
         '二层B区': {'roomId': 100455346, 'floor': 2, 'area': 'B'},
@@ -30,32 +24,22 @@ class SeatQueryService:
 
     @staticmethod
     def get_date_string(days_offset=0):
-        """获取日期字符串，格式：20251023"""
+
         target_date = datetime.now() + timedelta(days=days_offset)
         return target_date.strftime('%Y%m%d')
 
     @staticmethod
     def get_seats_data(authenticator, room_id, date_str):
-        """
-        获取指定房间的座位数据
 
-        Args:
-            authenticator: 认证器实例
-            room_id: 房间ID
-            date_str: 日期字符串，格式：20251023
-
-        Returns:
-            座位数据列表，或None（失败时）
-        """
         try:
-            url = HttpClient.get_lib_url("ic-web/reserve")  # 修改：使用正确的端点
+            url = HttpClient.get_lib_url("ic-web/reserve")
 
             logger.info(f"正在获取房间 {room_id} 日期 {date_str} 的座位数据")
             logger.info(f"请求URL: {url}")
 
             params = {
                 "vpn-12-libseat.njfu.edu.cn": "",
-                "roomIds": room_id,  # 修改：使用roomIds而不是roomId
+                "roomIds": room_id,
                 "resvDates": date_str,
                 "sysKind": 8
             }
@@ -105,20 +89,7 @@ class SeatQueryService:
 
     @staticmethod
     def analyze_seats(seats_data):
-        """
-        分析座位数据，统计总座位数和空闲座位数
 
-        Args:
-            seats_data: 座位数据列表
-
-        Returns:
-            {
-                'total': 总座位数,
-                'available': 空闲座位数,
-                'occupied': 已占用座位数,
-                'rate': 占用率
-            }
-        """
         if not seats_data:
             return {
                 'total': 0,
@@ -149,20 +120,10 @@ class SeatQueryService:
 
     @staticmethod
     def get_all_areas_summary(authenticator, date_str, progress_callback=None):
-        """
-        获取所有区域的座位摘要信息 (串行处理)
 
-        Args:
-            authenticator: 认证器实例
-            date_str: 日期字符串
-            progress_callback: 进度回调函数
-
-        Returns:
-            所有区域的统计数据
-        """
         summary = {}
         total_areas = len(SeatQueryService.AREAS)
-        
+
         for i, (area_name, config) in enumerate(SeatQueryService.AREAS.items()):
             try:
                 seats_data = SeatQueryService.get_seats_data(authenticator, config['roomId'], date_str)
@@ -176,7 +137,7 @@ class SeatQueryService:
                 }
             except Exception as e:
                 logger.error(f"查询区域 {area_name} 时出错: {e}", exc_info=True)
-            
+
             if progress_callback:
                 progress_callback((i + 1) / total_areas)
 
@@ -184,15 +145,7 @@ class SeatQueryService:
 
     @staticmethod
     def get_floor_summary(all_areas_summary):
-        """
-        按楼层汇总统计
 
-        Args:
-            all_areas_summary: 所有区域的统计数据
-
-        Returns:
-            按楼层汇总的数据
-        """
         floor_summary = {}
 
         for area_name, data in all_areas_summary.items():
@@ -216,7 +169,6 @@ class SeatQueryService:
                 'stats': stats
             })
 
-        # 计算每层的占用率
         for floor, data in floor_summary.items():
             if data['total'] > 0:
                 data['rate'] = round((data['occupied'] / data['total'] * 100), 1)
@@ -227,14 +179,14 @@ class SeatQueryService:
 
     @staticmethod
     def convert_timestamp_to_time(timestamp):
-        """将毫秒时间戳转换为时间字符串"""
+
         if not timestamp:
             return ""
         return datetime.fromtimestamp(timestamp / 1000).strftime('%H:%M')
 
     @staticmethod
     def get_seat_status_text(resv_status):
-        """获取预约状态文本"""
+
         status_map = {
             1027: "预约中",
             1093: "使用中"

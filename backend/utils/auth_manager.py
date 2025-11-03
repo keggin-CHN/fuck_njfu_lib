@@ -15,15 +15,12 @@ from functools import wraps
 
 logger = logging.getLogger(__name__)
 
-# 全局会话变量
 captcha_session = None
 
-# 加密密钥处理
 KEY_FILE = 'encryption_key.key'
 
-
 def get_or_create_key():
-    """获取或创建加密密钥"""
+
     if os.path.exists(KEY_FILE):
         with open(KEY_FILE, 'rb') as f:
             return f.read()
@@ -33,19 +30,14 @@ def get_or_create_key():
             f.write(key)
         return key
 
-
 SECRET_KEY = os.environ.get('ENCRYPTION_KEY') or get_or_create_key()
 fernet = Fernet(SECRET_KEY)
 
-
-# 密码加解密函数
 def encrypt_password(password):
     return fernet.encrypt(password.encode()).decode()
 
-
 def decrypt_password(encrypted_password):
     return fernet.decrypt(encrypted_password.encode()).decode()
-
 
 def encrypt_cas_password(password, key):
     CHARS = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678"
@@ -57,7 +49,6 @@ def encrypt_cas_password(password, key):
     ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
     return base64.b64encode(ciphertext).decode("utf-8")
 
-
 def encrypt_lib_password(plaintext_password, nonce, public_key_str):
     if "-----BEGIN PUBLIC KEY-----" not in public_key_str:
         public_key_str = "-----BEGIN PUBLIC KEY-----\n" + public_key_str + "\n-----END PUBLIC KEY-----"
@@ -67,8 +58,6 @@ def encrypt_lib_password(plaintext_password, nonce, public_key_str):
     encrypted = cipher.encrypt(message)
     return base64.b64encode(encrypted).decode("utf-8")
 
-
-# HTTP客户端工具类
 class HttpClient:
     BASE_URL_PREFIX = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OC4xNjc="
     LIB_URL_SUFFIX = "/LjIwNS4xNTguMjAwLjE3MS4xNTMuMTUwLjIxNi45Ny4yMTEuMTU2LjE1OC4xNzMuMTQ4LjE1NS4xNTUuMjE3LjEwMC4xNTAuMTY1"
@@ -89,7 +78,7 @@ class HttpClient:
     @staticmethod
     def request(method, url, headers=None, cookies=None, params=None, data=None, json_data=None, timeout=10,
                 allow_redirects=True):
-        """通用请求方法 - 保持原始参数名称 json_data 不变"""
+
         try:
             request_headers = {**HttpClient.DEFAULT_HEADERS}
             if headers:
@@ -98,7 +87,7 @@ class HttpClient:
             response = requests.request(
                 method=method, url=url, headers=request_headers, cookies=cookies,
                 params=params, data=data, json=json_data, timeout=timeout, allow_redirects=allow_redirects,
-                verify=False  # 禁用SSL证书验证（webvpn使用）
+                verify=False
             )
             return response
         except Exception as e:
@@ -113,8 +102,6 @@ class HttpClient:
     def post(url, **kwargs):
         return HttpClient.request("POST", url, **kwargs)
 
-
-# 图书馆认证器
 class LibraryAuthenticator:
     def __init__(self, username, edu_password, lib_password):
         self.username = username
@@ -285,7 +272,7 @@ class LibraryAuthenticator:
                     login_url,
                     headers=api_headers,
                     cookies={"my_client_ticket": self.my_client_ticket},
-                    json_data=payload,  # 保持使用 json_data 参数
+                    json_data=payload,
                     timeout=15
                 )
 
@@ -324,7 +311,7 @@ class LibraryAuthenticator:
             return False, False, f"认证过程中发生错误: {str(e)}"
 
     def is_valid(self):
-        """检查认证是否仍然有效（通过尝试获取预约信息）"""
+
         if not self.my_client_ticket or not self.token or not self.acc_no:
             return False
 
@@ -441,7 +428,7 @@ class LibraryAuthenticator:
                 if route:
                     session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
             except Exception:
-                pass  # 继续执行，不要因为获取 route cookie 失败而中断
+                pass
 
             encrypted_password = encrypt_cas_password(self.password1, form_data["salt"])
 
@@ -508,32 +495,27 @@ class LibraryAuthenticator:
             logger.error(f"认证过程发生错误: {str(e)}")
             return False, f"认证过程发生错误: {str(e)}"
 
-
-# 认证管理器
 class AuthManager:
     _auth_cache = {}
 
     @staticmethod
     def get_authenticator(user):
-        """获取用户认证器，如果缓存中没有或已失效则创建新的"""
+
         auth = AuthManager._auth_cache.get(user.id)
 
-        # 检查认证是否有效
         if auth and auth.is_valid():
             logger.debug(f"使用缓存的认证器: 用户 {user.username}")
             return auth
 
-        # 认证无效或不存在，创建新的认证器
         try:
             logger.info(f"为用户 {user.username} 创建新的认证器")
             edu_password = decrypt_password(user.edu_password)
             lib_password = decrypt_password(user.lib_password)
             auth = LibraryAuthenticator(user.username, edu_password, lib_password)
 
-            # 尝试认证
             auth_result, _, _ = auth.authenticate()
             if auth_result:
-                # 更新缓存
+
                 AuthManager._auth_cache[user.id] = auth
                 logger.info(f"用户 {user.username} 的认证器创建成功")
                 return auth
@@ -546,21 +528,18 @@ class AuthManager:
 
     @staticmethod
     def clear_authenticator(user_id):
-        """清除用户认证器缓存"""
+
         if user_id in AuthManager._auth_cache:
             logger.info(f"清除用户ID {user_id} 的认证缓存")
             del AuthManager._auth_cache[user_id]
 
     @staticmethod
     def refresh_authenticator(user):
-        """刷新认证（重新认证）"""
+
         AuthManager.clear_authenticator(user.id)
         return AuthManager.get_authenticator(user)
 
-
-# 异常处理装饰器
 def handle_exception(func):
-    """装饰器：统一异常处理，确保返回一个元组 (status, message)"""
 
     @wraps(func)
     def wrapper(*args, **kwargs):

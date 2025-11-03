@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}图书馆座位预约系统{% endblock %}</title>
 
-    <!-- 添加 Favicon 链接 -->
+    
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 
-    <!-- 兼容旧浏览器 -->
+    
 
-    <!-- 使用本地 Bootstrap CSS -->
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
-    <!-- 保留你自己的 main.css -->
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <!-- 霓虹风格样式 -->
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/neon-style.css') }}">
     {% block extra_css %}{% endblock %}
 
@@ -56,11 +56,11 @@
             text-decoration: underline; /* 悬停时显示下划线 */
         }
     </style>
-    <!-- 新的布局样式 -->
+    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/refactor.css') }}">
 </head>
 <body class="{% if not current_user.is_authenticated %}auth-page{% endif %}">
-<!-- 粒子背景 -->
+
 <div id="particles-js"></div>
 
 <div class="overlay"></div>
@@ -112,7 +112,7 @@
     </main>
 </div>
 
-<!-- 通知设置Modal -->
+
 {% if current_user.is_authenticated %}
 <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -321,15 +321,15 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endif %}
 
 
-<!-- 使用本地 Bootstrap JS -->
+
 <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 
 {% block modals %}{% endblock %}
 
-<!-- 保留你自己的 main.js -->
+
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
-<!-- Particles.js for 粒子背景 -->
+
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 <script>
 // 粒子背景配置

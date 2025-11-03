@@ -18,14 +18,14 @@
         </div>
     </div>
 
-    <!-- 进度条 -->
+    
     <div id="progressContainer" class="mb-4" style="display: none;">
         <div class="progress">
             <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
         </div>
     </div>
 
-    <!-- 加载提示 -->
+    
     <div id="loadingIndicator" class="text-center py-5" style="display: none;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">加载中...</span>
@@ -33,7 +33,7 @@
         <p class="mt-3 text-muted">正在获取座位数据...</p>
     </div>
 
-    <!-- 总览统计 -->
+    
     <div class="row mb-4" id="totalStats" style="display: none;">
         <div class="col-md-3 mb-3">
             <div class="card border-primary">
@@ -77,7 +77,7 @@
         </div>
     </div>
 
-    <!-- 楼层筛选 -->
+    
     <div class="row mb-3" id="floorFilter" style="display: none;">
         <div class="col-12">
             <div class="btn-group flex-wrap" role="group">
@@ -88,9 +88,9 @@
         </div>
     </div>
 
-    <!-- 楼层和区域信息 -->
+    
     <div class="row" id="areasContainer">
-        <!-- 动态加载 -->
+        
     </div>
 </div>
 
@@ -447,7 +447,7 @@ function displaySeatDetails(seats) {
 {% endblock %}
 
 {% block modals %}
-<!-- 座位详情模态框 -->
+
 <div class="modal fade" id="seatDetailModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -456,7 +456,7 @@ function displaySeatDetails(seats) {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="modalBody">
-                <!-- 动态加载 -->
+                
             </div>
         </div>
     </div>
