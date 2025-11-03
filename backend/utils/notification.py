@@ -130,14 +130,28 @@ class NotificationService:
 > **用户**: {user.username}
 > **时间**: {now}
 
+### {greeting}
+
+### {title}
+
 {details}
+"""
+        else:
+            tg_details = details.replace('> **', '• *').replace('**: ', '*: ').replace('\\n', '\\n')
+            return f"""📚 *图书馆预约结果通知*
+
 👤 用户: `{user.username}`
 🕒 时间: {now}
 
 {greeting}
 
 *{title}*
+
 {tg_details}
+"""
+
+    @staticmethod
+    def send_single_reservation_notification(user, history):
         if hasattr(history, 'id') and history.id and getattr(history, 'notification_sent', False):
             logger.info(f"用户 {user.username} 的预约历史 ID={history.id} 已发送过通知，跳过")
             return False, "通知已发送"
@@ -218,11 +232,34 @@ class NotificationService:
 > **用户**: {user.username}
 > **时间**: {now}
 
+### {greeting}
+
+### {title}
+
 {details}
+"""
+            data = {"msgtype": "markdown", "markdown": {"content": message}}
+        elif user.notification_type == 'telegram':
+            message = f"""📚 *图书馆预约设置更新通知*
+
 👤 用户: `{user.username}`
 🕒 时间: {now}
 
 {greeting}
 
 *{title}*
+
 {details.replace('> **', '• *').replace('**: ', '*: ').replace('\\n', '\\n')}
+"""
+            data = {"text": message, "parse_mode": "Markdown", "disable_web_page_preview": True}
+        else:
+            return False, "未知的通知类型"
+        
+        try:
+            response = requests.post(user.webhook_url, json=data, timeout=10)
+            response.raise_for_status()
+            logger.info(f"向用户 {user.username} 发送设置更新通知成功")
+            return True, "发送成功"
+        except requests.RequestException as e:
+            logger.error(f"向用户 {user.username} 发送设置更新通知失败: {str(e)}")
+            return False, str(e)
