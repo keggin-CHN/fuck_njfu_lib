@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-测试调度器锁机制
-该脚本模拟多个进程尝试获取调度器锁，验证只有一个进程能成功获取锁
-"""
+
 import os
 import fcntl
 import time
@@ -10,49 +7,42 @@ import sys
 from multiprocessing import Process
 
 def try_acquire_lock(process_id, lock_file_path):
-    """尝试获取锁"""
+
     try:
         print(f"[进程 {process_id}] 正在尝试获取调度器锁...")
-        
-        # 尝试获取文件锁
+
         lock_file = open(lock_file_path, 'w')
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        
-        # 成功获取锁
+
         print(f"[进程 {process_id}] ✓ 成功获取调度器锁！这个进程将运行调度器")
-        
-        # 模拟运行调度器（持有锁5秒）
+
         for i in range(5):
             print(f"[进程 {process_id}] 调度器运行中... ({i+1}/5)")
             time.sleep(1)
-        
-        # 释放锁
+
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
         lock_file.close()
         print(f"[进程 {process_id}] 已释放锁")
-        
+
     except (IOError, OSError) as e:
-        # 无法获取锁
+
         print(f"[进程 {process_id}] ✗ 无法获取锁，另一个进程已在运行调度器 (原因: {type(e).__name__})")
-        
-        # 模拟作为工作进程运行（不运行调度器）
+
         print(f"[进程 {process_id}] 作为普通工作进程运行...")
         time.sleep(5)
-        
+
         if lock_file:
             lock_file.close()
 
 def main():
-    """主函数"""
-    # 创建锁文件目录
+
     lock_dir = os.path.join(os.path.dirname(__file__), 'locks')
     os.makedirs(lock_dir, exist_ok=True)
     lock_file_path = os.path.join(lock_dir, 'scheduler_test.lock')
-    
-    # 清理旧的锁文件
+
     if os.path.exists(lock_file_path):
         os.remove(lock_file_path)
-    
+
     print("=" * 60)
     print("调度器锁机制测试")
     print("=" * 60)
@@ -60,30 +50,26 @@ def main():
     print(f"锁文件路径: {lock_file_path}")
     print("=" * 60)
     print()
-    
-    # 创建3个进程模拟3个 gunicorn worker
+
     processes = []
     for i in range(1, 4):
         p = Process(target=try_acquire_lock, args=(i, lock_file_path))
         processes.append(p)
-    
-    # 几乎同时启动所有进程
+
     for p in processes:
         p.start()
-        time.sleep(0.1)  # 小延迟以便观察输出
-    
-    # 等待所有进程完成
+        time.sleep(0.1)
+
     for p in processes:
         p.join()
-    
+
     print()
     print("=" * 60)
     print("测试完成！")
     print("预期结果: 只有一个进程成功获取锁并运行调度器")
     print("          其他进程跳过调度器初始化，仅作为工作进程运行")
     print("=" * 60)
-    
-    # 清理测试锁文件
+
     if os.path.exists(lock_file_path):
         os.remove(lock_file_path)
 

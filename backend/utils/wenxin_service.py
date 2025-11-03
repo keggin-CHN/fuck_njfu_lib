@@ -4,14 +4,10 @@ import random
 
 logger = logging.getLogger(__name__)
 
-
 class HitokotoService:
-    """一言（Hitokoto）API服务"""
 
-    # 一言API端点
     HITOKOTO_URL = "https://v1.hitokoto.cn/"
 
-    # 备用的随机问候语（当API不可用时使用）
     FALLBACK_GREETINGS = [
         "📚 读书是灵魂的旅行，愿今天的你收获满满！",
         "🌟 知识的海洋无边无际，每一次学习都是一次成长。",
@@ -27,10 +23,7 @@ class HitokotoService:
 
     @staticmethod
     def get_hitokoto():
-        """
-        获取一条一言。
-        返回格式：句子内容 ---- 出处
-        """
+
         try:
             response = requests.get(HitokotoService.HITOKOTO_URL, timeout=10)
             response.raise_for_status()
@@ -53,7 +46,5 @@ class HitokotoService:
 
     @staticmethod
     def generate_greeting():
-        """
-        生成随机问候语（兼容原有接口）
-        """
+
         return HitokotoService.get_hitokoto()
