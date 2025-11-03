@@ -3,9 +3,9 @@
 
 {% block content %}
 <div class="row">
-    
+    <!-- 主内容区 -->
     <div class="col-12">
-        
+        <!-- 公告 -->
         <div class="row">
             <div class="col-12 mb-4" id="announcementContainer" style="display: none;">
                 <div class="dashboard-card float-animation">
@@ -20,9 +20,9 @@
             </div>
         </div>
 
-        
+        <!-- 操作区 -->
         <div class="row match-height">
-            
+            <!-- 快速操作 -->
             <div class="col-md-6 mb-4">
                 <div class="dashboard-card">
                     <div class="card-header">
@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-            
+            <!-- 图书馆实时流量 -->
             <div class="col-md-6 mb-4">
                 <div class="dashboard-card stat-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -79,7 +79,7 @@
             </div>
         </div>
 
-        
+        <!-- 设置 -->
         <div class="col-12 mb-4 px-0">
             <div class="dashboard-card">
                 <div class="card-header">
@@ -101,7 +101,7 @@
                     </ul>
                 </div>
                 <div class="card-body tab-content" id="settingsTabsContent">
-                    
+                    <!-- 预约设置内容 -->
                     <div class="tab-pane fade show active" id="reservation-settings" role="tabpanel"
                          aria-labelledby="reservation-settings-tab">
                         <form action="{{ url_for('update_reservation_settings') }}" method="post">
@@ -157,7 +157,7 @@
                             <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>保存设置</button>
                         </form>
                     </div>
-                    
+                    <!-- 修改密码内容 -->
                     <div class="tab-pane fade" id="change-password" role="tabpanel"
                          aria-labelledby="change-password-tab">
                         <form action="{{ url_for('change_password') }}" method="post" id="passwordForm">
@@ -207,10 +207,10 @@
         </div>
     </div>
 
-    
+    <!-- 信息区 -->
     <div class="col-12">
         <div class="row">
-            
+            <!-- 我的当前预约 -->
             <div class="col-lg-6 mb-4">
                 <div class="dashboard-card">
                     <div class="card-header">
@@ -249,7 +249,7 @@
                 </div>
             </div>
 
-            
+            <!-- 历史预约记录 -->
             <div class="col-lg-6 mb-4">
                 <div class="dashboard-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -310,10 +310,10 @@
     </div>
 </div>
 
-
+<!-- Hidden button to trigger the modal programmatically -->
 <button id="announcementModalTrigger" type="button" class="d-none" data-bs-toggle="modal" data-bs-target="#announcementModal"></button>
 
-
+<!-- Announcement Modal -->
 <div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content neon-modal">
@@ -458,7 +458,7 @@
 }
 </style>
 
-
+<!-- Modals -->
 {% for history in histories %}
 <div class="modal fade" id="detailModal{{ history.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ history.id }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -495,7 +495,7 @@
 </div>
 {% endfor %}
 
-
+<!-- 自动寻座建议座位 Modal -->
 <div class="modal fade" id="alternativeSeatsModal" tabindex="-1" aria-labelledby="alternativeSeatsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">

@@ -2,10 +2,9 @@ import os
 from app import app, db
 
 def initialize_database():
-
     with app.app_context():
         db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
-
+        
         if os.path.exists(db_path):
             print("Database file already exists. Skipping initialization.")
             return

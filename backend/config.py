@@ -1,6 +1,7 @@
 import os
 import pytz
 
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'secret-key-for-library-reservation'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///database.db'
@@ -29,7 +30,6 @@ class Config:
 
     @staticmethod
     def get_seat_id(area, seat_number):
-
         if area in Config.SEAT_AREAS and 1 <= seat_number <= Config.SEAT_AREAS[area]["seats_count"]:
             return Config.SEAT_AREAS[area]["first_seat_id"] + seat_number - 1
         return None

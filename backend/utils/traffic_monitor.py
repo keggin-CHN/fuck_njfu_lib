@@ -6,6 +6,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+
 class LibraryTrafficMonitor:
 
     TRAFFIC_URL = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OA==/LjE0Ny4xMDEuMTUyLjEwMi4xMDEuMTAyLjE1Ny45Ny4xNTEuOTkuMTA0LjEwMi4xNTIuMTEyLjExMS4xNTM=/book/view"
@@ -13,18 +14,17 @@ class LibraryTrafficMonitor:
 
     @staticmethod
     def get_current_traffic():
-
         try:
             from utils.auth_manager import AuthManager
 
             user = User.query.filter_by(is_admin=True).first()
             if not user:
                 user = User.query.first()
-
+            
             if not user:
                 logger.error("流量监控：系统中没有任何用户，无法执行流量采集")
                 return None
-
+            
             logger.info(f"流量监控：使用用户 {user.username} (管理员: {user.is_admin}) 进行认证")
 
             authenticator = AuthManager.get_authenticator(user)
@@ -71,7 +71,6 @@ class LibraryTrafficMonitor:
                     num1 = int(nums[0])
                     num2 = int(nums[1])
                 else:
-
                     all_nums = re.findall(r'\d+', response.text)
                     if len(all_nums) >= 2:
                         num1 = int(all_nums[0])
@@ -79,7 +78,7 @@ class LibraryTrafficMonitor:
                     else:
                         logger.error("流量监控：未能从页面中解析到足够的数字信息")
                         return None
-
+                
                 total_seats = max(num1, num2)
                 remaining_seats = min(num1, num2)
 
@@ -102,7 +101,6 @@ class LibraryTrafficMonitor:
 
     @staticmethod
     def save_traffic_data(count):
-
         try:
             if count is None:
                 return False
@@ -128,7 +126,6 @@ class LibraryTrafficMonitor:
 
     @staticmethod
     def collect_and_save():
-
         count = LibraryTrafficMonitor.get_current_traffic()
         if count is not None:
             return LibraryTrafficMonitor.save_traffic_data(count)
@@ -136,7 +133,6 @@ class LibraryTrafficMonitor:
 
     @staticmethod
     def cleanup_old_data(days=7):
-
         try:
             Traffic.cleanup_old_data(days)
             logger.info(f"流量监控：已清理 {days} 天前的旧数据")

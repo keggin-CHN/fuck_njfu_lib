@@ -7,6 +7,7 @@ from flask_login import UserMixin
 
 db = SQLAlchemy()
 
+
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, index=True)
@@ -24,6 +25,7 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
 class ReservationSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True)
@@ -35,6 +37,7 @@ class ReservationSetting(db.Model):
     prevent_late = db.Column(db.Boolean, default=False)
     auto_find_seat = db.Column(db.Boolean, default=False)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
 
 class ReservationHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -58,6 +61,7 @@ class ReservationHistory(db.Model):
     STATUS_AUTH_FAILED = 'auth_failed'
     STATUS_CANCELED = '已取消'
 
+
 class InviteCode(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(8), unique=True, index=True, nullable=False)
@@ -72,17 +76,14 @@ class InviteCode(db.Model):
 
     @staticmethod
     def generate_code():
-
         characters = string.ascii_uppercase + string.digits
         while True:
             code = ''.join(random.choice(characters) for _ in range(8))
-
             if not InviteCode.query.filter_by(code=code).first():
                 return code
 
     @staticmethod
     def create_invite_code(created_by_user_id):
-
         code = InviteCode.generate_code()
         invite_code = InviteCode(
             code=code,
@@ -93,10 +94,9 @@ class InviteCode(db.Model):
         return invite_code
 
     def use_code(self, user_id):
-
         if self.is_used:
             return False, "邀请码已被使用"
-
+        
         self.used_by = user_id
         self.used_at = datetime.now()
         self.is_used = True
@@ -105,18 +105,17 @@ class InviteCode(db.Model):
 
     @staticmethod
     def validate_code(code):
-
         invite_code = InviteCode.query.filter_by(code=code).first()
         if not invite_code:
             return False, "邀请码不存在"
-
+        
         if invite_code.is_used:
             return False, "邀请码已被使用"
-
+        
         return True, invite_code
 
-class SystemSetting(db.Model):
 
+class SystemSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String(64), unique=True, nullable=False, index=True)
     value = db.Column(db.Text, nullable=False)
@@ -128,10 +127,8 @@ class SystemSetting(db.Model):
 
     @staticmethod
     def get_setting(key, default_value=None):
-
         setting = SystemSetting.query.filter_by(key=key).first()
         if setting:
-
             if setting.value.lower() in ['true', 'false']:
                 return setting.value.lower() == 'true'
             return setting.value
@@ -139,12 +136,11 @@ class SystemSetting(db.Model):
 
     @staticmethod
     def set_setting(key, value, description=None, updated_by=None):
-
         setting = SystemSetting.query.filter_by(key=key).first()
-
+        
         if isinstance(value, bool):
             value = str(value).lower()
-
+        
         if setting:
             setting.value = value
             setting.updated_at = datetime.now()
@@ -160,17 +156,16 @@ class SystemSetting(db.Model):
                 updated_by=updated_by
             )
             db.session.add(setting)
-
+        
         db.session.commit()
         return setting
 
     @staticmethod
     def is_invite_code_required():
-
         return SystemSetting.get_setting('invite_code_required', True)
 
-class Log(db.Model):
 
+class Log(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     ip_address = db.Column(db.String(45))
@@ -183,8 +178,8 @@ class Log(db.Model):
 
     user = db.relationship('User', backref='logs')
 
-class Traffic(db.Model):
 
+class Traffic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.Integer, unique=True, nullable=False, index=True)
     count = db.Column(db.Integer, nullable=False)
@@ -192,19 +187,15 @@ class Traffic(db.Model):
 
     @staticmethod
     def get_latest():
-
         return Traffic.query.order_by(Traffic.timestamp.desc()).first()
 
     @staticmethod
     def get_recent(hours=24):
-
         cutoff_time = int(datetime.now().timestamp()) - (hours * 3600)
         return Traffic.query.filter(Traffic.timestamp >= cutoff_time).order_by(Traffic.timestamp.asc()).all()
 
     @staticmethod
     def cleanup_old_data(days=7):
-
         cutoff_time = int(datetime.now().timestamp()) - (days * 24 * 3600)
         Traffic.query.filter(Traffic.timestamp < cutoff_time).delete()
         db.session.commit()
-

@@ -1,9 +1,9 @@
-
 import logging
 from datetime import datetime, timedelta
 from utils.auth_manager import HttpClient
 
 logger = logging.getLogger(__name__)
+
 
 class SeatQueryService:
 
@@ -24,13 +24,11 @@ class SeatQueryService:
 
     @staticmethod
     def get_date_string(days_offset=0):
-
         target_date = datetime.now() + timedelta(days=days_offset)
         return target_date.strftime('%Y%m%d')
 
     @staticmethod
     def get_seats_data(authenticator, room_id, date_str):
-
         try:
             url = HttpClient.get_lib_url("ic-web/reserve")
 
@@ -89,7 +87,6 @@ class SeatQueryService:
 
     @staticmethod
     def analyze_seats(seats_data):
-
         if not seats_data:
             return {
                 'total': 0,
@@ -120,10 +117,9 @@ class SeatQueryService:
 
     @staticmethod
     def get_all_areas_summary(authenticator, date_str, progress_callback=None):
-
         summary = {}
         total_areas = len(SeatQueryService.AREAS)
-
+        
         for i, (area_name, config) in enumerate(SeatQueryService.AREAS.items()):
             try:
                 seats_data = SeatQueryService.get_seats_data(authenticator, config['roomId'], date_str)
@@ -137,7 +133,7 @@ class SeatQueryService:
                 }
             except Exception as e:
                 logger.error(f"查询区域 {area_name} 时出错: {e}", exc_info=True)
-
+            
             if progress_callback:
                 progress_callback((i + 1) / total_areas)
 
@@ -145,7 +141,6 @@ class SeatQueryService:
 
     @staticmethod
     def get_floor_summary(all_areas_summary):
-
         floor_summary = {}
 
         for area_name, data in all_areas_summary.items():
@@ -179,14 +174,12 @@ class SeatQueryService:
 
     @staticmethod
     def convert_timestamp_to_time(timestamp):
-
         if not timestamp:
             return ""
         return datetime.fromtimestamp(timestamp / 1000).strftime('%H:%M')
 
     @staticmethod
     def get_seat_status_text(resv_status):
-
         status_map = {
             1027: "预约中",
             1093: "使用中"

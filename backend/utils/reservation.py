@@ -6,6 +6,7 @@ from models import db, ReservationHistory
 
 logger = logging.getLogger(__name__)
 
+
 class SeatReservation:
     def __init__(self, user, authenticator=None):
         self.user = user
@@ -24,7 +25,6 @@ class SeatReservation:
 
     def record_auth_failure(self, action_type, area=None, seat_number=None, seat_id=None, date_str=None,
                             start_time=None, send_notification=True):
-
         try:
             action_desc = "预约座位" if action_type == "reserve" else "迟到保护"
 
@@ -46,11 +46,11 @@ class SeatReservation:
             db.session.add(history)
             db.session.commit()
             logger.info(f"已记录用户 {self.user.username} 的认证失败: {action_desc}")
-
+            
             if send_notification:
                 from .notification import NotificationService
                 NotificationService.send_single_reservation_notification(self.user, history)
-
+            
             return True
         except Exception as e:
             logger.error(f"记录认证失败时出错: {str(e)}")
@@ -59,9 +59,7 @@ class SeatReservation:
 
     @handle_exception
     def reserve_seat(self, area, seat_number, seat_id, date_str=None, start_time=None, is_late_protection=False, is_auto_find=False, send_notification=True):
-
         if not self.ensure_authenticated():
-
             self.record_auth_failure(
                 "reserve",
                 area=area,
@@ -89,7 +87,6 @@ class SeatReservation:
         if setting and setting.end_time:
             end_time = normalize_time_format(setting.end_time)
         else:
-
             logger.warning(f"用户 {self.user.username} 的预约设置或结束时间未找到，使用默认结束时间")
             end_time = get_end_time(date_str)
 
@@ -224,27 +221,24 @@ class SeatReservation:
             db.session.add(history)
             db.session.commit()
             logger.info(f"已记录用户 {self.user.username} 的预约历史: {status}")
-
+            
             if send_notification:
                 from .notification import NotificationService
                 NotificationService.send_single_reservation_notification(self.user, history)
 
             try:
                 if status == ReservationHistory.STATUS_SUCCESS:
-
                     from models import ReservationSetting
                     setting = ReservationSetting.query.filter_by(user_id=self.user.id).first()
-
                     is_today = (date_str == get_today_date())
                     if setting and setting.prevent_late and is_today and start_time:
                         begin_dt = datetime.datetime.strptime(f"{date_str} {start_time}", "%Y-%m-%d %H:%M:%S")
-
                         from scheduler import schedule_late_check_task
                         schedule_late_check_task(self.user, begin_dt)
                         logger.info(f"已为用户 {self.user.username} 调度开始前20分钟的迟到检查（开始时间 {begin_dt.strftime('%H:%M:%S')}）")
             except Exception as se:
                 logger.error(f"调度迟到检查任务失败: {str(se)}")
-
+            
         except Exception as e:
             logger.error(f"记录预约历史或发送通知时出错: {str(e)}")
             db.session.rollback()
@@ -313,28 +307,28 @@ class SeatReservation:
                 from .logger_utils import add_log
                 add_log(message, user=self.user, response_code=400, error_message=message)
                 return False, message
-
+    
             if not self.ensure_authenticated():
                 message = "取消预约失败：认证失效"
                 self.record_auth_failure("cancel")
                 return False, message
-
+    
             url = HttpClient.get_lib_url("ic-web/reserve/delete")
-
+    
             params = {
                 "vpn-12-libseat.njfu.edu.cn": ""
             }
-
+    
             api_headers = {
                 "content-type": "application/json;charset=UTF-8",
                 "token": self.authenticator.token,
                 "lan": "1",
             }
-
+    
             payload = {
                 "uuid": uuid
             }
-
+    
             try:
                 logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
                 from .logger_utils import add_log
@@ -346,7 +340,7 @@ class SeatReservation:
                     cookies={"my_client_ticket": self.authenticator.my_client_ticket},
                     json_data=payload
                 )
-
+    
                 if response and response.status_code == 200:
                     result = response.json()
                     if result.get("code") == 0:
@@ -369,7 +363,7 @@ class SeatReservation:
                 logger.error(message)
                 add_log(message, user=self.user, response_code=500, error_message=message)
                 return False, message
-
+    
             return False, "取消预约失败"
 
     def reserve_today_seat(self, area, seat_number, seat_id, start_time, is_late_protection=True, is_auto_find=False):
