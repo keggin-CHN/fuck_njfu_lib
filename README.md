@@ -1,4 +1,4 @@
-# NJFU-lib-seat-reservation
+# FUVK_NJFU_LIB
 
 在线 Demo: <https://lib.keggin.me>
 
