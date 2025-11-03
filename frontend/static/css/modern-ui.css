@@ -1,6 +1,6 @@
+/* 现代化UI增强样式 - 浅色主题 */
 
-
-
+/* 1. 全局卡片样式优化 */
 .card {
     border: none;
     border-radius: 16px;
@@ -34,7 +34,7 @@
     padding: 1.5rem;
 }
 
-
+/* 2. 按钮样式优化 */
 .btn {
     border-radius: 10px;
     padding: 0.5rem 1.25rem;
@@ -88,7 +88,7 @@
     font-size: 0.875rem;
 }
 
-
+/* 3. 流量显示区域优化 */
 #trafficDataDisplay {
     animation: fadeIn 0.5s ease-in;
 }
@@ -123,7 +123,7 @@
     }
 }
 
-
+/* 4. 进度条优化 */
 .progress {
     border-radius: 12px;
     height: 30px !important;
@@ -183,7 +183,7 @@
     color: #2d3748;
 }
 
-
+/* 5. 表单优化 */
 .form-control, .form-select {
     border-radius: 10px;
     border: 2px solid #e2e8f0;
@@ -196,7 +196,7 @@
     box-shadow: 0 0 0 0.2rem rgba(168, 179, 255, 0.25);
 }
 
-
+/* 6. 徽章优化 */
 .badge {
     padding: 0.5rem 0.9rem;
     border-radius: 8px;
@@ -229,7 +229,7 @@
     color: #2d3748;
 }
 
-
+/* 7. 表格优化 */
 .table {
     border-radius: 12px;
     overflow: hidden;
@@ -252,12 +252,12 @@
     transform: scale(1.01);
 }
 
-
+/* 8. 图表容器优化 */
 canvas {
     border-radius: 12px;
 }
 
-
+/* 9. 导航栏优化 */
 .navbar {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -278,7 +278,7 @@ canvas {
     transform: translateY(-1px);
 }
 
-
+/* 10. 警告框优化 */
 .alert {
     border-radius: 12px;
     border: none;
@@ -317,7 +317,7 @@ canvas {
     color: #7f1d1d;
 }
 
-
+/* 11. 模态框优化 */
 .modal-content {
     border-radius: 16px;
     border: none;
@@ -336,7 +336,7 @@ canvas {
     padding: 1.25rem 1.5rem;
 }
 
-
+/* 12. 开关按钮优化 */
 .form-check-input:checked {
     background-color: #a8b3ff;
     border-color: #a8b3ff;
@@ -347,7 +347,7 @@ canvas {
     box-shadow: 0 0 0 0.2rem rgba(168, 179, 255, 0.25);
 }
 
-
+/* 13. 时间范围按钮组优化 */
 .btn-group .btn {
     border-radius: 0;
 }
@@ -373,7 +373,7 @@ canvas {
     color: #2d3748;
 }
 
-
+/* 14. 页面加载动画 */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -393,7 +393,7 @@ canvas {
 .row > div:nth-child(2) { animation-delay: 0.2s; }
 .row > div:nth-child(3) { animation-delay: 0.3s; }
 
-
+/* 15. 响应式优化 */
 @media (max-width: 768px) {
     .card {
         margin-bottom: 1rem;
@@ -409,7 +409,7 @@ canvas {
     }
 }
 
-
+/* 16. 滚动条优化 */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -429,7 +429,7 @@ canvas {
     background: linear-gradient(135deg, #939fef 0%, #b4c3ff 100%);
 }
 
-
+/* 17. 图标动画 */
 .bi {
     transition: transform 0.3s ease;
 }
@@ -439,14 +439,14 @@ button:hover .bi {
     transform: scale(1.1) rotate(5deg);
 }
 
-
+/* 18. 输入框图标 */
 .input-group-text {
     background: linear-gradient(135deg, #a8b3ff 0%, #c9d6ff 100%);
     color: #2d3748;
     border: none;
 }
 
-
+/* 19. 图表线条颜色优化 */
 #trafficChart {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }

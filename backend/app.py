@@ -74,7 +74,7 @@ with app.app_context():
                     logger.info("已添加列 auto_find_seat")
     except Exception as e:
         logger.error(f"检查/迁移 auto_find_seat 列失败: {str(e)}")
-
+    
     try:
         db_path = os.path.join(app.instance_path, app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''))
         if os.path.isfile(db_path):
@@ -90,7 +90,7 @@ with app.app_context():
                     logger.info("已添加列 is_auto_find")
     except Exception as e:
         logger.error(f"检查/迁移 is_auto_find 列失败: {str(e)}")
-
+    
     try:
         db_path = os.path.join(app.instance_path, app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''))
         if os.path.isfile(db_path):
@@ -106,10 +106,10 @@ with app.app_context():
                     logger.info("已添加列 notification_sent")
     except Exception as e:
         logger.error(f"检查/迁移 notification_sent 列失败: {str(e)}")
-
+    
     if User.query.count() == 0:
         logger.info("数据库为空，进行初始化设置...")
-
+        
         if not SystemSetting.query.filter_by(key='invite_code_required').first():
             SystemSetting.set_setting(
                 'invite_code_required',
@@ -117,10 +117,11 @@ with app.app_context():
                 '是否启用邀请码注册模式'
             )
             logger.info("已初始化邀请码模式设置为启用")
-
+        
         logger.info("数据库初始化完成，等待第一个用户注册成为管理员")
 
 setup_scheduler(app)
+
 
 def admin_required(f):
     @wraps(f)
@@ -132,8 +133,8 @@ def admin_required(f):
 
     return decorated_function
 
-def reset_user_ids():
 
+def reset_user_ids():
     try:
         tables = {"user": "user", "setting": "reservation_setting", "history": "reservation_history"}
         db_path = os.path.join(app.instance_path, app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', ''))
@@ -168,7 +169,6 @@ def reset_user_ids():
             cursor.execute("PRAGMA foreign_keys = OFF")
 
             try:
-
                 for table_key in ["setting", "history"]:
                     table = tables[table_key]
                     cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
@@ -198,35 +198,35 @@ def reset_user_ids():
     except Exception as e:
         logger.error(f"重置用户ID时发生错误: {str(e)}")
 
+
 @app.context_processor
 def inject_now():
-
     now = datetime.now(Config.TIMEZONE)
     tomorrow = now + timedelta(days=1)
     return {'now': now, 'tomorrow': tomorrow}
 
+
 @login_manager.user_loader
 def load_user(user_id):
-
     return User.query.get(int(user_id))
+
 
 @app.context_processor
 def inject_announcement():
-
     with app.app_context():
         announcement = SystemSetting.query.filter_by(key='announcement').first()
         if announcement:
             return {'announcement': announcement}
         return {'announcement': {'updated_at': ''}}
 
+
 @app.route('/')
 def index():
-
     return redirect(url_for('dashboard' if current_user.is_authenticated else 'login'))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
@@ -250,9 +250,9 @@ def login():
 
     return render_template('login.html')
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
 
@@ -269,19 +269,19 @@ def register():
             return render_template('register.html')
 
         is_first_user = User.query.count() == 0
-
+        
         invite_code_required = SystemSetting.is_invite_code_required()
-
+        
         if not is_first_user and invite_code_required:
             if not invite_code:
                 flash('请输入邀请码')
                 return render_template('register.html', username=username, remember_form=True)
-
+            
             is_valid, result = InviteCode.validate_code(invite_code)
             if not is_valid:
                 flash(result)
                 return render_template('register.html', username=username, remember_form=True)
-
+            
             invite_code_obj = result
 
         authenticator = LibraryAuthenticator(username, edu_password, lib_password)
@@ -347,18 +347,18 @@ def register():
 
     return render_template('register.html')
 
+
 @app.route('/logout')
 @login_required
 def logout():
-
     add_log(f"用户 {current_user.username} 退出登录", user=current_user)
     logout_user()
     return redirect(url_for('login'))
 
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-
     now = datetime.now()
     tomorrow = now + timedelta(days=1)
     reservation_setting = ReservationSetting.query.filter_by(user_id=current_user.id).first()
@@ -381,14 +381,14 @@ def dashboard():
             if reservations_data is None:
                 error_message = "获取预约信息失败，请稍后重试"
                 reservations_data = []
-
+            
             for resv in reservations_data:
                 day_type = "今日"
                 if resv.get("resvBeginTime"):
                     resv_date = datetime.fromtimestamp(resv.get("resvBeginTime") / 1000).strftime("%Y-%m-%d")
                     if resv_date == tomorrow_str:
                         day_type = "明日"
-
+                
                 formatted = format_reservation(resv, day_type)
                 if formatted:
                     reservations.append(formatted)
@@ -423,10 +423,10 @@ def dashboard():
                            reservations_error=error_message,
                            traffic_data=traffic_data)
 
+
 @app.route('/update_reservation_settings', methods=['POST'])
 @login_required
 def update_reservation_settings():
-
     area = request.form.get('area')
     seat_number = request.form.get('seat_number', type=int)
     start_time = request.form.get('start_time')
@@ -479,8 +479,8 @@ def update_reservation_settings():
     flash('预约设置已更新')
     return redirect(url_for('dashboard'))
 
-def validate_reservation_params(area, seat_number, start_time, end_time):
 
+def validate_reservation_params(area, seat_number, start_time, end_time):
     if not all([area, seat_number, start_time, end_time]):
         flash('所有字段均为必填项')
         return False
@@ -496,22 +496,21 @@ def validate_reservation_params(area, seat_number, start_time, end_time):
         if start_time_obj >= end_time_obj:
             flash('结束时间必须晚于开始时间')
             return False
-
+        
         if (end_time_obj - start_time_obj).seconds / 3600 < 2:
             flash('预约时长必须至少为2小时')
             return False
-
+            
         return True
     except ValueError:
         flash('无效的时间格式')
         return False
 
+
 @app.route('/immediate_reserve', methods=['POST'])
 @login_required
 def immediate_reserve():
-
     setting = ReservationSetting.query.filter_by(user_id=current_user.id).first()
-
     reserve_date = request.form.get('reserve_date', 'today')
 
     if not setting:
@@ -581,8 +580,10 @@ def immediate_reserve():
     flash(f'预约{"今天" if reserve_date == "today" else "明天"}座位{"成功！" if ok else "失败，请查看日志了解详情"}')
     return redirect(url_for('dashboard'))
 
-def _map_config_area_to_query_area(area_name: str) -> str:
 
+
+
+def _map_config_area_to_query_area(area_name: str) -> str:
     if not area_name:
         return area_name
     name = area_name.replace('楼', '层')
@@ -591,7 +592,6 @@ def _map_config_area_to_query_area(area_name: str) -> str:
 @app.route('/api/suggest_alternative_seats')
 @login_required
 def api_suggest_alternative_seats():
-
     try:
         from utils.seat_query import SeatQueryService
         from utils.date_utils import get_today_date, get_tomorrow_date, normalize_time_format
@@ -627,14 +627,11 @@ def api_suggest_alternative_seats():
         end_ms = int(end_dt.timestamp() * 1000)
 
         def no_conflict(reservations):
-
             for r in reservations or []:
                 s = r.get('startTime')
                 e = r.get('endTime')
                 if s is None or e is None:
-
                     return False
-
                 if not (end_ms <= s or begin_ms >= e):
                     return False
             return True
@@ -657,7 +654,6 @@ def api_suggest_alternative_seats():
 @app.route('/reserve_alternative', methods=['POST'])
 @login_required
 def reserve_alternative():
-
     try:
         from utils.date_utils import get_today_date, get_tomorrow_date, normalize_time_format
 
@@ -695,22 +691,22 @@ def reserve_alternative():
         ok, message = reservation.reserve_seat(
             area_name, seat_number, dev_id, date_str=date_str, start_time=start_time, is_auto_find=True
         )
-
+        
         if ok and setting.prevent_late and reserve_date == 'today':
             try:
                 begin_dt = datetime.strptime(f"{date_str} {start_time}", "%Y-%m-%d %H:%M:%S")
                 schedule_late_check_task(current_user, begin_dt)
             except Exception as e:
                 logger.error(f"为用户 {current_user.username} 调度迟到检查失败: {str(e)}")
-
+        
         return jsonify({'success': bool(ok), 'message': message})
     except Exception as e:
         logger.error(f"预约备选座位失败: {str(e)}")
         return jsonify({'success': False, 'message': '内部错误'}), 500
 
+
 @app.route('/captcha')
 def get_captcha():
-
     try:
         authenticator = LibraryAuthenticator("temp", "", "")
         captcha_data = authenticator.get_captcha_image()
@@ -722,11 +718,11 @@ def get_captcha():
         logger.error(f"获取验证码图片出错: {str(e)}")
         return "获取验证码失败", 500
 
+
 @app.route('/logs')
 @login_required
 @admin_required
 def view_logs():
-
     try:
         page = request.args.get('page', 1, type=int)
         search_query = request.args.get('search', '')
@@ -766,9 +762,9 @@ def view_logs():
         flash(f'加载日志失败: {str(e)}', 'error')
         return render_template('logs.html', logs=None), 500
 
+
 @app.route('/api/announcement')
 def get_announcement():
-
     try:
         announcement = SystemSetting.query.filter_by(key='announcement').first()
         if announcement:
@@ -782,11 +778,11 @@ def get_announcement():
         logger.error(f"获取公告失败: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
 @app.route('/admin/announcement', methods=['POST'])
 @login_required
 @admin_required
 def update_announcement():
-
     try:
         content = request.form.get('content', '').strip()
 
@@ -813,20 +809,20 @@ def update_announcement():
         flash(f'更新公告失败: {str(e)}', 'error')
         return redirect(url_for('admin'))
 
+
 @app.route('/admin')
 @login_required
 @admin_required
 def admin():
-
     users = User.query.all()
-
+    
     invite_codes = InviteCode.query.order_by(InviteCode.created_at.desc()).all()
-
+    
     invite_stats = {
         'unused': InviteCode.query.filter_by(is_used=False).count(),
         'used': InviteCode.query.filter_by(is_used=True).count()
     }
-
+    
     invite_code_required = SystemSetting.is_invite_code_required()
     return render_template('admin.html',
                          users=users,
@@ -834,25 +830,25 @@ def admin():
                          invite_stats=invite_stats,
                          invite_code_required=invite_code_required)
 
+
 @app.route('/toggle_invite_code_mode', methods=['POST'])
 @login_required
 @admin_required
 def toggle_invite_code_mode():
-
     try:
         current_mode = SystemSetting.is_invite_code_required()
         new_mode = not current_mode
-
+        
         SystemSetting.set_setting(
             'invite_code_required',
             new_mode,
             '是否启用邀请码注册模式',
             current_user.id
         )
-
+        
         mode_text = "启用" if new_mode else "关闭"
         logger.info(f"管理员 {current_user.username} {mode_text}了邀请码模式")
-
+        
         return jsonify({
             'success': True,
             'new_mode': new_mode,
@@ -865,11 +861,13 @@ def toggle_invite_code_mode():
             'message': '切换邀请码模式失败'
         }), 500
 
+
+
+
 @app.route('/generate_invite_code', methods=['POST'])
 @login_required
 @admin_required
 def generate_invite_code():
-
     try:
         invite_code = InviteCode.create_invite_code(current_user.id)
         add_log(f"管理员 {current_user.username} 生成了新的邀请码 {invite_code.code}", user=current_user)
@@ -885,13 +883,13 @@ def generate_invite_code():
             'message': '生成邀请码失败'
         }), 500
 
+
 @app.route('/delete_invite_code/<int:code_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_invite_code(code_id):
-
     invite_code = InviteCode.query.get_or_404(code_id)
-
+    
     if invite_code.is_used:
         flash('不能删除已使用的邀请码')
     else:
@@ -900,14 +898,14 @@ def delete_invite_code(code_id):
         db.session.commit()
         add_log(f"管理员 {current_user.username} 删除了邀请码 {code_str}", user=current_user)
         flash('邀请码已删除')
-
+    
     return redirect(url_for('admin'))
+
 
 @app.route('/admin/clear_logs', methods=['POST'])
 @login_required
 @admin_required
 def clear_all_logs():
-
     try:
         num_deleted = db.session.query(Log).delete()
         db.session.commit()
@@ -919,11 +917,11 @@ def clear_all_logs():
         flash(f'清空操作日志失败: {str(e)}', 'error')
     return redirect(url_for('admin'))
 
+
 @app.route('/update_user/<int:user_id>', methods=['POST'])
 @login_required
 @admin_required
 def update_user(user_id):
-
     user = User.query.get_or_404(user_id)
     action = request.form.get('action')
 
@@ -958,10 +956,10 @@ def update_user(user_id):
 
     return redirect(url_for('admin'))
 
+
 @app.route('/change_password', methods=['POST'])
 @login_required
 def change_password():
-
     old_password = request.form.get('old_password')
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
@@ -982,7 +980,6 @@ def change_password():
 
     elif password_type in ['edu', 'lib']:
         if captcha:
-
             if password_type == 'edu':
                 authenticator = LibraryAuthenticator(current_user.username, new_password,
                                                      decrypt_password(current_user.lib_password))
@@ -999,7 +996,6 @@ def change_password():
                 add_log(f"用户 {current_user.username} 修改{password_type}密码失败: {message}", user=current_user, response_code=401, error_message=message)
                 return redirect(url_for('dashboard', need_captcha=password_type))
         else:
-
             if password_type == 'edu':
                 authenticator = LibraryAuthenticator(current_user.username, new_password,
                                                      decrypt_password(current_user.lib_password))
@@ -1047,10 +1043,10 @@ def change_password():
     db.session.commit()
     return redirect(url_for('dashboard'))
 
+
 @app.route('/update_notification_settings', methods=['POST'])
 @login_required
 def update_notification_settings():
-
     notification_type = request.form.get('notification_type', 'none')
     webhook_url = request.form.get('webhook_url', '').strip()
 
@@ -1076,10 +1072,10 @@ def update_notification_settings():
 
     return redirect(url_for('dashboard'))
 
+
 @app.route('/test_notification', methods=['POST'])
 @login_required
 def test_notification():
-
     try:
         data = request.get_json()
         notification_type = data.get('notification_type')
@@ -1109,10 +1105,10 @@ def test_notification():
         logger.error(f"测试通知时发生错误: {str(e)}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
 @app.route('/delete_history/<int:history_id>', methods=['POST'])
 @login_required
 def delete_history(history_id):
-
     history = ReservationHistory.query.get_or_404(history_id)
 
     if history.user_id != current_user.id:
@@ -1124,24 +1120,24 @@ def delete_history(history_id):
     flash('记录已删除')
     return redirect(url_for('dashboard'))
 
+
 @app.route('/clear_history', methods=['POST'])
 @login_required
 def clear_history():
-
     ReservationHistory.query.filter_by(user_id=current_user.id).delete()
     db.session.commit()
     flash('所有预约记录已清空')
     return redirect(url_for('dashboard'))
 
+
 @app.route('/check_first_user')
 def check_first_user():
-
     is_first_user = User.query.count() == 0
     return jsonify({"is_first_user": is_first_user})
 
+
 @app.route('/check_invite_code_required')
 def check_invite_code_required():
-
     is_first_user = User.query.count() == 0
     invite_code_required = SystemSetting.is_invite_code_required()
 
@@ -1153,9 +1149,9 @@ def check_invite_code_required():
         "need_invite_code": need_invite_code
     })
 
+
 @app.route('/api/traffic/latest')
 def get_latest_traffic():
-
     latest = Traffic.get_latest()
     total_capacity = 2749
     if latest:
@@ -1175,9 +1171,9 @@ def get_latest_traffic():
         })
     return jsonify({'success': False, 'message': '暂无流量数据', 'total_capacity': total_capacity})
 
+
 @app.route('/api/traffic/history')
 def get_traffic_history():
-
     from datetime import datetime
     hours = request.args.get('hours', 24, type=int)
     traffic_list = Traffic.get_recent(hours=hours)
@@ -1195,17 +1191,16 @@ def get_traffic_history():
         'total_capacity': total_capacity
     })
 
+
 @app.route('/api/traffic/collect', methods=['POST'])
 @login_required
 @admin_required
 def collect_traffic_now():
-
     try:
         from utils.traffic_monitor import LibraryTrafficMonitor
         success = LibraryTrafficMonitor.collect_and_save()
 
         if success:
-
             latest = Traffic.get_latest()
             if latest:
                 add_log(f"管理员 {current_user.username} 手动采集流量数据", user=current_user)
@@ -1231,23 +1226,23 @@ def collect_traffic_now():
             'message': str(e)
         }), 500
 
-def query_traffic_data_chunk(date_range, db_uri):
 
+def query_traffic_data_chunk(date_range, db_uri):
     start_ts, end_ts = date_range
     engine = create_engine(db_uri)
     connection = engine.connect()
-
+    
     query = text(
         "SELECT timestamp, count FROM traffic WHERE timestamp >= :start AND timestamp < :end ORDER BY timestamp DESC"
     )
-
+    
     result = connection.execute(query, {'start': start_ts, 'end': end_ts})
-
+    
     chunk_data = [{
         'timestamp': row.timestamp,
         'count': row.count
     } for row in result]
-
+    
     connection.close()
     return chunk_data
 
@@ -1255,9 +1250,7 @@ def query_traffic_data_chunk(date_range, db_uri):
 @login_required
 @admin_required
 def export_traffic_csv():
-
     try:
-
         min_ts_result = db.session.query(db.func.min(Traffic.timestamp)).scalar()
         max_ts_result = db.session.query(db.func.max(Traffic.timestamp)).scalar()
 
@@ -1276,7 +1269,6 @@ def export_traffic_csv():
         @stream_with_context
         def generate():
             try:
-
                 yield '\ufeff'
                 header_buf = io.StringIO()
                 header_writer = csv.writer(header_buf)
@@ -1295,7 +1287,6 @@ def export_traffic_csv():
                         dt_local = datetime.fromtimestamp(ts, tz=Config.TIMEZONE)
                         dt_str = dt_local.strftime('%Y-%m-%d %H:%M:%S')
                     except Exception:
-
                         dt_str = datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 
                     occ = round((count / total_capacity) * 100, 2)
@@ -1306,7 +1297,6 @@ def export_traffic_csv():
                     yield buf.getvalue()
                     buf.close()
             finally:
-
                 connection.close()
 
         response = Response(
@@ -1327,16 +1317,16 @@ def export_traffic_csv():
         flash(f'导出失败: {str(e)}', 'error')
         return redirect(url_for('admin'))
 
+
 @app.route('/seats')
 @login_required
 def seats_query():
-
     return render_template('seats.html')
+
 
 @app.route('/api/seats/summary')
 @login_required
 def get_seats_summary():
-
     try:
         from utils.seat_query import SeatQueryService
         from utils.auth_manager import AuthManager
@@ -1394,17 +1384,17 @@ def get_seats_summary():
         logger.error(f"获取座位摘要失败: {str(e)}\n{error_detail}")
         return jsonify({'success': False, 'message': f'获取座位数据失败: {str(e)}'}), 500
 
+
 @app.route('/api/seats/progress')
 @login_required
 def get_seats_progress():
-
     progress = query_progress.get(current_user.id, 0)
     return jsonify({'progress': progress})
+
 
 @app.route('/api/seats/detail')
 @login_required
 def get_seats_detail():
-
     try:
         from utils.seat_query import SeatQueryService
         from utils.auth_manager import AuthManager
@@ -1468,8 +1458,8 @@ def get_seats_detail():
         logger.error(f"获取座位详情失败: {str(e)}\n{error_detail}")
         return jsonify({'success': False, 'message': f'获取座位数据失败: {str(e)}'}), 500
 
-def format_reservation(resv, day_type):
 
+def format_reservation(resv, day_type):
     try:
         def ts_to_str(ts):
             return datetime.fromtimestamp(ts / 1000).strftime("%Y-%m-%d %H:%M:%S") if ts else "未知"
@@ -1477,7 +1467,6 @@ def format_reservation(resv, day_type):
         seat_info = "未知座位"
         dev_info_list = resv.get("resvDevInfoList", [])
         if dev_info_list:
-
             dev_info = dev_info_list[0]
             seat_info = dev_info.get("devName", "未知座位")
 
@@ -1493,10 +1482,10 @@ def format_reservation(resv, day_type):
         logger.error(f"格式化预约信息出错: {str(e)}")
         return None
 
+
 @app.route('/cancel_reservation/<uuid>', methods=['POST'])
 @login_required
 def cancel_user_reservation(uuid):
-
     try:
         authenticator = AuthManager.get_authenticator(current_user)
         if not authenticator:
@@ -1511,8 +1500,9 @@ def cancel_user_reservation(uuid):
     except Exception as e:
         logger.error(f"取消预约出错: {str(e)}")
         flash("取消预约时发生错误")
-
+    
     return redirect(url_for('dashboard'))
+
 
 if __name__ == '__main__':
     freeze_support()

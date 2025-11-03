@@ -4,6 +4,7 @@ import random
 
 logger = logging.getLogger(__name__)
 
+
 class HitokotoService:
 
     HITOKOTO_URL = "https://v1.hitokoto.cn/"
@@ -23,7 +24,6 @@ class HitokotoService:
 
     @staticmethod
     def get_hitokoto():
-
         try:
             response = requests.get(HitokotoService.HITOKOTO_URL, timeout=10)
             response.raise_for_status()
@@ -46,5 +46,4 @@ class HitokotoService:
 
     @staticmethod
     def generate_greeting():
-
         return HitokotoService.get_hitokoto()

@@ -4,11 +4,9 @@ from flask_login import current_user
 from models import db, Log
 
 def log_action(action):
-
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-
             response = f(*args, **kwargs)
 
             try:
@@ -19,17 +17,16 @@ def log_action(action):
                     user_agent=request.user_agent.string,
                     response_code=response.status_code if hasattr(response, 'status_code') else 200
                 )
-
+                
                 if hasattr(response, 'get_data'):
                     data = response.get_data(as_text=True)
                     if len(data) < 2000:
                         log.response_content = data
-
+                
                 db.session.add(log)
                 db.session.commit()
             except Exception as e:
                 db.session.rollback()
-
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.error(f"Failed to log action '{action}': {e}")
@@ -39,7 +36,6 @@ def log_action(action):
     return decorator
 
 def add_log(action, user=None, response_code=200, response_content=None, error_message=None):
-
     try:
         log = Log(
             user_id=user.id if user else (current_user.id if current_user.is_authenticated else None),

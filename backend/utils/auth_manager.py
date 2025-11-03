@@ -19,8 +19,8 @@ captcha_session = None
 
 KEY_FILE = 'encryption_key.key'
 
-def get_or_create_key():
 
+def get_or_create_key():
     if os.path.exists(KEY_FILE):
         with open(KEY_FILE, 'rb') as f:
             return f.read()
@@ -30,14 +30,18 @@ def get_or_create_key():
             f.write(key)
         return key
 
+
 SECRET_KEY = os.environ.get('ENCRYPTION_KEY') or get_or_create_key()
 fernet = Fernet(SECRET_KEY)
+
 
 def encrypt_password(password):
     return fernet.encrypt(password.encode()).decode()
 
+
 def decrypt_password(encrypted_password):
     return fernet.decrypt(encrypted_password.encode()).decode()
+
 
 def encrypt_cas_password(password, key):
     CHARS = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678"
@@ -49,6 +53,7 @@ def encrypt_cas_password(password, key):
     ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
     return base64.b64encode(ciphertext).decode("utf-8")
 
+
 def encrypt_lib_password(plaintext_password, nonce, public_key_str):
     if "-----BEGIN PUBLIC KEY-----" not in public_key_str:
         public_key_str = "-----BEGIN PUBLIC KEY-----\n" + public_key_str + "\n-----END PUBLIC KEY-----"
@@ -57,6 +62,7 @@ def encrypt_lib_password(plaintext_password, nonce, public_key_str):
     message = f"{plaintext_password};{nonce}".encode("utf-8")
     encrypted = cipher.encrypt(message)
     return base64.b64encode(encrypted).decode("utf-8")
+
 
 class HttpClient:
     BASE_URL_PREFIX = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OC4xNjc="
@@ -78,7 +84,6 @@ class HttpClient:
     @staticmethod
     def request(method, url, headers=None, cookies=None, params=None, data=None, json_data=None, timeout=10,
                 allow_redirects=True):
-
         try:
             request_headers = {**HttpClient.DEFAULT_HEADERS}
             if headers:
@@ -101,6 +106,7 @@ class HttpClient:
     @staticmethod
     def post(url, **kwargs):
         return HttpClient.request("POST", url, **kwargs)
+
 
 class LibraryAuthenticator:
     def __init__(self, username, edu_password, lib_password):
@@ -311,7 +317,6 @@ class LibraryAuthenticator:
             return False, False, f"认证过程中发生错误: {str(e)}"
 
     def is_valid(self):
-
         if not self.my_client_ticket or not self.token or not self.acc_no:
             return False
 
@@ -495,12 +500,12 @@ class LibraryAuthenticator:
             logger.error(f"认证过程发生错误: {str(e)}")
             return False, f"认证过程发生错误: {str(e)}"
 
+
 class AuthManager:
     _auth_cache = {}
 
     @staticmethod
     def get_authenticator(user):
-
         auth = AuthManager._auth_cache.get(user.id)
 
         if auth and auth.is_valid():
@@ -515,7 +520,6 @@ class AuthManager:
 
             auth_result, _, _ = auth.authenticate()
             if auth_result:
-
                 AuthManager._auth_cache[user.id] = auth
                 logger.info(f"用户 {user.username} 的认证器创建成功")
                 return auth
@@ -528,16 +532,15 @@ class AuthManager:
 
     @staticmethod
     def clear_authenticator(user_id):
-
         if user_id in AuthManager._auth_cache:
             logger.info(f"清除用户ID {user_id} 的认证缓存")
             del AuthManager._auth_cache[user_id]
 
     @staticmethod
     def refresh_authenticator(user):
-
         AuthManager.clear_authenticator(user.id)
         return AuthManager.get_authenticator(user)
+
 
 def handle_exception(func):
 
