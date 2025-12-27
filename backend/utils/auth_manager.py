@@ -242,7 +242,7 @@ class LibraryAuthenticator:
                 pass
         return None, None
 
-    def second_level_auth(self, max_attempts=3):
+    def second_level_auth(self, max_attempts=5):
         if not self.my_client_ticket:
             return None, None
 
@@ -257,13 +257,15 @@ class LibraryAuthenticator:
             try:
                 public_key, nonce = self.get_public_key()
                 if not public_key or not nonce:
-                    time.sleep(1)
+                    logger.warning(f"第 {attempt} 次尝试获取公钥失败，等待重试...")
+                    time.sleep(2)
                     continue
 
                 try:
                     encrypted_password = encrypt_lib_password(self.password2, nonce, public_key)
-                except Exception:
-                    time.sleep(1)
+                except Exception as e:
+                    logger.error(f"密码加密失败: {str(e)}")
+                    time.sleep(2)
                     continue
 
                 payload = {
@@ -293,9 +295,11 @@ class LibraryAuthenticator:
                             return self.token, self.acc_no
                     except:
                         pass
-                time.sleep(1)
-            except:
-                time.sleep(1)
+                logger.warning(f"第 {attempt} 次认证尝试未获成功，等待重试...")
+                time.sleep(2)
+            except Exception as e:
+                logger.error(f"第 {attempt} 次认证发生异常: {str(e)}")
+                time.sleep(2)
         return None, None
 
     def authenticate(self):
@@ -307,6 +311,10 @@ class LibraryAuthenticator:
 
             if not my_client_ticket:
                 return False, False, "统一认证密码错误，请重新输入"
+
+            # 增加缓冲时间，等待 WebVPN 同步 Session
+            logger.info("统一认证成功，等待 2 秒以同步 WebVPN 会话...")
+            time.sleep(2)
 
             token, acc_no = self.second_level_auth()
             if not token or not acc_no:
