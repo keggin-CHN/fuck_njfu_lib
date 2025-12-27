@@ -230,6 +230,7 @@ class LibraryAuthenticator:
     def get_public_key(self):
         public_key_url = HttpClient.get_lib_url("ic-web/login/publicKey?vpn-12-libseat.njfu.edu.cn")
         api_headers = {"accept": "application/json, text/plain, */*"}
+        response = None # 初始化变量，防止 UnboundLocalError
         try:
             response = HttpClient.get(
                 public_key_url,
