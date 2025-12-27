@@ -6,6 +6,7 @@ import traceback
 import random
 import base64
 import os
+import urllib3
 from bs4 import BeautifulSoup
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.Util.Padding import pad
@@ -14,6 +15,9 @@ from cryptography.fernet import Fernet
 from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+# 禁用 InsecureRequestWarning
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 captcha_session = None
 
@@ -226,20 +230,31 @@ class LibraryAuthenticator:
     def get_public_key(self):
         public_key_url = HttpClient.get_lib_url("ic-web/login/publicKey?vpn-12-libseat.njfu.edu.cn")
         api_headers = {"accept": "application/json, text/plain, */*"}
-        response = HttpClient.get(
-            public_key_url,
-            headers=api_headers,
-            cookies={"my_client_ticket": self.my_client_ticket}
-        )
+        try:
+            response = HttpClient.get(
+                public_key_url,
+                headers=api_headers,
+                cookies={"my_client_ticket": self.my_client_ticket}
+            )
 
-        if response and response.status_code == 200:
-            try:
-                data = response.json()
-                if data.get("code") == 0:
-                    pub_data = data.get("data", {})
-                    return pub_data.get("publicKey"), pub_data.get("nonceStr")
-            except:
-                pass
+            if response and response.status_code == 200:
+                try:
+                    data = response.json()
+                    if data.get("code") == 0:
+                        pub_data = data.get("data", {})
+                        return pub_data.get("publicKey"), pub_data.get("nonceStr")
+                    else:
+                        logger.warning(f"获取公钥API返回错误代码: {data}")
+                except Exception as e:
+                    logger.error(f"解析公钥响应JSON失败: {str(e)}, 内容: {response.text[:100]}")
+            else:
+                status = response.status_code if response else "None"
+                logger.warning(f"获取公钥HTTP请求失败, 状态码: {status}")
+                if response:
+                    logger.warning(f"响应内容: {response.text[:200]}")
+        except Exception as e:
+            logger.error(f"获取公钥过程中发生异常: {str(e)}")
+            
         return None, None
 
     def second_level_auth(self, max_attempts=5):
