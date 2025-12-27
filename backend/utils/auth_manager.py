@@ -251,9 +251,12 @@ class LibraryAuthenticator:
                 status = response.status_code if response else "None"
                 logger.warning(f"获取公钥HTTP请求失败, 状态码: {status}")
                 if response:
-                    logger.warning(f"响应内容: {response.text[:200]}")
+                    logger.warning(f"响应内容: {response.text[:500]}") # 增加日志长度
+                else:
+                    logger.warning("响应对象为空 (None)")
         except Exception as e:
             logger.error(f"获取公钥过程中发生异常: {str(e)}")
+            logger.error(traceback.format_exc()) # 打印完整堆栈
             
         return None, None
 
