@@ -21,6 +21,8 @@ from scheduler import setup_scheduler, scheduler, schedule_late_protection, sche
 from config import Config
 from logging.handlers import TimedRotatingFileHandler
 from functools import wraps
+import sys
+
 
 backend_dir = os.path.abspath(os.path.dirname(__file__))
 root_dir = os.path.dirname(backend_dir)
@@ -331,6 +333,17 @@ def register():
 
         db.session.add(user)
         db.session.commit()
+        
+        # 注册成功后，立即缓存已成功的认证器，避免后续再次认证失败
+        try:
+            from utils.auth_manager import AuthManager
+            authenticator.username = username # 确保用户名设置正确
+            authenticator.password1 = edu_password # 确保使用明文密码
+            authenticator.password2 = lib_password # 确保使用明文密码
+            AuthManager._auth_cache[user.id] = authenticator
+            logger.info(f"注册流程中直接缓存用户 {username} 的认证器")
+        except Exception as e:
+            logger.error(f"注册后缓存认证器失败: {str(e)}")
 
         if not is_first_user and invite_code_required:
             invite_code_obj.use_code(user.id)
