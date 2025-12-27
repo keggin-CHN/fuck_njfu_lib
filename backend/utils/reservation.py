@@ -17,7 +17,8 @@ class SeatReservation:
             logger.info(f"用户 {self.user.username} 需要重新认证")
             from .logger_utils import add_log
             add_log(f"用户 {self.user.username} 的认证信息失效，正在尝试重新认证", user=self.user, response_code=100)
-            self.authenticator = AuthManager.get_authenticator(self.user)
+            # 强制刷新认证器，而不仅仅是获取（因为获取可能会返回缓存的失效认证器）
+            self.authenticator = AuthManager.refresh_authenticator(self.user)
         return self.authenticator is not None
 
     def is_authentication_valid(self):
@@ -170,7 +171,38 @@ class SeatReservation:
                     )
                     return True, message
                 else:
-                    message = f"预约失败: {result.get('message', '未知错误')}"
+                    # 检查是否是 Token 失效导致的错误
+                    error_msg = result.get('message', '未知错误')
+                    if "登录" in error_msg or "Token" in error_msg or "认证" in error_msg:
+                        logger.warning(f"用户 {self.user.username} 预约时遇到认证错误: {error_msg}，尝试刷新认证后重试")
+                        # 尝试刷新认证
+                        self.authenticator = AuthManager.refresh_authenticator(self.user)
+                        if self.authenticator:
+                            # 更新 header 中的 token
+                            api_headers["token"] = self.authenticator.token
+                            # 重新发送请求
+                            response = HttpClient.post(
+                                reserve_url,
+                                headers=api_headers,
+                                cookies={"my_client_ticket": self.authenticator.my_client_ticket},
+                                json_data=payload
+                            )
+                            if response and response.status_code == 200:
+                                result = response.json()
+                                if result.get("code") == 0:
+                                    message = f"重试预约成功: {result.get('message', '操作成功')}"
+                                    logger.info(f"用户 {self.user.username} {message}")
+                                    uuid = None
+                                    if "data" in result:
+                                        uuid = result["data"].get("uuid")
+                                    self._record_reservation_history(
+                                        area, seat_number, seat_id, date_str, start_time, end_time, "成功", message,
+                                        uuid=uuid, is_late_protection=is_late_protection, is_auto_find=is_auto_find,
+                                        send_notification=send_notification
+                                    )
+                                    return True, message
+
+                    message = f"预约失败: {error_msg}"
                     logger.error(f"用户 {self.user.username} {message}")
                     self._record_reservation_history(
                         area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
