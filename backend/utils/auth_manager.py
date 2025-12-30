@@ -156,6 +156,7 @@ class LibraryAuthenticator:
     def get_route_cookie(self, session=None):
         target_session = session if session else self.session
         try:
+            logger.info("正在获取 route cookie...")
             route_url = "https://webvpn.njfu.edu.cn/webvpn/cookie/?domain=uia.njfu.edu.cn&path=%2Fauthserver%2Flogin"
             headers = {'accept': '*/*', 'referer': "https://webvpn.njfu.edu.cn/"}
             response = target_session.get(route_url, headers=headers, timeout=5)
@@ -163,7 +164,9 @@ class LibraryAuthenticator:
             if match:
                 route = match.group(1)
                 target_session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
+                logger.info(f"成功获取并设置 route cookie: {route}")
                 return route
+            logger.warning("未能在响应中找到 route cookie")
             return None
         except Exception as e:
             logger.warning(f"获取 route cookie 失败: {e}")
@@ -223,12 +226,20 @@ class LibraryAuthenticator:
         )
         
         try:
+            logger.info(f"正在访问登录准备页面: {login_prepare_url}")
             response = self.session.get(login_prepare_url, timeout=10)
+            logger.info(f"登录准备页面响应码: {response.status_code}")
         except Exception as e:
             logger.error(f"访问登录页失败: {e}")
             return None, False
 
-        if not response or response.status_code != 200:
+        if not response:
+            logger.error("登录准备页面响应为空")
+            return None, False
+            
+        if response.status_code != 200:
+            logger.error(f"访问登录页失败，状态码: {response.status_code}")
+            logger.debug(f"响应内容片段: {response.text[:200]}")
             return None, False
 
         soup = BeautifulSoup(response.text, "html.parser")
