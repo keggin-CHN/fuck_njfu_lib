@@ -166,7 +166,8 @@ class LibraryAuthenticator:
                 target_session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
                 logger.info(f"成功获取并设置 route cookie: {route}")
                 return route
-            logger.warning("未能在响应中找到 route cookie")
+            logger.warning(f"未能在响应中找到 route cookie。状态码: {response.status_code}")
+            logger.debug(f"route cookie 响应内容: {response.text[:500]}")
             return None
         except Exception as e:
             logger.warning(f"获取 route cookie 失败: {e}")
@@ -229,6 +230,14 @@ class LibraryAuthenticator:
             logger.info(f"正在访问登录准备页面: {login_prepare_url}")
             response = self.session.get(login_prepare_url, timeout=10)
             logger.info(f"登录准备页面响应码: {response.status_code}")
+            
+            # 针对 502/503 错误进行一次重试
+            if response.status_code in [502, 503]:
+                logger.warning(f"遇到 {response.status_code} 错误，等待 2 秒后重试...")
+                time.sleep(2)
+                response = self.session.get(login_prepare_url, timeout=10)
+                logger.info(f"重试登录准备页面响应码: {response.status_code}")
+
         except Exception as e:
             logger.error(f"访问登录页失败: {e}")
             return None, False
@@ -239,7 +248,7 @@ class LibraryAuthenticator:
             
         if response.status_code != 200:
             logger.error(f"访问登录页失败，状态码: {response.status_code}")
-            logger.debug(f"响应内容片段: {response.text[:200]}")
+            logger.debug(f"响应内容片段: {response.text[:500]}")
             return None, False
 
         soup = BeautifulSoup(response.text, "html.parser")
