@@ -3,7 +3,7 @@ import logging
 import atexit
 import functools
 import os
-import fcntl
+import sys
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from models import db, User, ReservationSetting, ReservationHistory, Traffic
@@ -54,7 +54,14 @@ def setup_scheduler(app):
     
     try:
         scheduler_lock_file = open(lock_file_path, 'w')
-        fcntl.flock(scheduler_lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        
+        # Cross-platform file locking
+        if os.name == 'nt':
+            import msvcrt
+            msvcrt.locking(scheduler_lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(scheduler_lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         
         logger.info("成功获取调度器锁，此进程将运行调度器")
         
@@ -70,7 +77,13 @@ def setup_scheduler(app):
                     try:
                         scheduler.shutdown(wait=False)
                         if scheduler_lock_file:
-                            fcntl.flock(scheduler_lock_file.fileno(), fcntl.LOCK_UN)
+                            if os.name == 'nt':
+                                import msvcrt
+                                msvcrt.locking(scheduler_lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+                            else:
+                                import fcntl
+                                fcntl.flock(scheduler_lock_file.fileno(), fcntl.LOCK_UN)
+                            
                             scheduler_lock_file.close()
                             if os.path.exists(lock_file_path):
                                 os.remove(lock_file_path)

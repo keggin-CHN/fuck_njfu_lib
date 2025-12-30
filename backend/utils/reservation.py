@@ -147,11 +147,11 @@ class SeatReservation:
             f"用户 {self.user.username} 开始预约: 区域 {area}, 座位号 {seat_number}, 日期 {date_str}, 时间 {start_time} - {end_time}")
 
         try:
-            response = HttpClient.post(
+            # 使用 authenticator.session 发送请求以保持会话状态
+            response = self.authenticator.session.post(
                 reserve_url,
                 headers=api_headers,
-                cookies={"my_client_ticket": self.authenticator.my_client_ticket},
-                json_data=payload
+                json=payload
             )
 
             if response and response.status_code == 200:
@@ -181,11 +181,10 @@ class SeatReservation:
                             # 更新 header 中的 token
                             api_headers["token"] = self.authenticator.token
                             # 重新发送请求
-                            response = HttpClient.post(
+                            response = self.authenticator.session.post(
                                 reserve_url,
                                 headers=api_headers,
-                                cookies={"my_client_ticket": self.authenticator.my_client_ticket},
-                                json_data=payload
+                                json=payload
                             )
                             if response and response.status_code == 200:
                                 result = response.json()
@@ -296,11 +295,10 @@ class SeatReservation:
         }
 
         try:
-            response = HttpClient.get(
+            response = self.authenticator.session.get(
                 url,
                 headers=api_headers,
-                params=params,
-                cookies={"my_client_ticket": self.authenticator.my_client_ticket}
+                params=params
             )
 
             if response and response.status_code == 200:
@@ -365,12 +363,11 @@ class SeatReservation:
                 logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
                 from .logger_utils import add_log
                 add_log(f"用户尝试取消预约 UUID: {uuid}", user=self.user)
-                response = HttpClient.post(
+                response = self.authenticator.session.post(
                     url,
                     headers=api_headers,
                     params=params,
-                    cookies={"my_client_ticket": self.authenticator.my_client_ticket},
-                    json_data=payload
+                    json=payload
                 )
     
                 if response and response.status_code == 200:

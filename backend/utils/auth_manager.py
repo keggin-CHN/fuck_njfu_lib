@@ -86,30 +86,53 @@ class HttpClient:
         return f"{HttpClient.BASE_URL_PREFIX}{HttpClient.EDU_URL_SUFFIX}/{path}"
 
     @staticmethod
-    def request(method, url, headers=None, cookies=None, params=None, data=None, json_data=None, timeout=10,
-                allow_redirects=True):
+    def get(url, headers=None, cookies=None, timeout=10, **kwargs):
+        """
+        保留静态方法以兼容 app.py 中的调用。
+        注意：对于认证流程，推荐使用 LibraryAuthenticator 及其内部 Session。
+        """
+        req_headers = HttpClient.DEFAULT_HEADERS.copy()
+        if headers:
+            req_headers.update(headers)
+        
         try:
-            request_headers = {**HttpClient.DEFAULT_HEADERS}
-            if headers:
-                request_headers.update(headers)
-
-            response = requests.request(
-                method=method, url=url, headers=request_headers, cookies=cookies,
-                params=params, data=data, json=json_data, timeout=timeout, allow_redirects=allow_redirects,
-                verify=False
+            response = requests.get(
+                url,
+                headers=req_headers,
+                cookies=cookies,
+                verify=False,
+                timeout=timeout,
+                **kwargs
             )
             return response
         except Exception as e:
-            logger.error(f"HTTP请求错误 [{method}] {url}: {str(e)}")
+            logger.error(f"HttpClient.get 请求失败: {e}")
             return None
 
     @staticmethod
-    def get(url, **kwargs):
-        return HttpClient.request("GET", url, **kwargs)
-
-    @staticmethod
-    def post(url, **kwargs):
-        return HttpClient.request("POST", url, **kwargs)
+    def post(url, headers=None, cookies=None, data=None, json_data=None, timeout=10, **kwargs):
+        """
+        保留静态方法以兼容 reservation.py 中的调用。
+        """
+        req_headers = HttpClient.DEFAULT_HEADERS.copy()
+        if headers:
+            req_headers.update(headers)
+            
+        try:
+            response = requests.post(
+                url,
+                headers=req_headers,
+                cookies=cookies,
+                data=data,
+                json=json_data,
+                verify=False,
+                timeout=timeout,
+                **kwargs
+            )
+            return response
+        except Exception as e:
+            logger.error(f"HttpClient.post 请求失败: {e}")
+            return None
 
 
 class LibraryAuthenticator:
@@ -121,15 +144,42 @@ class LibraryAuthenticator:
         self.token = None
         self.acc_no = None
         self.last_auth_time = None
+        
+        # 初始化 Session
+        self.session = requests.Session()
+        self.session.verify = False
+        self.session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+        })
+
+    def get_route_cookie(self, session=None):
+        target_session = session if session else self.session
+        try:
+            route_url = "https://webvpn.njfu.edu.cn/webvpn/cookie/?domain=uia.njfu.edu.cn&path=%2Fauthserver%2Flogin"
+            headers = {'accept': '*/*', 'referer': "https://webvpn.njfu.edu.cn/"}
+            response = target_session.get(route_url, headers=headers, timeout=5)
+            match = re.search(r'route=([^;]+)', response.text)
+            if match:
+                route = match.group(1)
+                target_session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
+                return route
+            return None
+        except Exception as e:
+            logger.warning(f"获取 route cookie 失败: {e}")
+            return None
 
     def get_initial_client_ticket(self):
         url = "https://webvpn.njfu.edu.cn/rump_frontend/login/"
-        response = HttpClient.get(url)
-        if response and response.status_code == 200:
-            return response.cookies.get_dict().get("my_client_ticket")
+        try:
+            response = self.session.get(url, timeout=10)
+            if response and response.status_code == 200:
+                return self.session.cookies.get("my_client_ticket")
+        except Exception as e:
+            logger.error(f"获取初始 ticket 失败: {e}")
         return None
 
-    def check_need_captcha(self, username, salt, client_ticket):
+    def check_need_captcha(self, username, salt, client_ticket=None):
         url = HttpClient.get_edu_url("authserver/needCaptcha.html")
         params = {
             "vpn-12-uia.njfu.edu.cn": "",
@@ -138,10 +188,9 @@ class LibraryAuthenticator:
             "_": str(int(time.time() * 1000))
         }
         headers = {"X-Requested-With": "XMLHttpRequest"}
-        cookies = {"my_client_ticket": client_ticket}
 
         try:
-            resp = HttpClient.get(url, headers=headers, params=params, cookies=cookies)
+            resp = self.session.get(url, headers=headers, params=params, timeout=10)
             if resp and resp.status_code == 200:
                 return resp.text.strip().lower() == "true"
             return True
@@ -152,12 +201,19 @@ class LibraryAuthenticator:
         my_client_ticket = self.get_initial_client_ticket()
         if not my_client_ticket:
             return None, False
+            
+        # 尝试获取 route cookie
+        self.get_route_cookie()
 
         login_prepare_url = HttpClient.get_edu_url(
             "authserver/login?service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
         )
-        cookies = {"my_client_ticket": my_client_ticket}
-        response = HttpClient.get(login_prepare_url, cookies=cookies)
+        
+        try:
+            response = self.session.get(login_prepare_url, timeout=10)
+        except Exception as e:
+            logger.error(f"访问登录页失败: {e}")
+            return None, False
 
         if not response or response.status_code != 200:
             return None, False
@@ -191,51 +247,64 @@ class LibraryAuthenticator:
             "_eventId": event_id,
             "rmShown": rm_shown
         }
+        
+        headers = {
+            "Origin": "https://webvpn.njfu.edu.cn",
+            "Referer": login_prepare_url,
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
 
-        login_response = HttpClient.post(
-            login_url,
-            cookies=cookies,
-            data=login_data,
-            allow_redirects=False
-        )
+        try:
+            login_response = self.session.post(
+                login_url,
+                headers=headers,
+                data=login_data,
+                allow_redirects=False,
+                timeout=15
+            )
+        except Exception as e:
+            logger.error(f"登录请求失败: {e}")
+            return None, False
 
-        if not login_response or login_response.status_code != 302:
-            if login_response and login_response.status_code == 200:
-                need_captcha = self.check_need_captcha(self.username, salt, my_client_ticket)
-                return None, need_captcha
-            else:
+        if not login_response:
+            return None, False
+
+        if login_response.status_code == 302:
+            location = login_response.headers.get("Location")
+            if not location:
                 return None, False
 
-        location = login_response.headers.get("Location")
-        if not location:
+            ticket_match = re.search(r'ticket=([^&]+)', location)
+            if not ticket_match:
+                return None, False
+
+            ticket = ticket_match.group(1)
+            final_auth_url = f"https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/?ticket={ticket}"
+            
+            try:
+                final_response = self.session.get(final_auth_url, timeout=10)
+                if final_response and final_response.status_code == 200:
+                    self.my_client_ticket = self.session.cookies.get("my_client_ticket")
+                    return self.my_client_ticket, False
+            except Exception:
+                pass
             return None, False
-
-        ticket_match = re.search(r'ticket=([^&]+)', location)
-        if not ticket_match:
+            
+        elif login_response.status_code == 200:
+            need_captcha = self.check_need_captcha(self.username, salt)
+            return None, need_captcha
+        else:
             return None, False
-
-        ticket = ticket_match.group(1)
-        final_auth_url = f"https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/?ticket={ticket}"
-        final_response = HttpClient.get(final_auth_url, cookies=cookies)
-
-        if not final_response or final_response.status_code != 200:
-            return None, False
-
-        final_cookies = final_response.cookies.get_dict()
-        final_my_client_ticket = final_cookies.get("my_client_ticket", my_client_ticket)
-
-        self.my_client_ticket = final_my_client_ticket
-        return final_my_client_ticket, False
 
     def get_public_key(self):
         public_key_url = HttpClient.get_lib_url("ic-web/login/publicKey?vpn-12-libseat.njfu.edu.cn")
         api_headers = {"accept": "application/json, text/plain, */*"}
         response = None # 初始化变量，防止 UnboundLocalError
         try:
-            response = HttpClient.get(
+            response = self.session.get(
                 public_key_url,
                 headers=api_headers,
-                cookies={"my_client_ticket": self.my_client_ticket}
+                timeout=10
             )
 
             if response and response.status_code == 200:
@@ -295,11 +364,10 @@ class LibraryAuthenticator:
                     "privacy": True
                 }
 
-                response = HttpClient.post(
+                response = self.session.post(
                     login_url,
                     headers=api_headers,
-                    cookies={"my_client_ticket": self.my_client_ticket},
-                    json_data=payload,
+                    json=payload,
                     timeout=15
                 )
 
@@ -366,11 +434,11 @@ class LibraryAuthenticator:
                 "lan": "1",
             }
 
-            response = HttpClient.get(
+            # 使用 session 进行验证请求
+            response = self.session.get(
                 url,
                 headers=api_headers,
                 params=params,
-                cookies={"my_client_ticket": self.my_client_ticket},
                 timeout=10
             )
 
@@ -408,25 +476,6 @@ class LibraryAuthenticator:
             logger.error(f"获取验证码图片失败: {str(e)}")
             return None
 
-    def get_route_cookie(self, session):
-        if not session:
-            return None
-
-        try:
-            route_cookie_url = "https://webvpn.njfu.edu.cn/webvpn/cookie/?domain=uia.njfu.edu.cn&path=%2Fauthserver%2Flogin"
-            login_page_url = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OC4xNjc=/LjIxNC4xNTguMTk5LjEwMi4xNjIuMTU5LjIwMi4xNjguMTQ3LjE1MS4xNTYuMTczLjE0OC4xNTMuMTY1/authserver/login?service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
-            headers = {'accept': '*/*', 'referer': login_page_url}
-
-            response = session.get(route_cookie_url, headers=headers, timeout=10)
-            match = re.search(r'route=([^;]+)', response.text)
-            if match:
-                return match.group(1)
-            if 'route' in session.cookies:
-                return session.cookies.get('route')
-            return None
-        except Exception:
-            return None
-
     def authenticate_with_captcha(self, captcha):
         global captcha_session
 
@@ -436,9 +485,20 @@ class LibraryAuthenticator:
         session = captcha_session
 
         try:
-            login_url = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OC4xNjc=/LjIxNC4xNTguMTk5LjEwMi4xNjIuMTU5LjIwMi4xNjguMTQ3LjE1MS4xNTYuMTczLjE0OC4xNTMuMTY1/authserver/login?service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
-            login_page = session.get(login_url, timeout=10)
-
+            # 尝试设置 route cookie
+            self.get_route_cookie(session)
+            
+            # 获取登录页以刷新 flow execution
+            login_url = HttpClient.get_edu_url(
+                "authserver/login?service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
+            )
+            
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+            }
+            
+            login_page = session.get(login_url, headers=headers, timeout=10)
             soup = BeautifulSoup(login_page.text, "html.parser")
 
             form_elements = {
@@ -455,16 +515,11 @@ class LibraryAuthenticator:
 
             form_data = {key: element["value"] for key, element in form_elements.items()}
 
-            try:
-                route = self.get_route_cookie(session)
-                if route:
-                    session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
-            except Exception:
-                pass
-
             encrypted_password = encrypt_cas_password(self.password1, form_data["salt"])
 
-            login_post_url = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OC4xNjc=/LjIxNC4xNTguMTk5LjEwMi4xNjIuMTU5LjIwMi4xNjguMTQ3LjE1MS4xNTYuMTczLjE0OC4xNTMuMTY1/authserver/login?vpn-0&service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
+            login_post_url = HttpClient.get_edu_url(
+                "authserver/login?vpn-0&service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
+            )
 
             login_data = {
                 "username": self.username,
@@ -478,9 +533,18 @@ class LibraryAuthenticator:
                 "vpn-0": "",
                 "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/"
             }
+            
+            # 添加必要的 Headers
+            post_headers = {
+                "Origin": "https://webvpn.njfu.edu.cn",
+                "Referer": login_url,
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
 
             login_response = session.post(
                 login_post_url,
+                headers=post_headers,
                 data=login_data,
                 allow_redirects=False,
                 timeout=15
@@ -497,6 +561,9 @@ class LibraryAuthenticator:
 
                     if "my_client_ticket" in session.cookies:
                         self.my_client_ticket = session.cookies.get("my_client_ticket")
+                        
+                        # 成功后，更新实例的 session
+                        self.session = session
 
                         token, acc_no = self.second_level_auth()
                         if token and acc_no:
@@ -510,21 +577,14 @@ class LibraryAuthenticator:
             elif login_response.status_code == 200:
                 soup = BeautifulSoup(login_response.text, "html.parser")
                 error_msg = soup.find('span', {'id': 'msg'}) or soup.find('div', {'id': 'msg'})
-
                 if error_msg:
-                    error_text = error_msg.text.strip()
-                    if "验证码" in error_text:
-                        return False, "验证码错误或已过期，请刷新页面后重新输入"
-                    elif "用户名或密码" in error_text:
-                        return False, "用户名或密码错误"
-                    else:
-                        return False, f"认证失败: {error_text}"
-                else:
-                    return False, "认证失败，但未找到具体错误原因"
+                    return False, f"认证失败: {error_msg.text.strip()}"
+                return False, "认证失败，用户名/密码错误或验证码错误"
             else:
                 return False, f"网络错误，状态码: {login_response.status_code}"
+
         except Exception as e:
-            logger.error(f"认证过程发生错误: {str(e)}")
+            logger.error(f"验证码认证过程发生错误: {str(e)}")
             return False, f"认证过程发生错误: {str(e)}"
 
 

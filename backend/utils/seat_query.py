@@ -53,11 +53,11 @@ class SeatQueryService:
             logger.info(f"认证token存在: {bool(authenticator.token)}")
 
             try:
-                response = HttpClient.get(
+                # 使用 authenticator.session 发送请求以保持会话状态
+                response = authenticator.session.get(
                     url,
                     headers=api_headers,
                     params=params,
-                    cookies={"my_client_ticket": authenticator.my_client_ticket},
                     timeout=15
                 )
             except Exception as e:
