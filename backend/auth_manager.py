@@ -156,14 +156,48 @@ class LibraryAuthenticator:
     def get_route_cookie(self, session=None):
         target_session = session if session else self.session
         try:
+            logger.info("正在获取 route cookie...")
+            
+            # 1. 先访问 WebVPN 首页，模拟正常浏览器行为，获取基础 Cookies
+            try:
+                home_url = "https://webvpn.njfu.edu.cn/"
+                logger.info(f"预访问 WebVPN 首页: {home_url}")
+                target_session.get(home_url, timeout=5)
+            except Exception as e:
+                logger.warning(f"预访问 WebVPN 首页失败: {e}")
+
+            # 2. 请求 route cookie
             route_url = "https://webvpn.njfu.edu.cn/webvpn/cookie/?domain=uia.njfu.edu.cn&path=%2Fauthserver%2Flogin"
-            headers = {'accept': '*/*', 'referer': "https://webvpn.njfu.edu.cn/"}
+            headers = {
+                'Accept': '*/*',
+                'Referer': "https://webvpn.njfu.edu.cn/",
+                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-origin',
+            }
+            
             response = target_session.get(route_url, headers=headers, timeout=5)
+            
+            # 优先检查响应体中的 route
             match = re.search(r'route=([^;]+)', response.text)
             if match:
                 route = match.group(1)
                 target_session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
+                logger.info(f"成功从响应体获取并设置 route cookie: {route}")
                 return route
+            
+            # 其次检查 Cookies 中是否已包含 route
+            if 'route' in response.cookies:
+                route = response.cookies.get('route')
+                target_session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
+                logger.info(f"成功从Cookies获取并设置 route cookie: {route}")
+                return route
+
+            logger.warning(f"未能在响应中找到 route cookie。状态码: {response.status_code}")
+            logger.info(f"route cookie 响应内容(前500字符): {response.text[:500]}")
             return None
         except Exception as e:
             logger.warning(f"获取 route cookie 失败: {e}")
@@ -226,6 +260,14 @@ class LibraryAuthenticator:
             logger.info(f"正在访问登录准备页面: {login_prepare_url}")
             response = self.session.get(login_prepare_url, timeout=10)
             logger.info(f"登录准备页面响应码: {response.status_code}")
+            
+            # 针对 502/503 错误进行一次重试
+            if response.status_code in [502, 503]:
+                logger.warning(f"遇到 {response.status_code} 错误，等待 2 秒后重试...")
+                time.sleep(2)
+                response = self.session.get(login_prepare_url, timeout=10)
+                logger.info(f"重试登录准备页面响应码: {response.status_code}")
+
         except Exception as e:
             logger.error(f"访问登录页失败: {e}")
             return None, False
@@ -236,7 +278,7 @@ class LibraryAuthenticator:
             
         if response.status_code != 200:
             logger.error(f"访问登录页失败，状态码: {response.status_code}")
-            logger.debug(f"响应内容片段: {response.text[:200]}")
+            logger.debug(f"响应内容片段: {response.text[:500]}")
             return None, False
 
         soup = BeautifulSoup(response.text, "html.parser")
