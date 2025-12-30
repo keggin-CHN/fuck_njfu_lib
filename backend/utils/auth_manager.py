@@ -172,11 +172,22 @@ class LibraryAuthenticator:
     def get_initial_client_ticket(self):
         url = "https://webvpn.njfu.edu.cn/rump_frontend/login/"
         try:
+            logger.info(f"正在请求初始 ticket: {url}")
             response = self.session.get(url, timeout=10)
+            logger.info(f"初始 ticket 请求响应码: {response.status_code}")
+            
             if response and response.status_code == 200:
-                return self.session.cookies.get("my_client_ticket")
+                ticket = self.session.cookies.get("my_client_ticket")
+                if ticket:
+                    logger.info("成功获取 my_client_ticket")
+                    return ticket
+                else:
+                    logger.warning(f"响应成功但未找到 my_client_ticket。Cookies: {self.session.cookies.get_dict()}")
+            else:
+                logger.warning(f"获取初始 ticket 响应异常: {response.status_code if response else 'None'}")
         except Exception as e:
             logger.error(f"获取初始 ticket 失败: {e}")
+            logger.error(traceback.format_exc())
         return None
 
     def check_need_captcha(self, username, salt, client_ticket=None):
@@ -198,8 +209,10 @@ class LibraryAuthenticator:
             return True
 
     def first_level_auth(self):
+        logger.info("开始第一级认证流程...")
         my_client_ticket = self.get_initial_client_ticket()
         if not my_client_ticket:
+            logger.error("第一级认证失败: 无法获取初始 client ticket")
             return None, False
             
         # 尝试获取 route cookie
@@ -230,6 +243,7 @@ class LibraryAuthenticator:
         rm_shown = soup.find("input", {"name": "rmShown"})["value"] if soup.find("input", {"name": "rmShown"}) else None
 
         if not all([lt, salt, dllt, execution, event_id, rm_shown]):
+            logger.error(f"登录页参数解析失败: lt={bool(lt)}, salt={bool(salt)}, dllt={bool(dllt)}, execution={bool(execution)}, event_id={bool(event_id)}, rm_shown={bool(rm_shown)}")
             return None, False
 
         encrypted_password = encrypt_cas_password(self.password1, salt)
@@ -267,6 +281,7 @@ class LibraryAuthenticator:
             return None, False
 
         if not login_response:
+            logger.error("登录响应为空")
             return None, False
 
         if login_response.status_code == 302:
@@ -294,6 +309,15 @@ class LibraryAuthenticator:
             need_captcha = self.check_need_captcha(self.username, salt)
             return None, need_captcha
         else:
+            logger.error(f"登录失败，状态码: {login_response.status_code}")
+            # 尝试解析错误信息
+            try:
+                soup = BeautifulSoup(login_response.text, "html.parser")
+                msg = soup.find(id="msg")
+                if msg:
+                    logger.error(f"页面返回错误信息: {msg.text.strip()}")
+            except:
+                pass
             return None, False
 
     def get_public_key(self):
@@ -397,7 +421,8 @@ class LibraryAuthenticator:
                 return False, True, "需要验证码,请在统一认证中心登录一次"
 
             if not my_client_ticket:
-                return False, False, "统一认证密码错误，请重新输入"
+                # 此时日志中应该已经记录了具体原因
+                return False, False, "统一认证失败(密码错误或参数解析失败)，请查看后台日志"
 
             # 增加缓冲时间，等待 WebVPN 同步 Session
             logger.info("统一认证成功，等待 2 秒以同步 WebVPN 会话...")
