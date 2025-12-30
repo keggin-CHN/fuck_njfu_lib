@@ -157,8 +157,28 @@ class LibraryAuthenticator:
         target_session = session if session else self.session
         try:
             logger.info("正在获取 route cookie...")
+            
+            # 1. 先访问 WebVPN 首页，模拟正常浏览器行为，获取基础 Cookies
+            try:
+                home_url = "https://webvpn.njfu.edu.cn/"
+                logger.info(f"预访问 WebVPN 首页: {home_url}")
+                target_session.get(home_url, timeout=5)
+            except Exception as e:
+                logger.warning(f"预访问 WebVPN 首页失败: {e}")
+
+            # 2. 请求 route cookie
             route_url = "https://webvpn.njfu.edu.cn/webvpn/cookie/?domain=uia.njfu.edu.cn&path=%2Fauthserver%2Flogin"
-            headers = {'accept': '*/*', 'referer': "https://webvpn.njfu.edu.cn/"}
+            headers = {
+                'Accept': '*/*',
+                'Referer': "https://webvpn.njfu.edu.cn/",
+                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-origin',
+            }
+            
             response = target_session.get(route_url, headers=headers, timeout=5)
             
             # 优先检查响应体中的 route
@@ -178,10 +198,20 @@ class LibraryAuthenticator:
 
             logger.warning(f"未能在响应中找到 route cookie。状态码: {response.status_code}")
             logger.info(f"route cookie 响应内容(前500字符): {response.text[:500]}")
-            return None
+            
+            # 尝试使用硬编码的 route cookie (来自 Windows 成功日志)
+            fallback_route = "27d013fb8180661ab1bad8dfe911e19e"
+            logger.warning(f"尝试使用硬编码的 route cookie: {fallback_route}")
+            target_session.cookies.set('route', fallback_route, domain='webvpn.njfu.edu.cn', path='/')
+            return fallback_route
+            
         except Exception as e:
             logger.warning(f"获取 route cookie 失败: {e}")
-            return None
+            # 异常情况下也尝试 fallback
+            fallback_route = "27d013fb8180661ab1bad8dfe911e19e"
+            logger.warning(f"异常后尝试使用硬编码的 route cookie: {fallback_route}")
+            target_session.cookies.set('route', fallback_route, domain='webvpn.njfu.edu.cn', path='/')
+            return fallback_route
 
     def get_initial_client_ticket(self):
         url = "https://webvpn.njfu.edu.cn/rump_frontend/login/"
