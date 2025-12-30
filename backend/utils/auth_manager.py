@@ -160,14 +160,24 @@ class LibraryAuthenticator:
             route_url = "https://webvpn.njfu.edu.cn/webvpn/cookie/?domain=uia.njfu.edu.cn&path=%2Fauthserver%2Flogin"
             headers = {'accept': '*/*', 'referer': "https://webvpn.njfu.edu.cn/"}
             response = target_session.get(route_url, headers=headers, timeout=5)
+            
+            # 优先检查响应体中的 route
             match = re.search(r'route=([^;]+)', response.text)
             if match:
                 route = match.group(1)
                 target_session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
-                logger.info(f"成功获取并设置 route cookie: {route}")
+                logger.info(f"成功从响应体获取并设置 route cookie: {route}")
                 return route
+            
+            # 其次检查 Cookies 中是否已包含 route
+            if 'route' in response.cookies:
+                route = response.cookies.get('route')
+                target_session.cookies.set('route', route, domain='webvpn.njfu.edu.cn', path='/')
+                logger.info(f"成功从Cookies获取并设置 route cookie: {route}")
+                return route
+
             logger.warning(f"未能在响应中找到 route cookie。状态码: {response.status_code}")
-            logger.debug(f"route cookie 响应内容: {response.text[:500]}")
+            logger.info(f"route cookie 响应内容(前500字符): {response.text[:500]}")
             return None
         except Exception as e:
             logger.warning(f"获取 route cookie 失败: {e}")
