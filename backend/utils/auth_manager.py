@@ -17,6 +17,104 @@ from config import Config
 
 logger = logging.getLogger(__name__)
 
+# 延迟导入 warp_manager 以避免循环依赖
+_warp_manager = None
+
+def get_warp_manager():
+    """延迟加载 WarpManager 实例"""
+    global _warp_manager
+    if _warp_manager is None:
+        try:
+            from utils.warp_manager import WarpManager
+            _warp_manager = WarpManager()
+        except ImportError:
+            logger.warning("无法导入 WarpManager，IP 封禁检测功能将不可用")
+            _warp_manager = False  # 标记为不可用
+    return _warp_manager if _warp_manager else None
+
+
+def check_ip_blocked(response, context=""):
+    """
+    检查响应是否表明 IP 被封禁
+    
+    Args:
+        response: requests.Response 对象
+        context: 请求上下文描述，用于日志
+    
+    Returns:
+        bool: True 表示 IP 被封禁
+    """
+    if response is None:
+        return False
+    
+    # 检查状态码
+    blocked_status_codes = [403, 502, 503, 504]
+    if response.status_code in blocked_status_codes:
+        logger.warning(f"[{context}] 检测到可能的 IP 封禁，状态码: {response.status_code}")
+        return True
+    
+    # 检查响应内容中的封禁关键词
+    try:
+        text = response.text.lower()
+        blocked_keywords = ['blocked', 'banned', 'forbidden', 'access denied', '访问被拒绝', '封禁', 'ip被']
+        for keyword in blocked_keywords:
+            if keyword in text:
+                logger.warning(f"[{context}] 检测到封禁关键词: {keyword}")
+                return True
+    except:
+        pass
+    
+    return False
+
+
+def handle_ip_block(response, context=""):
+    """
+    处理 IP 封禁情况：重连 WARP 并通知管理员
+    
+    Args:
+        response: requests.Response 对象
+        context: 请求上下文描述
+    
+    Returns:
+        bool: True 表示成功处理（重连成功），False 表示处理失败
+    """
+    warp_mgr = get_warp_manager()
+    if not warp_mgr:
+        logger.error("WarpManager 不可用，无法处理 IP 封禁")
+        return False
+    
+    # 收集错误详情
+    error_details = {
+        'context': context,
+        'status_code': response.status_code if response else 'N/A',
+        'url': response.url if response else 'N/A',
+        'response_text': response.text[:500] if response and response.text else 'N/A'
+    }
+    
+    logger.warning(f"检测到 IP 封禁，正在尝试重连 WARP... 详情: {error_details}")
+    
+    # 尝试重连 WARP
+    success = warp_mgr.reconnect_warp()
+    
+    if success:
+        new_ip = warp_mgr.get_current_ip()
+        logger.info(f"WARP 重连成功，新 IP: {new_ip}")
+        
+        # 发送通知给管理员
+        try:
+            warp_mgr.notify_admin_ip_blocked(
+                old_ip="被封禁IP",
+                new_ip=new_ip,
+                error_details=error_details
+            )
+        except Exception as e:
+            logger.error(f"发送 IP 封禁通知失败: {e}")
+        
+        return True
+    else:
+        logger.error("WARP 重连失败")
+        return False
+
 # 禁用 InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -266,21 +364,39 @@ class LibraryAuthenticator:
             "authserver/login?service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
         )
         
-        try:
-            logger.info(f"正在访问登录准备页面: {login_prepare_url}")
-            response = self.session.get(login_prepare_url, timeout=10)
-            logger.info(f"登录准备页面响应码: {response.status_code}")
-            
-            # 针对 502/503 错误进行一次重试
-            if response.status_code in [502, 503]:
+        max_retries = 2
+        response = None
+        
+        for retry in range(max_retries):
+            try:
+                logger.info(f"正在访问登录准备页面: {login_prepare_url} (尝试 {retry + 1}/{max_retries})")
+                response = self.session.get(login_prepare_url, timeout=10)
+                logger.info(f"登录准备页面响应码: {response.status_code}")
+                
+                # 检查是否 IP 被封禁
+                if check_ip_blocked(response, "第一级认证-登录准备"):
+                    if handle_ip_block(response, "第一级认证-登录准备"):
+                        logger.info("IP 封禁处理成功，重试请求...")
+                        time.sleep(2)
+                        continue
+                    else:
+                        logger.error("IP 封禁处理失败")
+                        return None, False
+                
+                # 请求成功，跳出重试循环
+                if response.status_code == 200:
+                    break
+                    
+                # 其他错误，等待后重试
                 logger.warning(f"遇到 {response.status_code} 错误，等待 2 秒后重试...")
                 time.sleep(2)
-                response = self.session.get(login_prepare_url, timeout=10)
-                logger.info(f"重试登录准备页面响应码: {response.status_code}")
 
-        except Exception as e:
-            logger.error(f"访问登录页失败: {e}")
-            return None, False
+            except Exception as e:
+                logger.error(f"访问登录页失败: {e}")
+                if retry < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                return None, False
 
         if not response:
             logger.error("登录准备页面响应为空")
@@ -382,34 +498,52 @@ class LibraryAuthenticator:
     def get_public_key(self):
         public_key_url = HttpClient.get_lib_url("ic-web/login/publicKey?vpn-12-libseat.njfu.edu.cn")
         api_headers = {"accept": "application/json, text/plain, */*"}
-        response = None # 初始化变量，防止 UnboundLocalError
-        try:
-            response = self.session.get(
-                public_key_url,
-                headers=api_headers,
-                timeout=10
-            )
-
-            if response and response.status_code == 200:
-                try:
-                    data = response.json()
-                    if data.get("code") == 0:
-                        pub_data = data.get("data", {})
-                        return pub_data.get("publicKey"), pub_data.get("nonceStr")
+        response = None  # 初始化变量，防止 UnboundLocalError
+        
+        max_retries = 2
+        for retry in range(max_retries):
+            try:
+                response = self.session.get(
+                    public_key_url,
+                    headers=api_headers,
+                    timeout=10
+                )
+                
+                # 检查是否 IP 被封禁
+                if check_ip_blocked(response, "获取公钥"):
+                    if handle_ip_block(response, "获取公钥"):
+                        logger.info("IP 封禁处理成功，重试获取公钥...")
+                        time.sleep(2)
+                        continue
                     else:
-                        logger.warning(f"获取公钥API返回错误代码: {data}")
-                except Exception as e:
-                    logger.error(f"解析公钥响应JSON失败: {str(e)}, 内容: {response.text[:100]}")
-            else:
-                status = response.status_code if response else "None"
-                logger.warning(f"获取公钥HTTP请求失败, 状态码: {status}")
-                if response:
-                    logger.warning(f"响应内容: {response.text[:500]}") # 增加日志长度
+                        logger.error("IP 封禁处理失败")
+                        return None, None
+
+                if response and response.status_code == 200:
+                    try:
+                        data = response.json()
+                        if data.get("code") == 0:
+                            pub_data = data.get("data", {})
+                            return pub_data.get("publicKey"), pub_data.get("nonceStr")
+                        else:
+                            logger.warning(f"获取公钥API返回错误代码: {data}")
+                    except Exception as e:
+                        logger.error(f"解析公钥响应JSON失败: {str(e)}, 内容: {response.text[:100]}")
                 else:
-                    logger.warning("响应对象为空 (None)")
-        except Exception as e:
-            logger.error(f"获取公钥过程中发生异常: {str(e)}")
-            logger.error(traceback.format_exc()) # 打印完整堆栈
+                    status = response.status_code if response else "None"
+                    logger.warning(f"获取公钥HTTP请求失败, 状态码: {status}")
+                    if response:
+                        logger.warning(f"响应内容: {response.text[:500]}")
+                    else:
+                        logger.warning("响应对象为空 (None)")
+                        
+            except Exception as e:
+                logger.error(f"获取公钥过程中发生异常: {str(e)}")
+                logger.error(traceback.format_exc())
+                
+            # 如果还有重试机会，等待后继续
+            if retry < max_retries - 1:
+                time.sleep(2)
             
         return None, None
 
@@ -453,6 +587,15 @@ class LibraryAuthenticator:
                     json=payload,
                     timeout=15
                 )
+                
+                # 检查是否 IP 被封禁
+                if check_ip_blocked(response, "第二级认证"):
+                    if handle_ip_block(response, "第二级认证"):
+                        logger.info("IP 封禁处理成功，重试第二级认证...")
+                        time.sleep(2)
+                        continue
+                    else:
+                        logger.error("IP 封禁处理失败")
 
                 if response and response.status_code == 200:
                     try:

@@ -1,4 +1,3 @@
-import requests
 import logging
 from bs4 import BeautifulSoup
 from models import db, Traffic, User
@@ -32,20 +31,33 @@ class LibraryTrafficMonitor:
                 logger.error(f"流量监控：无法获取用户 {user.username} 的有效认证")
                 return None
 
-            cookies = {"my_client_ticket": authenticator.my_client_ticket}
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
             }
 
-            response = requests.get(
+            # 使用 authenticator.session 发送请求，这样会自动使用WARP代理
+            response = authenticator.session.get(
                 LibraryTrafficMonitor.TRAFFIC_URL,
-                cookies=cookies,
                 headers=headers,
                 timeout=LibraryTrafficMonitor.REQUEST_TIMEOUT
             )
 
             if response.status_code != 200:
                 logger.error(f"流量监控：请求失败，状态码 {response.status_code}")
+                
+                # 检查是否是IP被封导致的错误
+                from utils.warp_manager import WarpManager
+                if WarpManager.is_ip_blocked_response(
+                    status_code=response.status_code,
+                    response_text=response.text
+                ):
+                    logger.warning("流量监控：检测到可能的IP封禁，尝试更换IP...")
+                    WarpManager.handle_blocked_ip(
+                        status_code=response.status_code,
+                        response_text=response.text[:500] if response.text else None,
+                        context="流量监控采集"
+                    )
+                
                 return None
 
             soup = BeautifulSoup(response.text, "html.parser")

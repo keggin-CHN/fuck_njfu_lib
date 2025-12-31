@@ -263,3 +263,52 @@ class NotificationService:
         except requests.RequestException as e:
             logger.error(f"向用户 {user.username} 发送设置更新通知失败: {str(e)}")
             return False, str(e)
+
+    @staticmethod
+    def send_custom_notification(user, title, content):
+        """发送自定义通知（用于系统告警等）"""
+        if not hasattr(user, 'notification_type') or user.notification_type == 'none' or not user.webhook_url:
+            return False, "用户未配置通知"
+
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        if user.notification_type == 'wechat':
+            message = f"""## {title}
+> **时间**: {now}
+
+{content}
+"""
+            data = {"msgtype": "markdown", "markdown": {"content": message}}
+        elif user.notification_type == 'telegram':
+            message = f"""🔔 *{title}*
+
+🕒 时间: {now}
+
+{content}
+"""
+            data = {"text": message, "parse_mode": "Markdown", "disable_web_page_preview": True}
+        elif user.notification_type == 'feishu':
+            message = f"""【{title}】
+时间: {now}
+
+{content}
+"""
+            data = {"msg_type": "text", "content": {"text": message}}
+        elif user.notification_type == 'dingtalk':
+            message = f"""【{title}】
+时间: {now}
+
+{content}
+"""
+            data = {"msgtype": "text", "text": {"content": message}}
+        else:
+            return False, "未知的通知类型"
+        
+        try:
+            response = requests.post(user.webhook_url, json=data, timeout=10)
+            response.raise_for_status()
+            logger.info(f"向用户 {getattr(user, 'username', 'unknown')} 发送自定义通知成功: {title}")
+            return True, "发送成功"
+        except requests.RequestException as e:
+            logger.error(f"向用户 {getattr(user, 'username', 'unknown')} 发送自定义通知失败: {str(e)}")
+            return False, str(e)

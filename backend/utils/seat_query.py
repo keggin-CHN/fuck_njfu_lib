@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from utils.auth_manager import HttpClient
+from utils.auth_manager import HttpClient, check_ip_blocked, handle_ip_block
 
 logger = logging.getLogger(__name__)
 
@@ -29,29 +29,30 @@ class SeatQueryService:
 
     @staticmethod
     def get_seats_data(authenticator, room_id, date_str):
-        try:
-            url = HttpClient.get_lib_url("ic-web/reserve")
+        url = HttpClient.get_lib_url("ic-web/reserve")
 
-            logger.info(f"正在获取房间 {room_id} 日期 {date_str} 的座位数据")
-            logger.info(f"请求URL: {url}")
+        logger.info(f"正在获取房间 {room_id} 日期 {date_str} 的座位数据")
+        logger.info(f"请求URL: {url}")
 
-            params = {
-                "vpn-12-libseat.njfu.edu.cn": "",
-                "roomIds": room_id,
-                "resvDates": date_str,
-                "sysKind": 8
-            }
+        params = {
+            "vpn-12-libseat.njfu.edu.cn": "",
+            "roomIds": room_id,
+            "resvDates": date_str,
+            "sysKind": 8
+        }
 
-            api_headers = {
-                "token": authenticator.token,
-                "lan": "1",
-                "Referer": HttpClient.get_lib_url(""),
-                "Origin": "https://webvpn.njfu.edu.cn",
-            }
+        api_headers = {
+            "token": authenticator.token,
+            "lan": "1",
+            "Referer": HttpClient.get_lib_url(""),
+            "Origin": "https://webvpn.njfu.edu.cn",
+        }
 
-            logger.info(f"请求参数: {params}")
-            logger.info(f"认证token存在: {bool(authenticator.token)}")
+        logger.info(f"请求参数: {params}")
+        logger.info(f"认证token存在: {bool(authenticator.token)}")
 
+        max_retries = 2
+        for retry in range(max_retries):
             try:
                 # 使用 authenticator.session 发送请求以保持会话状态
                 response = authenticator.session.get(
@@ -60,28 +61,39 @@ class SeatQueryService:
                     params=params,
                     timeout=15
                 )
-            except Exception as e:
-                logger.error(f"HTTP请求异常: {str(e)}", exc_info=True)
-                response = None
+                
+                # 检查是否 IP 被封禁
+                if check_ip_blocked(response, "座位查询"):
+                    if handle_ip_block(response, "座位查询"):
+                        logger.info("IP 封禁处理成功，重试座位查询...")
+                        import time
+                        time.sleep(2)
+                        continue
+                    else:
+                        logger.error("IP 封禁处理失败")
 
-            if response and response.status_code == 200:
-                result = response.json()
-                logger.info(f"API响应: code={result.get('code')}, message={result.get('message')}")
-                if result.get("code") == 0:
-                    data = result.get("data", [])
-                    logger.info(f"成功获取房间 {room_id} 的座位数据，共 {len(data)} 个座位")
-                    return data
+                if response and response.status_code == 200:
+                    result = response.json()
+                    logger.info(f"API响应: code={result.get('code')}, message={result.get('message')}")
+                    if result.get("code") == 0:
+                        data = result.get("data", [])
+                        logger.info(f"成功获取房间 {room_id} 的座位数据，共 {len(data)} 个座位")
+                        return data
+                    else:
+                        error_msg = result.get('message', '未知错误')
+                        logger.error(f"获取座位数据失败: {error_msg}, 完整响应: {result}")
                 else:
-                    error_msg = result.get('message', '未知错误')
-                    logger.error(f"获取座位数据失败: {error_msg}, 完整响应: {result}")
-            else:
-                status = response.status_code if response else "请求失败"
-                logger.error(f"获取座位数据请求失败，状态码：{status}")
-                if response:
-                    logger.error(f"响应内容: {response.text[:500]}")
+                    status = response.status_code if response else "请求失败"
+                    logger.error(f"获取座位数据请求失败，状态码：{status}")
+                    if response:
+                        logger.error(f"响应内容: {response.text[:500]}")
 
-        except Exception as e:
-            logger.error(f"获取座位数据过程出错: {str(e)}", exc_info=True)
+            except Exception as e:
+                logger.error(f"获取座位数据过程出错: {str(e)}", exc_info=True)
+                if retry < max_retries - 1:
+                    import time
+                    time.sleep(2)
+                    continue
 
         return None
 

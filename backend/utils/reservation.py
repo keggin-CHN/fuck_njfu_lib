@@ -1,6 +1,6 @@
 import datetime
 import logging
-from .auth_manager import HttpClient, AuthManager, handle_exception
+from .auth_manager import HttpClient, AuthManager, handle_exception, check_ip_blocked, handle_ip_block
 from .date_utils import get_today_date, get_tomorrow_date, normalize_time_format, is_friday, get_end_time
 from models import db, ReservationHistory
 
@@ -146,62 +146,84 @@ class SeatReservation:
         logger.info(
             f"用户 {self.user.username} 开始预约: 区域 {area}, 座位号 {seat_number}, 日期 {date_str}, 时间 {start_time} - {end_time}")
 
-        try:
-            # 使用 authenticator.session 发送请求以保持会话状态
-            response = self.authenticator.session.post(
-                reserve_url,
-                headers=api_headers,
-                json=payload
-            )
+        max_retries = 2
+        for retry in range(max_retries):
+            try:
+                # 使用 authenticator.session 发送请求以保持会话状态
+                response = self.authenticator.session.post(
+                    reserve_url,
+                    headers=api_headers,
+                    json=payload
+                )
+                
+                # 检查是否 IP 被封禁
+                if check_ip_blocked(response, "座位预约"):
+                    if handle_ip_block(response, "座位预约"):
+                        logger.info("IP 封禁处理成功，重试预约请求...")
+                        import time
+                        time.sleep(2)
+                        continue
+                    else:
+                        logger.error("IP 封禁处理失败")
 
-            if response and response.status_code == 200:
-                result = response.json()
-                if result.get("code") == 0:
-                    message = f"预约成功: {result.get('message', '操作成功')}"
-                    logger.info(f"用户 {self.user.username} {message}")
+                if response and response.status_code == 200:
+                    result = response.json()
+                    if result.get("code") == 0:
+                        message = f"预约成功: {result.get('message', '操作成功')}"
+                        logger.info(f"用户 {self.user.username} {message}")
 
-                    uuid = None
-                    if "data" in result:
-                        uuid = result["data"].get("uuid")
+                        uuid = None
+                        if "data" in result:
+                            uuid = result["data"].get("uuid")
 
-                    self._record_reservation_history(
-                        area, seat_number, seat_id, date_str, start_time, end_time, "成功", message,
-                        uuid=uuid, is_late_protection=is_late_protection, is_auto_find=is_auto_find,
-                        send_notification=send_notification
-                    )
-                    return True, message
+                        self._record_reservation_history(
+                            area, seat_number, seat_id, date_str, start_time, end_time, "成功", message,
+                            uuid=uuid, is_late_protection=is_late_protection, is_auto_find=is_auto_find,
+                            send_notification=send_notification
+                        )
+                        return True, message
+                    else:
+                        # 检查是否是 Token 失效导致的错误
+                        error_msg = result.get('message', '未知错误')
+                        if "登录" in error_msg or "Token" in error_msg or "认证" in error_msg:
+                            logger.warning(f"用户 {self.user.username} 预约时遇到认证错误: {error_msg}，尝试刷新认证后重试")
+                            # 尝试刷新认证
+                            self.authenticator = AuthManager.refresh_authenticator(self.user)
+                            if self.authenticator:
+                                # 更新 header 中的 token
+                                api_headers["token"] = self.authenticator.token
+                                # 重新发送请求
+                                response = self.authenticator.session.post(
+                                    reserve_url,
+                                    headers=api_headers,
+                                    json=payload
+                                )
+                                if response and response.status_code == 200:
+                                    result = response.json()
+                                    if result.get("code") == 0:
+                                        message = f"重试预约成功: {result.get('message', '操作成功')}"
+                                        logger.info(f"用户 {self.user.username} {message}")
+                                        uuid = None
+                                        if "data" in result:
+                                            uuid = result["data"].get("uuid")
+                                        self._record_reservation_history(
+                                            area, seat_number, seat_id, date_str, start_time, end_time, "成功", message,
+                                            uuid=uuid, is_late_protection=is_late_protection, is_auto_find=is_auto_find,
+                                            send_notification=send_notification
+                                        )
+                                        return True, message
+
+                        message = f"预约失败: {error_msg}"
+                        logger.error(f"用户 {self.user.username} {message}")
+                        self._record_reservation_history(
+                            area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
+                            is_late_protection=is_late_protection, is_auto_find=is_auto_find,
+                            send_notification=send_notification
+                        )
+                        return False, message
                 else:
-                    # 检查是否是 Token 失效导致的错误
-                    error_msg = result.get('message', '未知错误')
-                    if "登录" in error_msg or "Token" in error_msg or "认证" in error_msg:
-                        logger.warning(f"用户 {self.user.username} 预约时遇到认证错误: {error_msg}，尝试刷新认证后重试")
-                        # 尝试刷新认证
-                        self.authenticator = AuthManager.refresh_authenticator(self.user)
-                        if self.authenticator:
-                            # 更新 header 中的 token
-                            api_headers["token"] = self.authenticator.token
-                            # 重新发送请求
-                            response = self.authenticator.session.post(
-                                reserve_url,
-                                headers=api_headers,
-                                json=payload
-                            )
-                            if response and response.status_code == 200:
-                                result = response.json()
-                                if result.get("code") == 0:
-                                    message = f"重试预约成功: {result.get('message', '操作成功')}"
-                                    logger.info(f"用户 {self.user.username} {message}")
-                                    uuid = None
-                                    if "data" in result:
-                                        uuid = result["data"].get("uuid")
-                                    self._record_reservation_history(
-                                        area, seat_number, seat_id, date_str, start_time, end_time, "成功", message,
-                                        uuid=uuid, is_late_protection=is_late_protection, is_auto_find=is_auto_find,
-                                        send_notification=send_notification
-                                    )
-                                    return True, message
-
-                    message = f"预约失败: {error_msg}"
+                    status = response.status_code if response else "请求失败"
+                    message = f"预约请求失败，状态码：{status}"
                     logger.error(f"用户 {self.user.username} {message}")
                     self._record_reservation_history(
                         area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
@@ -209,26 +231,29 @@ class SeatReservation:
                         send_notification=send_notification
                     )
                     return False, message
-            else:
-                status = response.status_code if response else "请求失败"
-                message = f"预约请求失败，状态码：{status}"
+
+            except Exception as e:
+                message = f"预约过程出错: {str(e)}"
                 logger.error(f"用户 {self.user.username} {message}")
+                if retry < max_retries - 1:
+                    import time
+                    time.sleep(2)
+                    continue
                 self._record_reservation_history(
                     area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
                     is_late_protection=is_late_protection, is_auto_find=is_auto_find,
                     send_notification=send_notification
                 )
                 return False, message
-
-        except Exception as e:
-            message = f"预约过程出错: {str(e)}"
-            logger.error(f"用户 {self.user.username} {message}")
-            self._record_reservation_history(
-                area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
-                is_late_protection=is_late_protection, is_auto_find=is_auto_find,
-                send_notification=send_notification
-            )
-            return False, message
+        
+        # 如果所有重试都失败
+        message = "预约请求失败：已达最大重试次数"
+        self._record_reservation_history(
+            area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
+            is_late_protection=is_late_protection, is_auto_find=is_auto_find,
+            send_notification=send_notification
+        )
+        return False, message
 
     def _record_reservation_history(self, area, seat_number, seat_id, date_str, start_time, end_time, status,
                                     message=None, uuid=None, is_late_protection=False, is_auto_find=False, send_notification=True):
@@ -294,34 +319,50 @@ class SeatReservation:
             "lan": "1",
         }
 
-        try:
-            response = self.authenticator.session.get(
-                url,
-                headers=api_headers,
-                params=params
-            )
+        max_retries = 2
+        for retry in range(max_retries):
+            try:
+                response = self.authenticator.session.get(
+                    url,
+                    headers=api_headers,
+                    params=params
+                )
+                
+                # 检查是否 IP 被封禁
+                if check_ip_blocked(response, "获取预约信息"):
+                    if handle_ip_block(response, "获取预约信息"):
+                        logger.info("IP 封禁处理成功，重试获取预约信息...")
+                        import time
+                        time.sleep(2)
+                        continue
+                    else:
+                        logger.error("IP 封禁处理失败")
 
-            if response and response.status_code == 200:
-                result = response.json()
-                if result.get("code") == 0:
-                    logger.info(f"成功获取用户 {self.user.username} 的预约信息")
-                    return result.get("data", [])
+                if response and response.status_code == 200:
+                    result = response.json()
+                    if result.get("code") == 0:
+                        logger.info(f"成功获取用户 {self.user.username} 的预约信息")
+                        return result.get("data", [])
+                    else:
+                        message = f"获取预约信息失败: {result.get('message', '未知错误')}"
+                        logger.error(message)
+                        from .logger_utils import add_log
+                        add_log(message, user=self.user, response_code=500, error_message=message)
                 else:
-                    message = f"获取预约信息失败: {result.get('message', '未知错误')}"
+                    status = response.status_code if response else "请求失败"
+                    message = f"获取预约信息请求失败，状态码：{status}"
                     logger.error(message)
                     from .logger_utils import add_log
-                    add_log(message, user=self.user, response_code=500, error_message=message)
-            else:
-                status = response.status_code if response else "请求失败"
-                message = f"获取预约信息请求失败，状态码：{status}"
+                    add_log(message, user=self.user, response_code=status or 500, error_message=message)
+            except Exception as e:
+                message = f"获取预约信息过程出错: {str(e)}"
                 logger.error(message)
+                if retry < max_retries - 1:
+                    import time
+                    time.sleep(2)
+                    continue
                 from .logger_utils import add_log
-                add_log(message, user=self.user, response_code=status or 500, error_message=message)
-        except Exception as e:
-            message = f"获取预约信息过程出错: {str(e)}"
-            logger.error(message)
-            from .logger_utils import add_log
-            add_log(message, user=self.user, response_code=500, error_message=message)
+                add_log(message, user=self.user, response_code=500, error_message=message)
 
         return []
 
@@ -331,45 +372,58 @@ class SeatReservation:
 
     @handle_exception
     def cancel_reservation(self, uuid):
-            if not uuid:
-                message = "取消预约失败：没有提供预约UUID"
-                logger.error(message)
-                from .logger_utils import add_log
-                add_log(message, user=self.user, response_code=400, error_message=message)
-                return False, message
-    
-            if not self.ensure_authenticated():
-                message = "取消预约失败：认证失效"
-                self.record_auth_failure("cancel")
-                return False, message
-    
-            url = HttpClient.get_lib_url("ic-web/reserve/delete")
-    
-            params = {
-                "vpn-12-libseat.njfu.edu.cn": ""
-            }
-    
-            api_headers = {
-                "content-type": "application/json;charset=UTF-8",
-                "token": self.authenticator.token,
-                "lan": "1",
-            }
-    
-            payload = {
-                "uuid": uuid
-            }
-    
+        if not uuid:
+            message = "取消预约失败：没有提供预约UUID"
+            logger.error(message)
+            from .logger_utils import add_log
+            add_log(message, user=self.user, response_code=400, error_message=message)
+            return False, message
+
+        if not self.ensure_authenticated():
+            message = "取消预约失败：认证失效"
+            self.record_auth_failure("cancel")
+            return False, message
+
+        url = HttpClient.get_lib_url("ic-web/reserve/delete")
+
+        params = {
+            "vpn-12-libseat.njfu.edu.cn": ""
+        }
+
+        api_headers = {
+            "content-type": "application/json;charset=UTF-8",
+            "token": self.authenticator.token,
+            "lan": "1",
+        }
+
+        payload = {
+            "uuid": uuid
+        }
+
+        from .logger_utils import add_log
+        logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
+        add_log(f"用户尝试取消预约 UUID: {uuid}", user=self.user)
+        
+        max_retries = 2
+        for retry in range(max_retries):
             try:
-                logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
-                from .logger_utils import add_log
-                add_log(f"用户尝试取消预约 UUID: {uuid}", user=self.user)
                 response = self.authenticator.session.post(
                     url,
                     headers=api_headers,
                     params=params,
                     json=payload
                 )
-    
+                
+                # 检查是否 IP 被封禁
+                if check_ip_blocked(response, "取消预约"):
+                    if handle_ip_block(response, "取消预约"):
+                        logger.info("IP 封禁处理成功，重试取消预约请求...")
+                        import time
+                        time.sleep(2)
+                        continue
+                    else:
+                        logger.error("IP 封禁处理失败")
+
                 if response and response.status_code == 200:
                     result = response.json()
                     if result.get("code") == 0:
@@ -390,10 +444,14 @@ class SeatReservation:
             except Exception as e:
                 message = f"取消预约过程出错: {str(e)}"
                 logger.error(message)
+                if retry < max_retries - 1:
+                    import time
+                    time.sleep(2)
+                    continue
                 add_log(message, user=self.user, response_code=500, error_message=message)
                 return False, message
-    
-            return False, "取消预约失败"
+
+        return False, "取消预约失败：已达最大重试次数"
 
     def reserve_today_seat(self, area, seat_number, seat_id, start_time, is_late_protection=True, is_auto_find=False):
         today = get_today_date()
