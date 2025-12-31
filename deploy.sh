@@ -19,6 +19,8 @@ DEFAULT_PORT=5000
 DEFAULT_USE_WARP=true
 APP_PORT=$DEFAULT_PORT
 USE_WARP=$DEFAULT_USE_WARP
+INSTALL_DIR="/opt/library-reservation"
+REPO_URL="https://github.com/keggin-CHN/fuck_njfu_lib.git"
 
 # 日志函数
 log_info() {
@@ -260,16 +262,46 @@ EOF
     log_info "WARP 开机自启配置完成"
 }
 
+# 克隆或更新项目
+clone_project() {
+    log_step "获取项目代码..."
+    
+    if [ -d "$INSTALL_DIR" ]; then
+        log_info "检测到已有安装目录: $INSTALL_DIR"
+        read -p "是否删除并重新安装？[y/N]: " reinstall
+        case "$reinstall" in
+            [yY][eE][sS]|[yY])
+                log_info "删除旧安装..."
+                rm -rf "$INSTALL_DIR"
+                ;;
+            *)
+                log_info "保留现有安装，尝试更新..."
+                cd "$INSTALL_DIR"
+                git pull origin main || log_warn "更新失败，继续使用现有代码"
+                return 0
+                ;;
+        esac
+    fi
+    
+    log_info "从 GitHub 克隆项目..."
+    git clone "$REPO_URL" "$INSTALL_DIR"
+    
+    if [ ! -d "$INSTALL_DIR" ]; then
+        log_error "项目克隆失败"
+        exit 1
+    fi
+    
+    log_info "项目代码获取完成"
+}
+
 # 部署应用
 deploy_app() {
     log_step "部署图书馆预约应用..."
     
-    # 获取脚本所在目录
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    APP_DIR="$SCRIPT_DIR/backend"
+    APP_DIR="$INSTALL_DIR/backend"
     
     if [ ! -d "$APP_DIR" ]; then
-        log_error "未找到 backend 目录，请确保在项目根目录运行此脚本"
+        log_error "未找到 backend 目录，项目结构可能有问题"
         exit 1
     fi
     
@@ -296,8 +328,7 @@ deploy_app() {
 create_service() {
     log_step "创建系统服务..."
     
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    APP_DIR="$SCRIPT_DIR/backend"
+    APP_DIR="$INSTALL_DIR/backend"
     
     # 获取当前用户（非root）
     REAL_USER=${SUDO_USER:-$USER}
@@ -383,6 +414,8 @@ show_info() {
         echo "  预约请求将使用服务器原始IP"
     fi
     echo ""
+    echo "安装目录: $INSTALL_DIR"
+    echo ""
     echo "============================================"
 }
 
@@ -408,6 +441,7 @@ main() {
     
     interactive_config
     install_base_deps
+    clone_project
     install_warp
     configure_warp
     setup_warp_autostart
