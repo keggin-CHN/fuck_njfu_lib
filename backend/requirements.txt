@@ -1,4 +1,6 @@
 requests~=2.32.3
+requests[socks]
+PySocks~=1.7.1
 bs4~=0.0.2
 beautifulsoup4~=4.13.4
 pycryptodome~=3.22.0

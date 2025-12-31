@@ -13,6 +13,20 @@ class Config:
 
     TIMEZONE = pytz.timezone('Asia/Shanghai')
 
+    # WARP SOCKS5 代理配置
+    # 设置为 True 启用代理，False 禁用
+    USE_WARP_PROXY = os.environ.get('USE_WARP_PROXY', 'true').lower() == 'true'
+    # WARP proxy 模式默认监听地址
+    WARP_PROXY_HOST = os.environ.get('WARP_PROXY_HOST', '127.0.0.1')
+    WARP_PROXY_PORT = int(os.environ.get('WARP_PROXY_PORT', '40000'))
+    
+    @staticmethod
+    def get_proxy_url():
+        """获取SOCKS5代理URL，如果禁用则返回None"""
+        if Config.USE_WARP_PROXY:
+            return f"socks5h://{Config.WARP_PROXY_HOST}:{Config.WARP_PROXY_PORT}"
+        return None
+
     SEAT_AREAS = {
         "二层A区": {"first_seat_id": 100455361, "seats_count": 441},
         "二层B区": {"first_seat_id": 100455802, "seats_count": 96},
