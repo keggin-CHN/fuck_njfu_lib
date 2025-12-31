@@ -1,4 +1,5 @@
 import logging
+import time
 from bs4 import BeautifulSoup
 from models import db, Traffic, User
 from datetime import datetime
@@ -10,6 +11,31 @@ class LibraryTrafficMonitor:
 
     TRAFFIC_URL = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OA==/LjE0Ny4xMDEuMTUyLjEwMi4xMDEuMTAyLjE1Ny45Ny4xNTEuOTkuMTA0LjEwMi4xNTIuMTEyLjExMS4xNTM=/book/view"
     REQUEST_TIMEOUT = 15
+    MAX_RETRIES = 2
+
+    @staticmethod
+    def _check_and_handle_ip_block(response, context="流量监控"):
+        """检查并处理IP封禁"""
+        try:
+            from utils.warp_manager import WarpManager
+            
+            # 检查是否是IP被封导致的错误
+            blocked_codes = [403, 502, 503, 504]
+            if response.status_code in blocked_codes:
+                logger.warning(f"{context}：状态码 {response.status_code} 可能表示IP被封")
+                
+                # 调用 handle_blocked_ip 处理
+                success = WarpManager.handle_blocked_ip(
+                    status_code=response.status_code,
+                    response_text=response.text[:500] if response.text else None,
+                    context=context
+                )
+                return success
+            
+            return False
+        except Exception as e:
+            logger.error(f"{context}：检查IP封禁时出错: {str(e)}")
+            return False
 
     @staticmethod
     def get_current_traffic():
@@ -35,30 +61,40 @@ class LibraryTrafficMonitor:
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
             }
 
-            # 使用 authenticator.session 发送请求，这样会自动使用WARP代理
-            response = authenticator.session.get(
-                LibraryTrafficMonitor.TRAFFIC_URL,
-                headers=headers,
-                timeout=LibraryTrafficMonitor.REQUEST_TIMEOUT
-            )
-
-            if response.status_code != 200:
-                logger.error(f"流量监控：请求失败，状态码 {response.status_code}")
-                
-                # 检查是否是IP被封导致的错误
-                from utils.warp_manager import WarpManager
-                if WarpManager.is_ip_blocked_response(
-                    status_code=response.status_code,
-                    response_text=response.text
-                ):
-                    logger.warning("流量监控：检测到可能的IP封禁，尝试更换IP...")
-                    WarpManager.handle_blocked_ip(
-                        status_code=response.status_code,
-                        response_text=response.text[:500] if response.text else None,
-                        context="流量监控采集"
+            # 使用重试逻辑
+            for retry in range(LibraryTrafficMonitor.MAX_RETRIES):
+                try:
+                    # 使用 authenticator.session 发送请求，这样会自动使用WARP代理
+                    response = authenticator.session.get(
+                        LibraryTrafficMonitor.TRAFFIC_URL,
+                        headers=headers,
+                        timeout=LibraryTrafficMonitor.REQUEST_TIMEOUT
                     )
-                
-                return None
+
+                    if response.status_code != 200:
+                        logger.error(f"流量监控：请求失败，状态码 {response.status_code} (尝试 {retry + 1}/{LibraryTrafficMonitor.MAX_RETRIES})")
+                        
+                        # 检查是否是IP被封导致的错误，并尝试处理
+                        if LibraryTrafficMonitor._check_and_handle_ip_block(response, "流量监控采集"):
+                            logger.info("流量监控：IP已更换，等待3秒后重试...")
+                            time.sleep(3)
+                            continue
+                        
+                        # 非封禁错误，等待后重试
+                        if retry < LibraryTrafficMonitor.MAX_RETRIES - 1:
+                            time.sleep(2)
+                            continue
+                        return None
+                    
+                    # 请求成功，跳出重试循环
+                    break
+                    
+                except Exception as e:
+                    logger.error(f"流量监控：请求异常 - {str(e)} (尝试 {retry + 1}/{LibraryTrafficMonitor.MAX_RETRIES})")
+                    if retry < LibraryTrafficMonitor.MAX_RETRIES - 1:
+                        time.sleep(2)
+                        continue
+                    return None
 
             soup = BeautifulSoup(response.text, "html.parser")
             logger.debug(f"流量监控：成功获取页面内容, HTML长度: {len(response.text)}")
