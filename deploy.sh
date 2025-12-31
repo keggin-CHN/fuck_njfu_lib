@@ -307,6 +307,9 @@ deploy_app() {
     
     cd "$APP_DIR"
     
+    # 获取运行用户
+    REAL_USER=${SUDO_USER:-$USER}
+    
     # 创建虚拟环境
     log_info "创建 Python 虚拟环境..."
     python3 -m venv venv
@@ -320,6 +323,19 @@ deploy_app() {
     # 初始化数据库
     log_info "初始化数据库..."
     python init_db.py || true
+    
+    # 设置正确的文件权限
+    log_info "设置文件权限..."
+    chown -R "$REAL_USER:$REAL_USER" "$INSTALL_DIR"
+    
+    # 确保数据库文件可写
+    if [ -f "$APP_DIR/library.db" ]; then
+        chmod 664 "$APP_DIR/library.db"
+        log_info "数据库文件权限已设置"
+    fi
+    
+    # 确保目录可写（SQLite需要在目录中创建临时文件）
+    chmod 775 "$APP_DIR"
     
     log_info "应用部署完成"
 }
