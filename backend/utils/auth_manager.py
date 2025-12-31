@@ -13,6 +13,7 @@ from Crypto.Util.Padding import pad
 from Crypto.PublicKey import RSA
 from cryptography.fernet import Fernet
 from functools import wraps
+from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +153,15 @@ class LibraryAuthenticator:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
         })
+        
+        # 配置 WARP SOCKS5 代理
+        proxy_url = Config.get_proxy_url()
+        if proxy_url:
+            self.session.proxies = {
+                'http': proxy_url,
+                'https': proxy_url
+            }
+            logger.info(f"用户 {username} 的会话已配置 WARP 代理: {proxy_url}")
 
     def get_route_cookie(self, session=None):
         target_session = session if session else self.session
@@ -197,21 +207,11 @@ class LibraryAuthenticator:
                 return route
 
             logger.warning(f"未能在响应中找到 route cookie。状态码: {response.status_code}")
-            logger.info(f"route cookie 响应内容(前500字符): {response.text[:500]}")
-            
-            # 尝试使用硬编码的 route cookie (来自 Windows 成功日志)
-            fallback_route = "27d013fb8180661ab1bad8dfe911e19e"
-            logger.warning(f"尝试使用硬编码的 route cookie: {fallback_route}")
-            target_session.cookies.set('route', fallback_route, domain='webvpn.njfu.edu.cn', path='/')
-            return fallback_route
-            
+            logger.debug(f"route cookie 响应内容(前500字符): {response.text[:500]}")
+            return None
         except Exception as e:
             logger.warning(f"获取 route cookie 失败: {e}")
-            # 异常情况下也尝试 fallback
-            fallback_route = "27d013fb8180661ab1bad8dfe911e19e"
-            logger.warning(f"异常后尝试使用硬编码的 route cookie: {fallback_route}")
-            target_session.cookies.set('route', fallback_route, domain='webvpn.njfu.edu.cn', path='/')
-            return fallback_route
+            return None
 
     def get_initial_client_ticket(self):
         url = "https://webvpn.njfu.edu.cn/rump_frontend/login/"
@@ -288,7 +288,6 @@ class LibraryAuthenticator:
             
         if response.status_code != 200:
             logger.error(f"访问登录页失败，状态码: {response.status_code}")
-            logger.debug(f"响应内容片段: {response.text[:500]}")
             return None, False
 
         soup = BeautifulSoup(response.text, "html.parser")
@@ -540,6 +539,16 @@ class LibraryAuthenticator:
 
         try:
             captcha_session = requests.Session()
+            captcha_session.verify = False
+            
+            # 配置 WARP SOCKS5 代理
+            proxy_url = Config.get_proxy_url()
+            if proxy_url:
+                captcha_session.proxies = {
+                    'http': proxy_url,
+                    'https': proxy_url
+                }
+                logger.info(f"验证码会话已配置 WARP 代理: {proxy_url}")
 
             frontend_url = "https://webvpn.njfu.edu.cn/rump_frontend/login/"
             captcha_session.get(frontend_url, timeout=10)
