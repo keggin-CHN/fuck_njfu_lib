@@ -10,7 +10,6 @@ from models import db, User, ReservationSetting, ReservationHistory, Traffic
 from utils.auth_manager import AuthManager, handle_exception
 from utils.reservation import SeatReservation
 from utils.date_utils import get_today_date, get_tomorrow_date
-from utils.traffic_monitor import LibraryTrafficMonitor
 from utils.notification import NotificationService
 from config import Config
 
@@ -145,18 +144,6 @@ def add_scheduler_jobs():
         id="check_late_protection_morning",
         name="Check late protection for all users in the morning",
         replace_existing=True,
-        coalesce=True,
-        max_instances=1
-    )
-
-    scheduler.add_job(
-        func=collect_traffic_data,
-        trigger="interval",
-        minutes=5,
-        id="collect_traffic_data",
-        name="Collect library traffic data every 5 minutes",
-        replace_existing=True,
-        next_run_time=datetime.datetime.now(),
         coalesce=True,
         max_instances=1
     )
@@ -600,15 +587,6 @@ def check_late_protection_for_all_users():
 
     for user in users:
         check_late_protection_for_user(user)
-
-
-@with_app_context
-@handle_exception
-def collect_traffic_data():
-    now = datetime.datetime.now()
-    weekday_name = ['一', '二', '三', '四', '五', '六', '日'][now.weekday()]
-    logger.info(f"开始采集流量数据（周{weekday_name} {now.strftime('%H:%M')}）")
-    LibraryTrafficMonitor.collect_and_save()
 
 
 @with_app_context
