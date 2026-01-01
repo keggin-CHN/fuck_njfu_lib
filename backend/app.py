@@ -410,7 +410,26 @@ def dashboard():
         logger.error(f"在 dashboard 加载预约信息时出错: {str(e)}")
         error_message = "加载预约信息时发生内部错误"
 
+    # 按需流量采集逻辑
     latest_traffic = Traffic.get_latest()
+    should_collect = False
+    
+    if not latest_traffic:
+        should_collect = True
+    else:
+        # 如果数据超过 60 秒，重新采集
+        current_ts = int(datetime.now().timestamp())
+        if current_ts - latest_traffic.timestamp > 60:
+            should_collect = True
+            
+    if should_collect:
+        from utils.traffic_monitor import LibraryTrafficMonitor
+        try:
+            if LibraryTrafficMonitor.collect_and_save():
+                latest_traffic = Traffic.get_latest()
+        except Exception as e:
+            logger.error(f"Dashboard 触发流量采集失败: {e}")
+
     traffic_data = {
         'count': 0,
         'total': 2749,
