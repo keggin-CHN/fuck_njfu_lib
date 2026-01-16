@@ -45,7 +45,7 @@ jobs:
         import time
         from datetime import datetime
         import pytz
-        from utils.auth_manager import LibraryAuthenticator, encrypt_cas_password, encrypt_lib_password
+        from utils.auth_manager import LibraryAuthenticator
         from utils.date_utils import get_tomorrow_date, normalize_time_format
         from config import Config
 
@@ -90,9 +90,9 @@ jobs:
                 break
             else:
                 wait_seconds = (7 - now.hour) * 3600 + (0 - now.minute) * 60 + (4 - now.second)
-                if wait_seconds > 0 and wait_seconds < 180:  # 如果等待时间小于3分钟
+                if wait_seconds > 0 and wait_seconds < 180:
                     logger.info(f"⏰ 当前时间: {now.strftime('%H:%M:%S')}，等待 {wait_seconds} 秒到达7:00:04...")
-                    time.sleep(min(wait_seconds, 1))  # 每秒检查一次
+                    time.sleep(min(wait_seconds, 1))
                 else:
                     logger.info(f"⏰ 当前时间: {now.strftime('%H:%M:%S')}，直接开始预约")
                     break
@@ -182,29 +182,22 @@ jobs:
                             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                             
                             if NOTIFICATION_TYPE == 'wechat':
-                                message = f"""## 图书馆预约成功通知
-> **学号**: {STUDENT_ID}
-> **时间**: {now}
-
-### ✅ 预约成功
-
-> **日期**: {date_str}
-> **座位**: {SEAT_AREA} {SEAT_NUMBER}号
-> **时间**: {start_time} - {end_time}
-"""
+                                message = "## 图书馆预约成功通知\n"
+                                message += f"> **学号**: {STUDENT_ID}\n"
+                                message += f"> **时间**: {now}\n\n"
+                                message += "### ✅ 预约成功\n\n"
+                                message += f"> **日期**: {date_str}\n"
+                                message += f"> **座位**: {SEAT_AREA} {SEAT_NUMBER}号\n"
+                                message += f"> **时间**: {start_time} - {end_time}\n"
                                 data = {"msgtype": "markdown", "markdown": {"content": message}}
                             elif NOTIFICATION_TYPE == 'telegram':
-                                message = f"""📚 *图书馆预约成功通知*
-
-👤 学号: `{STUDENT_ID}`
-🕒 时间: {now}
-
-*✅ 预约成功*
-
-• *日期*: {date_str}
-• *座位*: {SEAT_AREA} {SEAT_NUMBER}号
-• *时间*: {start_time} - {end_time}
-"""
+                                message = "📚 *图书馆预约成功通知*\n\n"
+                                message += f"👤 学号: `{STUDENT_ID}`\n"
+                                message += f"🕒 时间: {now}\n\n"
+                                message += "*✅ 预约成功*\n\n"
+                                message += f"• *日期*: {date_str}\n"
+                                message += f"• *座位*: {SEAT_AREA} {SEAT_NUMBER}号\n"
+                                message += f"• *时间*: {start_time} - {end_time}\n"
                                 data = {"text": message, "parse_mode": "Markdown"}
                             else:
                                 data = None
@@ -228,31 +221,24 @@ jobs:
                             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                             
                             if NOTIFICATION_TYPE == 'wechat':
-                                message = f"""## 图书馆预约失败通知
-> **学号**: {STUDENT_ID}
-> **时间**: {now}
-
-### ❌ 预约失败
-
-> **日期**: {date_str}
-> **座位**: {SEAT_AREA} {SEAT_NUMBER}号
-> **时间**: {start_time} - {end_time}
-> **原因**: {error_msg}
-"""
+                                message = "## 图书馆预约失败通知\n"
+                                message += f"> **学号**: {STUDENT_ID}\n"
+                                message += f"> **时间**: {now}\n\n"
+                                message += "### ❌ 预约失败\n\n"
+                                message += f"> **日期**: {date_str}\n"
+                                message += f"> **座位**: {SEAT_AREA} {SEAT_NUMBER}号\n"
+                                message += f"> **时间**: {start_time} - {end_time}\n"
+                                message += f"> **原因**: {error_msg}\n"
                                 data = {"msgtype": "markdown", "markdown": {"content": message}}
                             elif NOTIFICATION_TYPE == 'telegram':
-                                message = f"""📚 *图书馆预约失败通知*
-
-👤 学号: `{STUDENT_ID}`
-🕒 时间: {now}
-
-*❌ 预约失败*
-
-• *日期*: {date_str}
-• *座位*: {SEAT_AREA} {SEAT_NUMBER}号
-• *时间*: {start_time} - {end_time}
-• *原因*: {error_msg}
-"""
+                                message = "📚 *图书馆预约失败通知*\n\n"
+                                message += f"👤 学号: `{STUDENT_ID}`\n"
+                                message += f"🕒 时间: {now}\n\n"
+                                message += "*❌ 预约失败*\n\n"
+                                message += f"• *日期*: {date_str}\n"
+                                message += f"• *座位*: {SEAT_AREA} {SEAT_NUMBER}号\n"
+                                message += f"• *时间*: {start_time} - {end_time}\n"
+                                message += f"• *原因*: {error_msg}\n"
                                 data = {"text": message, "parse_mode": "Markdown"}
                             else:
                                 data = None
