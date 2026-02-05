@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 主题色 -->
+    <!-- 主题色 - Keep standard blue for white text contrast on Toolbar/Buttons -->
     <color name="primary">#1976D2</color>
     <color name="primary_dark">#1565C0</color>
     <color name="primary_light">#42A5F5</color>
     <color name="accent">#FF5722</color>
     
     <!-- 背景色 -->
-    <color name="background_primary">#F5F5F5</color>
-    <color name="background_secondary">#FFFFFF</color>
-    <color name="card_background">#FFFFFF</color>
+    <color name="background_primary">#121212</color>
+    <color name="background_secondary">#1E1E1E</color>
+    <color name="card_background">#1E1E1E</color>
     
     <!-- 文字颜色 -->
-    <color name="text_primary">#212121</color>
-    <color name="text_secondary">#757575</color>
-    <color name="text_hint">#9E9E9E</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="text_hint">#808080</color>
     <color name="text_white">#FFFFFF</color>
     
     <!-- 状态颜色 -->
@@ -36,7 +36,7 @@
     <color name="occupancy_crowded">#F44336</color>
     
     <!-- 分割线 -->
-    <color name="divider">#E0E0E0</color>
+    <color name="divider">#303030</color>
     
     <!-- 按钮 -->
     <color name="button_primary">#1976D2</color>
