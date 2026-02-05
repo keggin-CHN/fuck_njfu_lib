@@ -125,65 +125,128 @@ public class SystemPermissionChecker {
      * 打开自启动设置页面（尝试跳转到厂商自启动管理页面）
      */
     public static void openAutoStartSettings(Context context) {
+        String manufacturer = Build.MANUFACTURER.toLowerCase();
+        boolean success = false;
+        
+        // 小米
+        if (manufacturer.contains("xiaomi")) {
+            success = tryStartActivity(context, "com.miui.securitycenter",
+                    "com.miui.permcenter.autostart.AutoStartManagementActivity");
+        }
+        // 华为 - 尝试多个可能的路径
+        else if (manufacturer.contains("huawei") || manufacturer.contains("honor")) {
+            // 方案1: 启动管理
+            success = tryStartActivity(context, "com.huawei.systemmanager",
+                    "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity");
+            
+            if (!success) {
+                // 方案2: 应用启动管理
+                success = tryStartActivity(context, "com.huawei.systemmanager",
+                        "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity");
+            }
+            
+            if (!success) {
+                // 方案3: 受保护应用
+                success = tryStartActivity(context, "com.huawei.systemmanager",
+                        "com.huawei.systemmanager.optimize.process.ProtectActivity");
+            }
+            
+            if (!success) {
+                // 方案4: 手机管家主页
+                success = tryStartActivity(context, "com.huawei.systemmanager",
+                        "com.huawei.systemmanager.MainActivity");
+            }
+        }
+        // OPPO/Realme
+        else if (manufacturer.contains("oppo") || manufacturer.contains("realme")) {
+            success = tryStartActivity(context, "com.coloros.safecenter",
+                    "com.coloros.safecenter.permission.startup.StartupAppListActivity");
+            
+            if (!success) {
+                success = tryStartActivity(context, "com.oppo.safe",
+                        "com.oppo.safe.permission.startup.StartupAppListActivity");
+            }
+        }
+        // vivo/iQOO
+        else if (manufacturer.contains("vivo") || manufacturer.contains("iqoo")) {
+            success = tryStartActivity(context, "com.vivo.permissionmanager",
+                    "com.vivo.permissionmanager.activity.BgStartUpManagerActivity");
+            
+            if (!success) {
+                success = tryStartActivity(context, "com.iqoo.secure",
+                        "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager");
+            }
+        }
+        // 魅族
+        else if (manufacturer.contains("meizu")) {
+            Intent intent = new Intent();
+            intent.setComponent(new ComponentName("com.meizu.safe",
+                    "com.meizu.safe.security.SHOW_APPSEC"));
+            intent.addCategory(Intent.CATEGORY_DEFAULT);
+            intent.putExtra("packageName", context.getPackageName());
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            success = tryStartIntent(context, intent);
+        }
+        // 三星
+        else if (manufacturer.contains("samsung")) {
+            success = tryStartActivity(context, "com.samsung.android.lool",
+                    "com.samsung.android.sm.ui.battery.BatteryActivity");
+        }
+        // 一加
+        else if (manufacturer.contains("oneplus")) {
+            success = tryStartActivity(context, "com.oneplus.security",
+                    "com.oneplus.security.chainlaunch.view.ChainLaunchAppListActivity");
+        }
+        // 联想/ZUK
+        else if (manufacturer.contains("lenovo") || manufacturer.contains("zuk")) {
+            success = tryStartActivity(context, "com.lenovo.security",
+                    "com.lenovo.security.purebackground.PureBackgroundActivity");
+        }
+        
+        // 如果所有厂商特定方案都失败，打开应用详情页
+        if (!success) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + context.getPackageName()));
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            } catch (Exception e) {
+                // 最后的降级方案：打开系统设置
+                try {
+                    Intent intent = new Intent(Settings.ACTION_SETTINGS);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                } catch (Exception ex) {
+                    // 忽略错误
+                }
+            }
+        }
+    }
+    
+    /**
+     * 尝试启动指定的Activity
+     */
+    private static boolean tryStartActivity(Context context, String packageName, String activityName) {
         try {
             Intent intent = new Intent();
-            String manufacturer = Build.MANUFACTURER.toLowerCase();
-            
-            // 小米
-            if (manufacturer.contains("xiaomi")) {
-                intent.setComponent(new ComponentName("com.miui.securitycenter",
-                        "com.miui.permcenter.autostart.AutoStartManagementActivity"));
-            }
-            // 华为
-            else if (manufacturer.contains("huawei")) {
-                intent.setComponent(new ComponentName("com.huawei.systemmanager",
-                        "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"));
-            }
-            // OPPO
-            else if (manufacturer.contains("oppo")) {
-                intent.setComponent(new ComponentName("com.coloros.safecenter",
-                        "com.coloros.safecenter.permission.startup.StartupAppListActivity"));
-            }
-            // vivo
-            else if (manufacturer.contains("vivo")) {
-                intent.setComponent(new ComponentName("com.vivo.permissionmanager",
-                        "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"));
-            }
-            // 魅族
-            else if (manufacturer.contains("meizu")) {
-                intent.setComponent(new ComponentName("com.meizu.safe",
-                        "com.meizu.safe.security.SHOW_APPSEC"));
-                intent.addCategory(Intent.CATEGORY_DEFAULT);
-                intent.putExtra("packageName", context.getPackageName());
-            }
-            // 三星
-            else if (manufacturer.contains("samsung")) {
-                intent.setComponent(new ComponentName("com.samsung.android.lool",
-                        "com.samsung.android.sm.ui.battery.BatteryActivity"));
-            }
-            // 其他厂商或无法识别，打开应用详情页
-            else {
-                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.parse("package:" + context.getPackageName()));
-            }
-            
+            intent.setComponent(new ComponentName(packageName, activityName));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
+            return tryStartIntent(context, intent);
         } catch (Exception e) {
-            // 如果跳转失败，打开应用详情页
-            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-            intent.setData(Uri.parse("package:" + context.getPackageName()));
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            return false;
+        }
+    }
+    
+    /**
+     * 尝试启动Intent
+     */
+    private static boolean tryStartIntent(Context context, Intent intent) {
+        try {
             context.startActivity(intent);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
-    /**
-     * 获取权限状态描述文本
-     */
-    public static String getPermissionStatusText(Context context, boolean isGranted) {
-        return isGranted 
-                ? context.getString(R.string.permission_status_granted)
-                : context.getString(R.string.permission_status_not_granted);
-    }
 }

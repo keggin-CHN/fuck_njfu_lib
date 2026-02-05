@@ -70,6 +70,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     // 关于
     private TextView tvVersion;
+    private LinearLayout layoutGithub;
 
     private PreferenceManager preferenceManager;
 
@@ -119,6 +120,7 @@ public class SettingsActivity extends AppCompatActivity {
         layoutLogout = findViewById(R.id.layoutLogout);
 
         tvVersion = findViewById(R.id.tvVersion);
+        layoutGithub = findViewById(R.id.layoutGithub);
     }
 
     private void setupToolbar() {
@@ -230,6 +232,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         // 退出登录
         layoutLogout.setOnClickListener(v -> showLogoutConfirm());
+
+        // GitHub 链接
+        layoutGithub.setOnClickListener(v -> openGithubPage());
     }
 
     private void scheduleAutoReserve() {
@@ -397,5 +402,78 @@ public class SettingsActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    /**
+     * 检查系统权限状态
+     */
+    private void checkSystemPermissions() {
+        // 检查通知权限
+        boolean hasNotification = SystemPermissionChecker.isNotificationPermissionGranted(this);
+        tvNotificationStatus.setText(hasNotification
+                ? getString(R.string.permission_status_granted)
+                : getString(R.string.permission_status_not_granted));
+        tvNotificationStatus.setTextColor(getResources().getColor(
+                hasNotification ? R.color.success : R.color.error, null));
+
+        // 检查精确闹钟权限
+        boolean hasExactAlarm = SystemPermissionChecker.isExactAlarmPermissionGranted(this);
+        tvExactAlarmStatus.setText(hasExactAlarm
+                ? getString(R.string.permission_status_granted)
+                : getString(R.string.permission_status_not_granted));
+        tvExactAlarmStatus.setTextColor(getResources().getColor(
+                hasExactAlarm ? R.color.success : R.color.error, null));
+
+        // 检查电池优化
+        boolean batteryOptDisabled = SystemPermissionChecker.isBatteryOptimizationDisabled(this);
+        tvBatteryOptimizationStatus.setText(batteryOptDisabled
+                ? getString(R.string.permission_status_granted)
+                : getString(R.string.permission_status_not_granted));
+        tvBatteryOptimizationStatus.setTextColor(getResources().getColor(
+                batteryOptDisabled ? R.color.success : R.color.error, null));
+
+        // 自启动权限（无法准确检测）
+        tvAutoStartStatus.setText(getString(R.string.permission_status_check_manually));
+        tvAutoStartStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
+    }
+
+    /**
+     * 更新权限卡片的可见性
+     */
+    private void updatePermissionCardVisibility() {
+        boolean allGranted = SystemPermissionChecker.areAllPermissionsGranted(this);
+        boolean hideByUser = preferenceManager.isHidePermissionCheck();
+        
+        // 如果用户选择隐藏，或者所有权限都已授予且用户勾选了隐藏，则隐藏卡片
+        if (hideByUser || (allGranted && checkboxHidePermissionCard.isChecked())) {
+            cardPermissionCheck.setVisibility(View.GONE);
+        } else {
+            cardPermissionCheck.setVisibility(View.VISIBLE);
+        }
+        
+        // 设置复选框状态
+        checkboxHidePermissionCard.setChecked(hideByUser);
+    }
+
+    /**
+     * 打开 GitHub 项目页面
+     */
+    private void openGithubPage() {
+        String url = getString(R.string.setting_github_url);
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(android.net.Uri.parse(url));
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 从设置页面返回时重新检查权限
+        checkSystemPermissions();
+        updatePermissionCardVisibility();
     }
 }
