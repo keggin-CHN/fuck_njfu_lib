@@ -17,6 +17,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity() {
         preferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         configureWebView()
         configureSwipeRefresh()
+        setupBackPressHandler()
         if (savedInstanceState != null) {
             binding.webView.restoreState(savedInstanceState)
         } else {
@@ -139,12 +141,17 @@ class MainActivity : AppCompatActivity() {
         binding.webView.saveState(outState)
         super.onSaveInstanceState(outState)
     }
-    override fun onBackPressed() {
-        if (binding.webView.canGoBack()) {
-            binding.webView.goBack()
-        } else {
-            super.onBackPressed()
-        }
+    private fun setupBackPressHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.webView.canGoBack()) {
+                    binding.webView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
     override fun onDestroy() {
         binding.webView.apply {
