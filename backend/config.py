@@ -1,32 +1,22 @@
 import os
 import pytz
-
-
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'secret-key-for-library-reservation'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///database.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
     AUTH_TIME = "06:55:00"
     ADMIN_RESERVE_TIME = "07:00:20"
     USER_RESERVE_TIME = "07:03:20"
-
     TIMEZONE = pytz.timezone('Asia/Shanghai')
-
-    # WARP SOCKS5 代理配置
-    # 设置为 True 启用代理，False 禁用
     USE_WARP_PROXY = os.environ.get('USE_WARP_PROXY', 'true').lower() == 'true'
-    # WARP proxy 模式默认监听地址
     WARP_PROXY_HOST = os.environ.get('WARP_PROXY_HOST', '127.0.0.1')
     WARP_PROXY_PORT = int(os.environ.get('WARP_PROXY_PORT', '40000'))
-    
     @staticmethod
     def get_proxy_url():
         """获取SOCKS5代理URL，如果禁用则返回None"""
         if Config.USE_WARP_PROXY:
             return f"socks5h://{Config.WARP_PROXY_HOST}:{Config.WARP_PROXY_PORT}"
         return None
-
     SEAT_AREAS = {
         "二层A区": {"first_seat_id": 100455361, "seats_count": 441},
         "二层B区": {"first_seat_id": 100455802, "seats_count": 96},
@@ -41,7 +31,6 @@ class Config:
         "七楼北侧": {"first_seat_id": 106744855, "seats_count": 224},
         "七楼南侧": {"first_seat_id": 111488640, "seats_count": 114},
     }
-
     @staticmethod
     def get_seat_id(area, seat_number):
         if area in Config.SEAT_AREAS and 1 <= seat_number <= Config.SEAT_AREAS[area]["seats_count"]:

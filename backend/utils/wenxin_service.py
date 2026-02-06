@@ -1,14 +1,9 @@
 import requests
 import logging
 import random
-
 logger = logging.getLogger(__name__)
-
-
 class HitokotoService:
-
     HITOKOTO_URL = "https://v1.hitokoto.cn/"
-
     FALLBACK_GREETINGS = [
         "📚 读书是灵魂的旅行，愿今天的你收获满满！",
         "🌟 知识的海洋无边无际，每一次学习都是一次成长。",
@@ -21,17 +16,14 @@ class HitokotoService:
         "🎨 知识改变命运，学习成就未来。",
         "🌺 在图书馆的时光，是最美好的回忆。"
     ]
-
     @staticmethod
     def get_hitokoto():
         try:
             response = requests.get(HitokotoService.HITOKOTO_URL, timeout=10)
             response.raise_for_status()
-
             result = response.json()
             hitokoto = result.get("hitokoto", "")
             from_source = result.get("from", "")
-
             if hitokoto:
                 greeting = f"{hitokoto}    ----{from_source}"
                 logger.info(f"一言获取成功: {greeting}")
@@ -39,11 +31,9 @@ class HitokotoService:
             else:
                 logger.warning("一言API返回空结果，使用备用问候语")
                 return random.choice(HitokotoService.FALLBACK_GREETINGS)
-
         except Exception as e:
             logger.error(f"一言获取失败: {str(e)}")
             return random.choice(HitokotoService.FALLBACK_GREETINGS)
-
     @staticmethod
     def generate_greeting():
         return HitokotoService.get_hitokoto()

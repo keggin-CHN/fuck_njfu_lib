@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/background_primary">
 
-    <!-- 顶部AppBar -->
+    
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,7 +19,7 @@
             app:title="@string/dashboard_title"
             app:titleTextColor="@color/text_white">
 
-            <!-- 设置按钮 -->
+            
             <ImageButton
                 android:id="@+id/btnSettings"
                 android:layout_width="48dp"
@@ -43,7 +43,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- 当前预约卡片 -->
+            
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardCurrentReservation"
                 android:layout_width="match_parent"
@@ -66,7 +66,7 @@
                         android:textColor="@color/text_secondary"
                         android:textStyle="bold" />
 
-                    <!-- 无预约/加载时显示 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutNoReservation"
                         android:layout_width="match_parent"
@@ -92,7 +92,7 @@
                             android:textColor="@color/text_hint" />
                     </LinearLayout>
 
-                    <!-- 有预约时显示 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutReservationInfo"
                         android:layout_width="match_parent"
@@ -101,7 +101,7 @@
                         android:layout_marginTop="12dp"
                         android:visibility="gone">
 
-                        <!-- 区域和座位号 -->
+                        
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -125,7 +125,7 @@
                                 android:textStyle="bold" />
                         </LinearLayout>
 
-                        <!-- 时间 -->
+                        
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -149,7 +149,7 @@
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
 
-                        <!-- 状态 -->
+                        
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -173,7 +173,7 @@
                                 android:textColor="@color/success" />
                         </LinearLayout>
 
-                        <!-- 操作按钮 -->
+                        
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -204,7 +204,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 快捷操作 -->
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -215,7 +215,7 @@
                 android:textColor="@color/text_secondary"
                 android:textStyle="bold" />
 
-            <!-- 操作按钮网格 -->
+            
             <GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -223,7 +223,7 @@
                 android:rowCount="2"
                 android:useDefaultMargins="true">
 
-                <!-- 立即预约 -->
+                
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardReserveNow"
                     android:layout_width="0dp"
@@ -259,7 +259,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- 查询座位 -->
+                
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardQuerySeats"
                     android:layout_width="0dp"
@@ -295,7 +295,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- 查看人数 -->
+                
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardCheckTraffic"
                     android:layout_width="0dp"
@@ -331,7 +331,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- 设置 -->
+                
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardSettings"
                     android:layout_width="0dp"
@@ -369,7 +369,7 @@
 
             </GridLayout>
 
-            <!-- 自动化状态卡片 -->
+            
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardAutoStatus"
                 android:layout_width="match_parent"
@@ -393,7 +393,7 @@
                         android:textColor="@color/text_secondary"
                         android:textStyle="bold" />
 
-                    <!-- 自动预约状态 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -426,7 +426,7 @@
                             android:textColor="@color/success" />
                     </LinearLayout>
 
-                    <!-- 迟到保护状态 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -459,7 +459,7 @@
                             android:textColor="@color/text_hint" />
                     </LinearLayout>
 
-                    <!-- 自动寻座状态 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -498,7 +498,7 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- 加载遮罩 -->
+    
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"

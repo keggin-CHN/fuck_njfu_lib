@@ -1,126 +1,76 @@
 package com.keggin.fucknjfulib.reservation;
-
 import android.util.Log;
-
 import com.keggin.fucknjfulib.auth.AuthManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.DateUtils;
-
 import java.util.List;
-
-/**
- * 自动寻座模块
- * 当目标座位被占用时，自动在同区域寻找可用座位并预约
- */
 public class AutoFinder {
-    
     private static final String TAG = "AutoFinder";
-    
     private final AuthManager authManager;
     private final SeatQuery seatQuery;
     private final SeatReservation seatReservation;
-    
-    // 默认最多推荐50个备选座位
     private static final int DEFAULT_ALTERNATIVES_LIMIT = 50;
-    
     public AutoFinder(AuthManager authManager) {
         this.authManager = authManager;
         this.seatQuery = new SeatQuery(authManager);
         this.seatReservation = new SeatReservation(authManager);
     }
-    
-    /**
-     * 自动寻座结果
-     */
     public static class AutoFindResult {
         public boolean success;
         public String message;
-        public SeatQuery.SeatInfo reservedSeat;  // 成功预约的座位
-        public List<SeatQuery.SeatInfo> alternatives;  // 备选座位列表
-        
+        public SeatQuery.SeatInfo reservedSeat;  
+        public List<SeatQuery.SeatInfo> alternatives;  
         public AutoFindResult(boolean success, String message) {
             this.success = success;
             this.message = message;
         }
     }
-    
-    /**
-     * 尝试预约目标座位，如果失败则自动寻找备选
-     * 
-     * @param areaName   区域名称
-     * @param seatNumber 目标座位号
-     * @param dateStr    日期
-     * @param startTime  开始时间
-     * @param endTime    结束时间
-     * @param autoReserve 是否自动预约第一个可用的备选座位
-     * @return 自动寻座结果
-     */
     public AutoFindResult tryReserveWithAutoFind(String areaName, int seatNumber,
                                                    String dateStr, String startTime, String endTime,
                                                    boolean autoReserve) {
         Log.d(TAG, "尝试预约: " + areaName + " " + seatNumber + "号");
-        
-        // 首先尝试预约目标座位
         SeatReservation.ReserveResult result = seatReservation.reserveSeat(
                 areaName, seatNumber, dateStr, startTime, endTime);
-        
         if (result.success) {
             Log.d(TAG, "目标座位预约成功");
             AutoFindResult findResult = new AutoFindResult(true, "预约成功: " + result.message);
             return findResult;
         }
-        
-        // 检查是否是座位被占用
         String errorMsg = result.message != null ? result.message.toLowerCase() : "";
         boolean isSeatOccupied = errorMsg.contains("已被预约") 
                 || errorMsg.contains("已预约")
                 || errorMsg.contains("被占用")
                 || errorMsg.contains("正在被预约");
-        
         if (!isSeatOccupied) {
-            // 其他错误，不进行自动寻座
             Log.d(TAG, "非座位占用错误，不进行自动寻座: " + result.message);
             return new AutoFindResult(false, result.message);
         }
-        
         Log.d(TAG, "目标座位被占用，开始寻找备选座位...");
-        
-        // 查找备选座位
         List<SeatQuery.SeatInfo> alternatives = seatQuery.findAvailableSeats(
                 areaName, dateStr, startTime, endTime, DEFAULT_ALTERNATIVES_LIMIT);
-        
         if (alternatives.isEmpty()) {
             Log.d(TAG, "未找到可用的备选座位");
             AutoFindResult findResult = new AutoFindResult(false, 
                     "目标座位已被占用，且该区域无其他可用座位");
             return findResult;
         }
-        
         Log.d(TAG, "找到 " + alternatives.size() + " 个备选座位");
-        
         if (!autoReserve) {
-            // 不自动预约，返回备选列表供用户选择
             AutoFindResult findResult = new AutoFindResult(false, 
                     "目标座位已被占用，找到 " + alternatives.size() + " 个备选座位");
             findResult.alternatives = alternatives;
             return findResult;
         }
-        
-        // 自动预约第一个可用座位
         for (SeatQuery.SeatInfo alt : alternatives) {
             String[] areaAndSeat = Constants.getAreaAndSeatNumber(alt.devId);
             if (areaAndSeat == null) {
                 continue;
             }
-            
             String altArea = areaAndSeat[0];
             int altSeatNumber = Integer.parseInt(areaAndSeat[1]);
-            
             Log.d(TAG, "尝试预约备选座位: " + altArea + " " + altSeatNumber + "号");
-            
             SeatReservation.ReserveResult altResult = seatReservation.reserveSeat(
                     altArea, altSeatNumber, dateStr, startTime, endTime);
-            
             if (altResult.success) {
                 Log.d(TAG, "备选座位预约成功: " + alt.devName);
                 AutoFindResult findResult = new AutoFindResult(true, 
@@ -129,45 +79,27 @@ public class AutoFinder {
                 return findResult;
             }
         }
-        
-        // 所有备选都失败了
         Log.d(TAG, "所有备选座位预约均失败");
         AutoFindResult findResult = new AutoFindResult(false, 
                 "目标座位已被占用，备选座位预约也失败了");
         findResult.alternatives = alternatives;
         return findResult;
     }
-    
-    /**
-     * 快速自动寻座预约（今天）
-     */
     public AutoFindResult autoFindAndReserveToday(String areaName, int seatNumber,
                                                    String startTime, String endTime) {
         return tryReserveWithAutoFind(areaName, seatNumber, 
                 DateUtils.getTodayDate(), startTime, endTime, true);
     }
-    
-    /**
-     * 快速自动寻座预约（明天）
-     */
     public AutoFindResult autoFindAndReserveTomorrow(String areaName, int seatNumber,
                                                       String startTime, String endTime) {
         return tryReserveWithAutoFind(areaName, seatNumber, 
                 DateUtils.getTomorrowDate(), startTime, endTime, true);
     }
-    
-    /**
-     * 获取备选座位列表（不自动预约）
-     */
     public List<SeatQuery.SeatInfo> getAlternatives(String areaName, String dateStr,
                                                      String startTime, String endTime) {
         return seatQuery.findAvailableSeats(areaName, dateStr, startTime, endTime, 
                 DEFAULT_ALTERNATIVES_LIMIT);
     }
-    
-    /**
-     * 预约指定的备选座位
-     */
     public SeatReservation.ReserveResult reserveAlternative(SeatQuery.SeatInfo seat,
                                                              String dateStr, 
                                                              String startTime, String endTime) {
@@ -175,10 +107,8 @@ public class AutoFinder {
         if (areaAndSeat == null) {
             return new SeatReservation.ReserveResult(false, "无法识别座位信息");
         }
-        
         String areaName = areaAndSeat[0];
         int seatNumber = Integer.parseInt(areaAndSeat[1]);
-        
         return seatReservation.reserveSeat(areaName, seatNumber, dateStr, startTime, endTime);
     }
 }

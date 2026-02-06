@@ -2,49 +2,49 @@
 <resources>
 
     <style name="Theme.FuckNjfuLib" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Primary brand color -->
+        
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_dark</item>
         <item name="colorOnPrimary">@color/text_white</item>
         
-        <!-- Secondary brand color -->
+        
         <item name="colorSecondary">@color/accent</item>
         <item name="colorSecondaryVariant">@color/accent</item>
         <item name="colorOnSecondary">@color/text_white</item>
         
-        <!-- Status bar color -->
+        
         <item name="android:statusBarColor">@color/primary_dark</item>
         
-        <!-- Background colors -->
+        
         <item name="android:colorBackground">@color/background_primary</item>
         <item name="colorSurface">@color/card_background</item>
         
-        <!-- Text colors -->
+        
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
         <item name="android:textColorHint">@color/text_hint</item>
         
-        <!-- Error color -->
+        
         <item name="colorError">@color/error</item>
     </style>
 
-    <!-- 登录页面主题 -->
+    
     <style name="Theme.FuckNjfuLib.Login">
         <item name="android:windowBackground">@color/background_primary</item>
     </style>
 
-    <!-- Dashboard主题 -->
+    
     <style name="Theme.FuckNjfuLib.Dashboard">
         <item name="android:windowBackground">@color/background_primary</item>
     </style>
 
-    <!-- 对话框样式 -->
+    
     <style name="Theme.FuckNjfuLib.Dialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorSecondary">@color/accent</item>
     </style>
 
-    <!-- 按钮样式 -->
+    
     <style name="Widget.FuckNjfuLib.Button.Primary" parent="Widget.MaterialComponents.Button">
         <item name="backgroundTint">@color/primary</item>
         <item name="cornerRadius">8dp</item>
@@ -60,7 +60,7 @@
         <item name="cornerRadius">8dp</item>
     </style>
 
-    <!-- 卡片样式 -->
+    
     <style name="Widget.FuckNjfuLib.Card" parent="Widget.MaterialComponents.CardView">
         <item name="cardCornerRadius">12dp</item>
         <item name="cardElevation">4dp</item>

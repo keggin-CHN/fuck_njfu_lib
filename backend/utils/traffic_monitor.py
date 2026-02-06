@@ -3,109 +3,78 @@ import time
 from bs4 import BeautifulSoup
 from models import db, Traffic, User
 from datetime import datetime
-
 logger = logging.getLogger(__name__)
-
-
 class LibraryTrafficMonitor:
-
     TRAFFIC_URL = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OA==/LjE0Ny4xMDEuMTUyLjEwMi4xMDEuMTAyLjE1Ny45Ny4xNTEuOTkuMTA0LjEwMi4xNTIuMTEyLjExMS4xNTM=/book/view"
     REQUEST_TIMEOUT = 15
     MAX_RETRIES = 2
-
     @staticmethod
     def _check_and_handle_ip_block(response, context="流量监控"):
         """检查并处理IP封禁"""
         try:
             from utils.warp_manager import WarpManager
-            
-            # 检查是否是IP被封导致的错误
             blocked_codes = [403, 502, 503, 504]
             if response.status_code in blocked_codes:
                 logger.warning(f"{context}：状态码 {response.status_code} 可能表示IP被封")
-                
-                # 调用 handle_blocked_ip 处理
                 success = WarpManager.handle_blocked_ip(
                     status_code=response.status_code,
                     response_text=response.text[:500] if response.text else None,
                     context=context
                 )
                 return success
-            
             return False
         except Exception as e:
             logger.error(f"{context}：检查IP封禁时出错: {str(e)}")
             return False
-
     @staticmethod
     def get_current_traffic():
         try:
             from utils.auth_manager import AuthManager
-
             user = User.query.filter_by(is_admin=True).first()
             if not user:
                 user = User.query.first()
-            
             if not user:
                 logger.error("流量监控：系统中没有任何用户，无法执行流量采集")
                 return None
-            
             logger.info(f"流量监控：使用用户 {user.username} (管理员: {user.is_admin}) 进行认证")
-
             authenticator = AuthManager.get_authenticator(user)
             if not authenticator or not authenticator.my_client_ticket:
                 logger.error(f"流量监控：无法获取用户 {user.username} 的有效认证")
                 return None
-
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
             }
-
-            # 使用重试逻辑
             for retry in range(LibraryTrafficMonitor.MAX_RETRIES):
                 try:
-                    # 使用 authenticator.session 发送请求，这样会自动使用WARP代理
                     response = authenticator.session.get(
                         LibraryTrafficMonitor.TRAFFIC_URL,
                         headers=headers,
                         timeout=LibraryTrafficMonitor.REQUEST_TIMEOUT
                     )
-
                     if response.status_code != 200:
                         logger.error(f"流量监控：请求失败，状态码 {response.status_code} (尝试 {retry + 1}/{LibraryTrafficMonitor.MAX_RETRIES})")
-                        
-                        # 检查是否是IP被封导致的错误，并尝试处理
                         if LibraryTrafficMonitor._check_and_handle_ip_block(response, "流量监控采集"):
                             logger.info("流量监控：IP已更换，等待3秒后重试...")
                             time.sleep(3)
                             continue
-                        
-                        # 非封禁错误，等待后重试
                         if retry < LibraryTrafficMonitor.MAX_RETRIES - 1:
                             time.sleep(2)
                             continue
                         return None
-                    
-                    # 请求成功，跳出重试循环
                     break
-                    
                 except Exception as e:
                     logger.error(f"流量监控：请求异常 - {str(e)} (尝试 {retry + 1}/{LibraryTrafficMonitor.MAX_RETRIES})")
                     if retry < LibraryTrafficMonitor.MAX_RETRIES - 1:
                         time.sleep(2)
                         continue
                     return None
-
             soup = BeautifulSoup(response.text, "html.parser")
             logger.debug(f"流量监控：成功获取页面内容, HTML长度: {len(response.text)}")
-
             all_spans = soup.find_all("span", style=lambda value: value and "font-size:20px" in value)
             logger.debug(f"流量监控：找到 {len(all_spans)} 个匹配的 <span> 标签")
-
             if len(all_spans) < 1:
                 logger.error(f"流量监控：页面结构解析失败，未找到匹配的 span。页面内容: {response.text[:500]}")
                 return None
-
             import re
             nums = []
             try:
@@ -114,7 +83,6 @@ class LibraryTrafficMonitor:
                     found = re.findall(r'\d+', txt)
                     if found:
                         nums.append(''.join(found))
-
                 if len(nums) >= 2:
                     num1 = int(nums[0])
                     num2 = int(nums[1])
@@ -126,59 +94,46 @@ class LibraryTrafficMonitor:
                     else:
                         logger.error("流量监控：未能从页面中解析到足够的数字信息")
                         return None
-                
                 total_seats = max(num1, num2)
                 remaining_seats = min(num1, num2)
-
                 count = total_seats - remaining_seats
-
                 logger.debug(f"流量监控：解析到在馆人数: {count}, 总座位: {total_seats}, 剩余座位: {remaining_seats}")
             except Exception as e:
                 logger.error(f"流量监控：解析数字失败 - {e}", exc_info=True)
                 return None
-
             logger.info(f"流量监控：当前在馆人数 {count}/{total_seats} (剩余{remaining_seats})")
             return count
-
         except ValueError as e:
             logger.error(f"流量监控：数据解析失败 - {e}")
             return None
         except Exception as e:
             logger.error(f"流量监控：获取流量失败 - {e}", exc_info=True)
             return None
-
     @staticmethod
     def save_traffic_data(count):
         try:
             if count is None:
                 return False
-
             timestamp = int(datetime.now().timestamp())
-
             existing = Traffic.query.filter_by(timestamp=timestamp).first()
             if existing:
                 logger.debug(f"流量监控：时间戳 {timestamp} 的数据已存在，跳过")
                 return False
-
             traffic = Traffic(timestamp=timestamp, count=count)
             db.session.add(traffic)
             db.session.commit()
-
             logger.info(f"流量监控：数据已保存 - 时间戳={timestamp}, 人数={count}")
             return True
-
         except Exception as e:
             logger.error(f"流量监控：数据库操作失败 - {e}")
             db.session.rollback()
             return False
-
     @staticmethod
     def collect_and_save():
         count = LibraryTrafficMonitor.get_current_traffic()
         if count is not None:
             return LibraryTrafficMonitor.save_traffic_data(count)
         return False
-
     @staticmethod
     def cleanup_old_data(days=7):
         try:

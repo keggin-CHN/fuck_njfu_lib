@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/background_primary">
 
-    <!-- 顶部AppBar -->
+    
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -32,7 +32,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- 系统权限检查 -->
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -57,7 +57,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- 提示标题 -->
+                    
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -75,7 +75,7 @@
                         android:textColor="@color/text_secondary"
                         android:layout_marginBottom="16dp" />
 
-                    <!-- 通知权限 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutNotificationPermission"
                         android:layout_width="match_parent"
@@ -117,7 +117,7 @@
                         android:background="@color/divider"
                         android:layout_marginVertical="4dp" />
 
-                    <!-- 精确闹钟权限 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutExactAlarmPermission"
                         android:layout_width="match_parent"
@@ -159,7 +159,7 @@
                         android:background="@color/divider"
                         android:layout_marginVertical="4dp" />
 
-                    <!-- 电池优化 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutBatteryOptimization"
                         android:layout_width="match_parent"
@@ -201,7 +201,7 @@
                         android:background="@color/divider"
                         android:layout_marginVertical="4dp" />
 
-                    <!-- 自启动权限 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutAutoStartPermission"
                         android:layout_width="match_parent"
@@ -237,7 +237,7 @@
                             app:tint="@color/text_hint" />
                     </LinearLayout>
 
-                    <!-- 隐藏此卡片的选项 -->
+                    
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
@@ -256,7 +256,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 计划任务（放在系统权限检查下方） -->
+            
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -315,7 +315,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 预约设置 -->
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -338,7 +338,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- 目标区域 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutTargetArea"
                         android:layout_width="match_parent"
@@ -385,7 +385,7 @@
                         android:layout_height="1dp"
                         android:background="@color/divider" />
 
-                    <!-- 目标座位号 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutTargetSeat"
                         android:layout_width="match_parent"
@@ -432,7 +432,7 @@
                         android:layout_height="1dp"
                         android:background="@color/divider" />
 
-                    <!-- 开始时间 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutStartTime"
                         android:layout_width="match_parent"
@@ -479,7 +479,7 @@
                         android:layout_height="1dp"
                         android:background="@color/divider" />
 
-                    <!-- 结束时间 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutEndTime"
                         android:layout_width="match_parent"
@@ -524,7 +524,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 自动化设置 -->
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -548,7 +548,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- 自动预约开关 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -589,7 +589,7 @@
                         android:layout_height="1dp"
                         android:background="@color/divider" />
 
-                    <!-- 迟到保护开关 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -630,7 +630,7 @@
                         android:layout_height="1dp"
                         android:background="@color/divider" />
 
-                    <!-- 自动寻座开关 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -669,7 +669,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 账户设置 -->
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -693,7 +693,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- 当前账号 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -739,7 +739,7 @@
                         android:layout_height="1dp"
                         android:background="@color/divider" />
 
-                    <!-- 退出登录 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutLogout"
                         android:layout_width="match_parent"
@@ -769,7 +769,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 外观设置 -->
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -793,7 +793,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- 深色模式开关 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -832,7 +832,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 账户设置 -->
+            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -856,7 +856,7 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- 版本 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -886,7 +886,7 @@
                         android:layout_height="1dp"
                         android:background="@color/divider" />
 
-                    <!-- 作者 -->
+                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -915,7 +915,7 @@
                         android:layout_height="1dp"
                         android:background="@color/divider" />
 
-                    <!-- GitHub 项目地址 -->
+                    
                     <LinearLayout
                         android:id="@+id/layoutGithub"
                         android:layout_width="match_parent"
@@ -946,7 +946,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 底部空白 -->
+            
             <View
                 android:layout_width="match_parent"
                 android:layout_height="32dp" />

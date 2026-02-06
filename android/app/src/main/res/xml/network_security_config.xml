@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- 允许明文HTTP连接（用于本地调试） -->
+    
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
     
-    <!-- 信任 webvpn.njfu.edu.cn 和 libseat.njfu.edu.cn -->
+    
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">webvpn.njfu.edu.cn</domain>
         <domain includeSubdomains="true">libseat.njfu.edu.cn</domain>

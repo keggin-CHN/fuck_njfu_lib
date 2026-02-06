@@ -1,44 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 主题色 - Keep standard blue for white text contrast on Toolbar/Buttons -->
+    
     <color name="primary">#1976D2</color>
     <color name="primary_dark">#1565C0</color>
     <color name="primary_light">#42A5F5</color>
     <color name="accent">#FF5722</color>
     
-    <!-- 背景色 -->
+    
     <color name="background_primary">#121212</color>
     <color name="background_secondary">#1E1E1E</color>
     <color name="card_background">#1E1E1E</color>
     
-    <!-- 文字颜色 -->
+    
     <color name="text_primary">#FFFFFF</color>
     <color name="text_secondary">#B0B0B0</color>
     <color name="text_hint">#808080</color>
     <color name="text_white">#FFFFFF</color>
     
-    <!-- 状态颜色 -->
+    
     <color name="success">#4CAF50</color>
     <color name="warning">#FF9800</color>
     <color name="error">#F44336</color>
     <color name="info">#2196F3</color>
     
-    <!-- 座位状态颜色 -->
+    
     <color name="seat_available">#4CAF50</color>
     <color name="seat_occupied">#F44336</color>
     <color name="seat_reserved">#FF9800</color>
     <color name="seat_selected">#1976D2</color>
     
-    <!-- 占用率颜色 -->
+    
     <color name="occupancy_free">#4CAF50</color>
     <color name="occupancy_normal">#2196F3</color>
     <color name="occupancy_busy">#FF9800</color>
     <color name="occupancy_crowded">#F44336</color>
     
-    <!-- 分割线 -->
+    
     <color name="divider">#303030</color>
     
-    <!-- 按钮 -->
+    
     <color name="button_primary">#1976D2</color>
     <color name="button_secondary">#757575</color>
     <color name="button_danger">#F44336</color>

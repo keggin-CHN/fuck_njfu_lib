@@ -13,7 +13,7 @@
         android:padding="32dp"
         android:gravity="center_horizontal">
 
-        <!-- Logo区域 -->
+        
         <ImageView
             android:id="@+id/ivLogo"
             android:layout_width="120dp"
@@ -39,7 +39,7 @@
             android:textSize="14sp"
             android:textColor="@color/text_secondary" />
 
-        <!-- 登录表单 -->
+        
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -54,7 +54,7 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
-                <!-- 学号 -->
+                
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilStudentId"
                     android:layout_width="match_parent"
@@ -72,7 +72,7 @@
                         android:imeOptions="actionNext" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- 统一认证密码（CAS） -->
+                
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilCasPassword"
                     android:layout_width="match_parent"
@@ -92,7 +92,7 @@
                         android:imeOptions="actionNext" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- 图书馆密码 -->
+                
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilLibPassword"
                     android:layout_width="match_parent"
@@ -113,7 +113,7 @@
                         android:imeOptions="actionDone" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- 登录按钮 -->
+                
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnLogin"
                     android:layout_width="match_parent"
@@ -123,7 +123,7 @@
                     android:textSize="16sp"
                     app:cornerRadius="8dp" />
 
-                <!-- 加载指示器 -->
+                
                 <ProgressBar
                     android:id="@+id/progressBar"
                     android:layout_width="wrap_content"
@@ -132,7 +132,7 @@
                     android:layout_marginTop="16dp"
                     android:visibility="gone" />
 
-                <!-- 状态信息 -->
+                
                 <TextView
                     android:id="@+id/tvStatus"
                     android:layout_width="match_parent"
@@ -146,7 +146,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 底部提示 -->
+        
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

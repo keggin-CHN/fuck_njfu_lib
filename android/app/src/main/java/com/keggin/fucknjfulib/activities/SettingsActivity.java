@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.activities;
-
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Build;
@@ -11,12 +10,10 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
-
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.keggin.fucknjfulib.BuildConfig;
 import com.keggin.fucknjfulib.R;
@@ -25,18 +22,10 @@ import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.SystemPermissionChecker;
-
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * 设置页面
- */
 public class SettingsActivity extends AppCompatActivity {
-
     private Toolbar toolbar;
-
-    // 系统权限检查
     private CardView cardPermissionCheck;
     private LinearLayout layoutNotificationPermission;
     private LinearLayout layoutExactAlarmPermission;
@@ -48,8 +37,6 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvAutoStartStatus;
     private CheckBox checkboxHidePermissionCard;
     private LinearLayout layoutPlanTasks;
-
-    // 预约设置
     private LinearLayout layoutTargetArea;
     private LinearLayout layoutTargetSeat;
     private LinearLayout layoutStartTime;
@@ -58,40 +45,27 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvTargetSeat;
     private TextView tvStartTime;
     private TextView tvEndTime;
-
-    // 自动化设置
     private SwitchMaterial switchAutoReserve;
     private SwitchMaterial switchLateProtection;
     private SwitchMaterial switchAutoFindSeat;
     private SwitchMaterial switchDarkMode;
-
-    // 账户设置
     private TextView tvStudentId;
     private LinearLayout layoutLogout;
-
-    // 关于
     private TextView tvVersion;
     private LinearLayout layoutGithub;
-
     private PreferenceManager preferenceManager;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
-
         preferenceManager = new PreferenceManager(this);
-
         initViews();
         setupToolbar();
         loadSettings();
         setupClickListeners();
     }
-
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-
-        // 系统权限检查
         cardPermissionCheck = findViewById(R.id.cardPermissionCheck);
         layoutNotificationPermission = findViewById(R.id.layoutNotificationPermission);
         layoutExactAlarmPermission = findViewById(R.id.layoutExactAlarmPermission);
@@ -103,7 +77,6 @@ public class SettingsActivity extends AppCompatActivity {
         tvAutoStartStatus = findViewById(R.id.tvAutoStartStatus);
         checkboxHidePermissionCard = findViewById(R.id.checkboxHidePermissionCard);
         layoutPlanTasks = findViewById(R.id.layoutPlanTasks);
-
         layoutTargetArea = findViewById(R.id.layoutTargetArea);
         layoutTargetSeat = findViewById(R.id.layoutTargetSeat);
         layoutStartTime = findViewById(R.id.layoutStartTime);
@@ -112,19 +85,15 @@ public class SettingsActivity extends AppCompatActivity {
         tvTargetSeat = findViewById(R.id.tvTargetSeat);
         tvStartTime = findViewById(R.id.tvStartTime);
         tvEndTime = findViewById(R.id.tvEndTime);
-
         switchAutoReserve = findViewById(R.id.switchAutoReserve);
         switchLateProtection = findViewById(R.id.switchLateProtection);
         switchAutoFindSeat = findViewById(R.id.switchAutoFindSeat);
         switchDarkMode = findViewById(R.id.switchDarkMode);
-
         tvStudentId = findViewById(R.id.tvStudentId);
         layoutLogout = findViewById(R.id.layoutLogout);
-
         tvVersion = findViewById(R.id.tvVersion);
         layoutGithub = findViewById(R.id.layoutGithub);
     }
-
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -132,70 +101,41 @@ public class SettingsActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> finish());
     }
-
     private void loadSettings() {
-        // 系统权限检查
         checkSystemPermissions();
         updatePermissionCardVisibility();
-
-        // 预约设置
         String areaKey = preferenceManager.getTargetArea();
         tvTargetArea.setText(preferenceManager.getAreaName(areaKey));
         tvTargetSeat.setText(String.valueOf(preferenceManager.getTargetSeat()));
         tvStartTime.setText(preferenceManager.getStartTime());
         tvEndTime.setText(preferenceManager.getEndTime());
-
-        // 自动化设置
         switchAutoReserve.setChecked(preferenceManager.isAutoReserveEnabled());
         switchLateProtection.setChecked(preferenceManager.isLateProtectionEnabled());
         switchAutoFindSeat.setChecked(preferenceManager.isAutoFindSeatEnabled());
         switchDarkMode.setChecked(preferenceManager.isDarkModeEnabled());
-
-        // 账户信息
         tvStudentId.setText("学号：" + preferenceManager.getStudentId());
-
-        // 版本信息
         tvVersion.setText(BuildConfig.VERSION_NAME);
     }
-
     private void setupClickListeners() {
-        // 系统权限检查点击事件
         layoutNotificationPermission.setOnClickListener(v ->
             SystemPermissionChecker.openNotificationSettings(this));
-        
         layoutExactAlarmPermission.setOnClickListener(v ->
             SystemPermissionChecker.openExactAlarmSettings(this));
-        
         layoutBatteryOptimization.setOnClickListener(v ->
             SystemPermissionChecker.openBatteryOptimizationSettings(this));
-        
         layoutAutoStartPermission.setOnClickListener(v ->
             SystemPermissionChecker.openAutoStartSettings(this));
-        
-        // 隐藏权限卡片的复选框
         checkboxHidePermissionCard.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setHidePermissionCheck(isChecked);
             updatePermissionCardVisibility();
         });
-
-        // 计划任务
         if (layoutPlanTasks != null) {
             layoutPlanTasks.setOnClickListener(v -> openPlanTasks());
         }
-
-        // 目标区域
         layoutTargetArea.setOnClickListener(v -> showAreaPicker());
-
-        // 目标座位
         layoutTargetSeat.setOnClickListener(v -> showSeatPicker());
-
-        // 开始时间
         layoutStartTime.setOnClickListener(v -> showTimePicker(true));
-
-        // 结束时间
         layoutEndTime.setOnClickListener(v -> showTimePicker(false));
-
-        // 自动预约开关
         switchAutoReserve.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoReserveEnabled(isChecked);
             if (isChecked) {
@@ -206,8 +146,6 @@ public class SettingsActivity extends AppCompatActivity {
                 Toast.makeText(this, "自动预约已关闭", Toast.LENGTH_SHORT).show();
             }
         });
-
-        // 迟到保护开关
         switchLateProtection.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setLateProtectionEnabled(isChecked);
             if (isChecked) {
@@ -217,8 +155,6 @@ public class SettingsActivity extends AppCompatActivity {
                 Toast.makeText(this, "迟到保护已关闭", Toast.LENGTH_SHORT).show();
             }
         });
-
-        // 自动寻座开关
         switchAutoFindSeat.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoFindSeatEnabled(isChecked);
             if (isChecked) {
@@ -227,8 +163,6 @@ public class SettingsActivity extends AppCompatActivity {
                 Toast.makeText(this, "自动寻座已关闭", Toast.LENGTH_SHORT).show();
             }
         });
-
-        // 深色模式开关
         switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setDarkModeEnabled(isChecked);
             AppCompatDelegate.setDefaultNightMode(isChecked
@@ -236,19 +170,13 @@ public class SettingsActivity extends AppCompatActivity {
                     : AppCompatDelegate.MODE_NIGHT_NO);
             recreate();
         });
-
-        // 退出登录
         layoutLogout.setOnClickListener(v -> showLogoutConfirm());
-
-        // GitHub 链接
         layoutGithub.setOnClickListener(v -> openGithubPage());
     }
-
     private void openPlanTasks() {
         Intent intent = new Intent(this, PlanTasksActivity.class);
         startActivity(intent);
     }
-
     private void scheduleAutoReserve() {
         Intent serviceIntent = new Intent(this, AutoReserveService.class);
         serviceIntent.setAction(AutoReserveService.ACTION_SCHEDULE);
@@ -258,13 +186,11 @@ public class SettingsActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
     }
-    
     private void cancelAutoReserve() {
         Intent serviceIntent = new Intent(this, AutoReserveService.class);
         serviceIntent.setAction(AutoReserveService.ACTION_CANCEL);
         startService(serviceIntent);
     }
-    
     private void scheduleLateProtection() {
         Intent serviceIntent = new Intent(this, LateProtectionService.class);
         serviceIntent.setAction(LateProtectionService.ACTION_SCHEDULE);
@@ -274,7 +200,6 @@ public class SettingsActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
     }
-
     private void showAreaPicker() {
         List<String> areaKeys = new ArrayList<>(Constants.SEAT_AREAS_MAP.keySet());
         String[] areaNames = new String[areaKeys.size()];
@@ -282,48 +207,38 @@ public class SettingsActivity extends AppCompatActivity {
             Constants.AreaInfo info = Constants.SEAT_AREAS_MAP.get(areaKeys.get(i));
             areaNames[i] = info != null ? info.name : areaKeys.get(i);
         }
-
         String currentArea = preferenceManager.getTargetArea();
         int currentIndex = areaKeys.indexOf(currentArea);
         if (currentIndex < 0) currentIndex = 0;
-
         new AlertDialog.Builder(this)
                 .setTitle("选择目标区域")
                 .setSingleChoiceItems(areaNames, currentIndex, (dialog, which) -> {
                     String selectedKey = areaKeys.get(which);
                     preferenceManager.setTargetArea(selectedKey);
                     tvTargetArea.setText(areaNames[which]);
-
-                    // 重置座位号为该区域的第一个座位
                     Constants.AreaInfo areaInfo = Constants.SEAT_AREAS_MAP.get(selectedKey);
                     if (areaInfo != null && areaInfo.seatIds.length > 0) {
                         preferenceManager.setTargetSeat(1);
                         tvTargetSeat.setText("1");
                     }
-
                     dialog.dismiss();
                 })
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void showSeatPicker() {
         String areaKey = preferenceManager.getTargetArea();
         Constants.AreaInfo areaInfo = Constants.SEAT_AREAS_MAP.get(areaKey);
-
         if (areaInfo == null) {
             Toast.makeText(this, "请先选择目标区域", Toast.LENGTH_SHORT).show();
             return;
         }
-
         int maxSeat = areaInfo.seatCount;
         int currentSeat = preferenceManager.getTargetSeat();
-
         final EditText input = new EditText(this);
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         input.setText(String.valueOf(currentSeat));
         input.selectAll();
-
         int padding = (int) (24 * getResources().getDisplayMetrics().density);
         FrameLayout container = new FrameLayout(this);
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
@@ -334,21 +249,18 @@ public class SettingsActivity extends AppCompatActivity {
         params.rightMargin = padding;
         input.setLayoutParams(params);
         container.addView(input);
-
         new AlertDialog.Builder(this)
                 .setTitle("输入目标座位号 (1-" + maxSeat + ")")
                 .setView(container)
                 .setPositiveButton("确定", (dialog, which) -> {
                     String text = input.getText().toString();
                     if (text.isEmpty()) return;
-
                     try {
                         int seatNum = Integer.parseInt(text);
                         if (seatNum < 1 || seatNum > maxSeat) {
                             Toast.makeText(this, "座位号超出范围 (1-" + maxSeat + ")", Toast.LENGTH_SHORT).show();
                             return;
                         }
-
                         preferenceManager.setTargetSeat(seatNum);
                         tvTargetSeat.setText(String.valueOf(seatNum));
                     } catch (NumberFormatException e) {
@@ -358,14 +270,11 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void showTimePicker(boolean isStartTime) {
         String[] timeOptions = getResources().getStringArray(R.array.time_options);
-        
         String currentTime = isStartTime ? 
                 preferenceManager.getStartTime() : 
                 preferenceManager.getEndTime();
-        
         int currentIndex = 0;
         for (int i = 0; i < timeOptions.length; i++) {
             if (timeOptions[i].equals(currentTime)) {
@@ -373,7 +282,6 @@ public class SettingsActivity extends AppCompatActivity {
                 break;
             }
         }
-
         new AlertDialog.Builder(this)
                 .setTitle(isStartTime ? "选择开始时间" : "选择结束时间")
                 .setSingleChoiceItems(timeOptions, currentIndex, (dialog, which) -> {
@@ -390,7 +298,6 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void showLogoutConfirm() {
         new AlertDialog.Builder(this)
                 .setTitle("退出登录")
@@ -401,75 +308,46 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void performLogout() {
-        // 取消所有自动任务
         cancelAutoReserve();
-
-        // 清除凭据
         preferenceManager.clearCredentials();
-
-        // 跳转到登录页
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }
-
-    /**
-     * 检查系统权限状态
-     */
     private void checkSystemPermissions() {
-        // 检查通知权限
         boolean hasNotification = SystemPermissionChecker.isNotificationPermissionGranted(this);
         tvNotificationStatus.setText(hasNotification
                 ? getString(R.string.permission_status_granted)
                 : getString(R.string.permission_status_not_granted));
         tvNotificationStatus.setTextColor(getResources().getColor(
                 hasNotification ? R.color.success : R.color.error, null));
-
-        // 检查精确闹钟权限
         boolean hasExactAlarm = SystemPermissionChecker.isExactAlarmPermissionGranted(this);
         tvExactAlarmStatus.setText(hasExactAlarm
                 ? getString(R.string.permission_status_granted)
                 : getString(R.string.permission_status_not_granted));
         tvExactAlarmStatus.setTextColor(getResources().getColor(
                 hasExactAlarm ? R.color.success : R.color.error, null));
-
-        // 检查电池优化
         boolean batteryOptDisabled = SystemPermissionChecker.isBatteryOptimizationDisabled(this);
         tvBatteryOptimizationStatus.setText(batteryOptDisabled
                 ? getString(R.string.permission_status_granted)
                 : getString(R.string.permission_status_not_granted));
         tvBatteryOptimizationStatus.setTextColor(getResources().getColor(
                 batteryOptDisabled ? R.color.success : R.color.error, null));
-
-        // 自启动权限（无法准确检测）
         tvAutoStartStatus.setText(getString(R.string.permission_status_check_manually));
         tvAutoStartStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
     }
-
-    /**
-     * 更新权限卡片的可见性
-     */
     private void updatePermissionCardVisibility() {
         boolean allGranted = SystemPermissionChecker.areAllPermissionsGranted(this);
         boolean hideByUser = preferenceManager.isHidePermissionCheck();
-        
-        // 如果用户选择隐藏，或者所有权限都已授予且用户勾选了隐藏，则隐藏卡片
         if (hideByUser || (allGranted && checkboxHidePermissionCard.isChecked())) {
             cardPermissionCheck.setVisibility(View.GONE);
         } else {
             cardPermissionCheck.setVisibility(View.VISIBLE);
         }
-        
-        // 设置复选框状态
         checkboxHidePermissionCard.setChecked(hideByUser);
     }
-
-    /**
-     * 打开 GitHub 项目页面
-     */
     private void openGithubPage() {
         String url = getString(R.string.setting_github_url);
         try {
@@ -480,11 +358,9 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show();
         }
     }
-
     @Override
     protected void onResume() {
         super.onResume();
-        // 从设置页面返回时重新检查权限
         checkSystemPermissions();
         updatePermissionCardVisibility();
     }

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">NJFU LIB</string>
     
-    <!-- 登录页面 -->
+    
     <string name="login_subtitle">南京林业大学图书馆座位预约</string>
     <string name="hint_student_id">学号</string>
     <string name="hint_cas_password">统一认证密码</string>
@@ -15,7 +15,7 @@
     <string name="login_success">登录成功</string>
     <string name="login_failed">登录失败：%1$s</string>
     
-    <!-- 主页面 -->
+    
     <string name="dashboard_title">座位预约</string>
     <string name="section_current_reservation">当前预约</string>
     <string name="section_quick_actions">快捷操作</string>
@@ -27,7 +27,7 @@
     <string name="btn_query_seats">查询座位</string>
     <string name="btn_check_traffic">查看人数</string>
     
-    <!-- 预约信息 -->
+    
     <string name="reservation_area">区域：%1$s</string>
     <string name="reservation_seat">座位：%1$s</string>
     <string name="reservation_time">时间：%1$s - %2$s</string>
@@ -37,7 +37,7 @@
     <string name="status_away">暂离</string>
     <string name="status_late">迟到</string>
     
-    <!-- 座位查询 -->
+    
     <string name="seat_query_title">座位查询</string>
     <string name="select_area">选择区域</string>
     <string name="select_date">选择日期</string>
@@ -46,10 +46,10 @@
     <string name="total_seats">总座位：%d</string>
     <string name="no_available_seats">当前无可用座位</string>
     
-    <!-- 设置页面 -->
+    
     <string name="settings_title">设置</string>
     
-    <!-- 系统权限检查 -->
+    
     <string name="settings_system_permission">系统权限检查</string>
     <string name="permission_check_title">自动预约功能需要以下系统权限</string>
     <string name="permission_check_desc">请确保已授予以下权限，否则自动预约功能可能无法正常工作</string>
@@ -108,7 +108,7 @@
     <string name="setting_github">GitHub 项目地址</string>
     <string name="setting_github_url">https://github.com/keggin-CHN/fuck_njfu_lib</string>
     
-    <!-- 图书馆人数 -->
+    
     <string name="traffic_title">图书馆人数</string>
     <string name="traffic_current">当前人数</string>
     <string name="traffic_count">%1$d 人</string>
@@ -118,7 +118,7 @@
     <string name="traffic_status_busy">较多</string>
     <string name="traffic_status_crowded">拥挤</string>
     
-    <!-- 通用 -->
+    
     <string name="btn_confirm">确定</string>
     <string name="btn_cancel">取消</string>
     <string name="btn_save">保存</string>
@@ -129,7 +129,7 @@
     <string name="success">操作成功</string>
     <string name="failed">操作失败</string>
     
-    <!-- 通知 -->
+    
     <string name="notification_channel_reserve">预约通知</string>
     <string name="notification_channel_reserve_desc">自动预约相关通知</string>
     <string name="notification_channel_late">迟到保护</string>
@@ -144,7 +144,7 @@
     <string name="notification_late_running">正在检查签到状态...</string>
     <string name="notification_late_handled">已自动处理迟到情况</string>
     
-    <!-- 区域名称 -->
+    
     <string name="area_101">一楼101</string>
     <string name="area_102">一楼102</string>
     <string name="area_105">一楼105</string>
@@ -158,7 +158,7 @@
     <string name="area_501b">五楼501B</string>
     <string name="area_601">六楼601</string>
     
-    <!-- 时间选项 -->
+    
     <string-array name="time_options">
         <item>08:00</item>
         <item>08:30</item>
@@ -190,16 +190,16 @@
         <item>21:30</item>
         <item>22:00</item>
     </string-array>
-    <!-- 菜单 -->
+    
     <string name="menu_reload">重新加载</string>
     <string name="menu_change_server">切换服务器</string>
     
-    <!-- 错误提示 -->
+    
     <string name="message_loading_error">加载失败，请检查网络</string>
     <string name="message_invalid_url">无效的服务器地址</string>
     <string name="message_updating_url">正在更新服务器地址为：%s</string>
 
-    <!-- 对话框 -->
+    
     <string name="dialog_hint_server_url">请输入服务器地址</string>
     <string name="dialog_title_change_server">更换服务器</string>
     <string name="dialog_action_save">保存</string>

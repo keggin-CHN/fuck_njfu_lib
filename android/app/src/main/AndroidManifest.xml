@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 网络权限 -->
+    
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
-    <!-- 前台服务权限 -->
+    
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     
-    <!-- 闹钟/定时任务权限 -->
+    
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     
-    <!-- 通知权限 (Android 13+) -->
+    
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
-    <!-- 振动权限（通知使用） -->
+    
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
@@ -31,7 +31,7 @@
         android:theme="@style/Theme.FuckNjfuLib"
         android:networkSecurityConfig="@xml/network_security_config">
 
-        <!-- 主界面（仪表盘） -->
+        
         <activity
             android:name=".activities.DashboardActivity"
             android:exported="true"
@@ -43,45 +43,45 @@
             </intent-filter>
         </activity>
 
-        <!-- 登录界面 -->
+        
         <activity
             android:name=".activities.LoginActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- 座位查询界面 -->
+        
         <activity
             android:name=".activities.SeatQueryActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- 设置界面 -->
+        
         <activity
             android:name=".activities.SettingsActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- 计划任务 -->
+        
         <activity
             android:name=".activities.PlanTasksActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- 自动预约服务 -->
+        
         <service
             android:name=".services.AutoReserveService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- 迟到保护服务 -->
+        
         <service
             android:name=".services.LateProtectionService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- 自动预约广播接收器 -->
+        
         <receiver
             android:name=".services.AutoReserveReceiver"
             android:enabled="true"
@@ -91,7 +91,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- 迟到保护广播接收器 -->
+        
         <receiver
             android:name=".services.LateProtectionReceiver"
             android:enabled="true"
@@ -101,7 +101,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- 开机启动接收器 -->
+        
         <receiver
             android:name=".services.BootReceiver"
             android:enabled="true"
