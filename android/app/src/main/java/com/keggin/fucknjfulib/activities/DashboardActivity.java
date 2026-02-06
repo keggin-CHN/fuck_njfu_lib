@@ -23,6 +23,9 @@ import com.keggin.fucknjfulib.reservation.TrafficQuery;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 
+import org.json.JSONObject;
+
+import java.util.Calendar;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -37,6 +40,7 @@ public class DashboardActivity extends AppCompatActivity {
     // 当前预约卡片
     private MaterialCardView cardCurrentReservation;
     private LinearLayout layoutNoReservation;
+    private TextView tvNoReservationText;
     private LinearLayout layoutReservationInfo;
     private TextView tvReservationSeat;
     private TextView tvReservationTime;
@@ -80,7 +84,11 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        loadCurrentReservation();
+
+        boolean hasCache = loadCachedReservation();
+        // 有缓存就不要用遮罩挡住，后台刷新即可；无缓存则显示加载遮罩
+        loadCurrentReservation(!hasCache);
+
         updateAutoStatus();
     }
 
@@ -90,6 +98,7 @@ public class DashboardActivity extends AppCompatActivity {
 
         cardCurrentReservation = findViewById(R.id.cardCurrentReservation);
         layoutNoReservation = findViewById(R.id.layoutNoReservation);
+        tvNoReservationText = findViewById(R.id.tvNoReservationText);
         layoutReservationInfo = findViewById(R.id.layoutReservationInfo);
         tvReservationSeat = findViewById(R.id.tvReservationSeat);
         tvReservationTime = findViewById(R.id.tvReservationTime);
@@ -125,16 +134,24 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void loadCurrentReservation() {
-        showLoading(true);
+        loadCurrentReservation(true);
+    }
+
+    private void loadCurrentReservation(boolean showOverlay) {
+        if (showOverlay) {
+            showLoading(true);
+        }
 
         executor.execute(() -> {
             try {
                 AuthManager authManager = AuthManager.getInstance(this);
-                
+
                 // 确保登录状态
                 if (!authManager.ensureLoggedIn()) {
                     runOnUiThread(() -> {
-                        showLoading(false);
+                        if (showOverlay) {
+                            showLoading(false);
+                        }
                         Toast.makeText(this, "登录已过期，请重新登录", Toast.LENGTH_SHORT).show();
                         navigateToLogin();
                     });
@@ -149,36 +166,136 @@ public class DashboardActivity extends AppCompatActivity {
                 );
 
                 runOnUiThread(() -> {
-                    showLoading(false);
+                    if (showOverlay) {
+                        showLoading(false);
+                    }
                     currentReservation = reservation;
                     updateReservationUI(reservation);
+
+                    // 仅缓存“有预约”的结果：用于下次进入时优先展示
+                    cacheCurrentReservationIfNeeded(reservation);
                 });
 
             } catch (Exception e) {
                 runOnUiThread(() -> {
-                    showLoading(false);
+                    if (showOverlay) {
+                        showLoading(false);
+                    }
                     Toast.makeText(this, "查询预约失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
             }
         });
     }
 
+    /**
+     * 优先展示缓存的“当前预约”，避免页面出现默认占位内容。
+     *
+     * @return 是否成功展示了缓存预约
+     */
+    private boolean loadCachedReservation() {
+        String cached = preferenceManager.getCachedCurrentReservation();
+        if (cached == null || cached.trim().isEmpty()) {
+            showReservationLoadingState();
+            return false;
+        }
+
+        try {
+            SeatReservation.ReservationInfo info = parseReservationInfo(cached);
+            if (info != null && info.hasReservation) {
+                currentReservation = info;
+                updateReservationUI(info);
+                return true;
+            }
+        } catch (Exception ignored) {
+            // 解析失败则当作无缓存
+        }
+
+        // 清理坏缓存，避免反复解析失败
+        preferenceManager.clearCachedCurrentReservation();
+        showReservationLoadingState();
+        return false;
+    }
+
+    private void showReservationLoadingState() {
+        if (tvNoReservationText != null) {
+            tvNoReservationText.setText(R.string.loading);
+        }
+        layoutNoReservation.setVisibility(View.VISIBLE);
+        layoutReservationInfo.setVisibility(View.GONE);
+    }
+
+    private void cacheCurrentReservationIfNeeded(SeatReservation.ReservationInfo reservation) {
+        if (reservation != null && reservation.hasReservation) {
+            try {
+                preferenceManager.setCachedCurrentReservation(toReservationJson(reservation));
+            } catch (Exception ignored) {
+                // 缓存失败不影响主流程
+            }
+        } else {
+            preferenceManager.clearCachedCurrentReservation();
+        }
+    }
+
+    private SeatReservation.ReservationInfo parseReservationInfo(String json) throws Exception {
+        JSONObject obj = new JSONObject(json);
+        SeatReservation.ReservationInfo info = new SeatReservation.ReservationInfo();
+        info.hasReservation = obj.optBoolean("hasReservation", false);
+        info.uuid = obj.optString("uuid", null);
+        info.resvId = obj.optString("resvId", info.uuid);
+        info.areaName = obj.optString("areaName", null);
+        info.seatLabel = obj.optString("seatLabel", null);
+        info.seatName = obj.optString("seatName", null);
+        info.startTime = obj.optString("startTime", null);
+        info.endTime = obj.optString("endTime", null);
+        info.beginTime = obj.optLong("beginTime", 0);
+        info.endTimestamp = obj.optLong("endTimestamp", 0);
+        info.state = obj.optString("state", null);
+        info.statusName = obj.optString("statusName", null);
+        return info;
+    }
+
+    private String toReservationJson(SeatReservation.ReservationInfo reservation) throws Exception {
+        JSONObject obj = new JSONObject();
+        obj.put("hasReservation", reservation.hasReservation);
+        obj.put("uuid", reservation.uuid);
+        obj.put("resvId", reservation.resvId);
+        obj.put("areaName", reservation.areaName);
+        obj.put("seatLabel", reservation.seatLabel);
+        obj.put("seatName", reservation.seatName);
+        obj.put("startTime", reservation.startTime);
+        obj.put("endTime", reservation.endTime);
+        obj.put("beginTime", reservation.beginTime);
+        obj.put("endTimestamp", reservation.endTimestamp);
+        obj.put("state", reservation.state);
+        obj.put("statusName", reservation.statusName);
+        return obj.toString();
+    }
+
     private void updateReservationUI(SeatReservation.ReservationInfo reservation) {
-        if (reservation == null || !reservation.hasReservation) {
+        if (reservation == null) {
+            showReservationLoadingState();
+            return;
+        }
+
+        if (!reservation.hasReservation) {
+            if (tvNoReservationText != null) {
+                tvNoReservationText.setText(R.string.no_reservation);
+            }
             layoutNoReservation.setVisibility(View.VISIBLE);
             layoutReservationInfo.setVisibility(View.GONE);
-        } else {
-            layoutNoReservation.setVisibility(View.GONE);
-            layoutReservationInfo.setVisibility(View.VISIBLE);
-
-            tvReservationSeat.setText(reservation.areaName + " - 座位" + reservation.seatLabel);
-            tvReservationTime.setText(reservation.startTime + " - " + reservation.endTime);
-            tvReservationStatus.setText(getStatusText(reservation.state));
-            tvReservationStatus.setTextColor(getStatusColor(reservation.state));
-
-            // 根据状态显示不同的按钮
-            updateButtonVisibility(reservation.state);
+            return;
         }
+
+        layoutNoReservation.setVisibility(View.GONE);
+        layoutReservationInfo.setVisibility(View.VISIBLE);
+
+        tvReservationSeat.setText(reservation.areaName + " - 座位" + reservation.seatLabel);
+        tvReservationTime.setText(reservation.startTime + " - " + reservation.endTime);
+        tvReservationStatus.setText(getStatusText(reservation.state));
+        tvReservationStatus.setTextColor(getStatusColor(reservation.state));
+
+        // 根据状态显示不同的按钮
+        updateButtonVisibility(reservation.state);
     }
 
     private String getStatusText(String state) {
@@ -238,6 +355,10 @@ public class DashboardActivity extends AppCompatActivity {
                 int seatNumber = preferenceManager.getTargetSeat();
                 String startTime = preferenceManager.getStartTime();
                 String endTime = preferenceManager.getEndTime();
+
+                // 闭馆时间限制：周五 20:00，其他 22:00
+                String closeTime = getTomorrowCloseTime();
+                endTime = clampEndTime(endTime, closeTime);
 
                 Constants.AreaInfo areaInfo = Constants.SEAT_AREAS_MAP.get(areaKey);
                 if (areaInfo == null) {
@@ -446,6 +567,44 @@ public class DashboardActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    /**
+     * 获取明天的闭馆时间（周五 20:00，其他 22:00）
+     */
+    private String getTomorrowCloseTime() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+        return dayOfWeek == Calendar.FRIDAY ? "20:00" : "22:00";
+    }
+
+    /**
+     * 将结束时间截断到闭馆时间
+     */
+    private String clampEndTime(String endTime, String closeTime) {
+        Integer endMinutes = parseTimeToMinutes(endTime);
+        Integer closeMinutes = parseTimeToMinutes(closeTime);
+        if (endMinutes == null || closeMinutes == null) {
+            return endTime;
+        }
+        if (endMinutes > closeMinutes) {
+            return closeTime;
+        }
+        return endTime;
+    }
+
+    private Integer parseTimeToMinutes(String hhmm) {
+        if (hhmm == null) return null;
+        String[] parts = hhmm.trim().split(":");
+        if (parts.length != 2) return null;
+        try {
+            int h = Integer.parseInt(parts[0]);
+            int m = Integer.parseInt(parts[1]);
+            return h * 60 + m;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override

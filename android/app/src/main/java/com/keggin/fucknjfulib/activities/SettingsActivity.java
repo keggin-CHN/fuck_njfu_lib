@@ -47,6 +47,7 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvBatteryOptimizationStatus;
     private TextView tvAutoStartStatus;
     private CheckBox checkboxHidePermissionCard;
+    private LinearLayout layoutPlanTasks;
 
     // 预约设置
     private LinearLayout layoutTargetArea;
@@ -101,6 +102,7 @@ public class SettingsActivity extends AppCompatActivity {
         tvBatteryOptimizationStatus = findViewById(R.id.tvBatteryOptimizationStatus);
         tvAutoStartStatus = findViewById(R.id.tvAutoStartStatus);
         checkboxHidePermissionCard = findViewById(R.id.checkboxHidePermissionCard);
+        layoutPlanTasks = findViewById(R.id.layoutPlanTasks);
 
         layoutTargetArea = findViewById(R.id.layoutTargetArea);
         layoutTargetSeat = findViewById(R.id.layoutTargetSeat);
@@ -176,6 +178,11 @@ public class SettingsActivity extends AppCompatActivity {
             updatePermissionCardVisibility();
         });
 
+        // 计划任务
+        if (layoutPlanTasks != null) {
+            layoutPlanTasks.setOnClickListener(v -> openPlanTasks());
+        }
+
         // 目标区域
         layoutTargetArea.setOnClickListener(v -> showAreaPicker());
 
@@ -235,6 +242,11 @@ public class SettingsActivity extends AppCompatActivity {
 
         // GitHub 链接
         layoutGithub.setOnClickListener(v -> openGithubPage());
+    }
+
+    private void openPlanTasks() {
+        Intent intent = new Intent(this, PlanTasksActivity.class);
+        startActivity(intent);
     }
 
     private void scheduleAutoReserve() {

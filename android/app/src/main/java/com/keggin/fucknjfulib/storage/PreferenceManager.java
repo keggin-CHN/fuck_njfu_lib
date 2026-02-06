@@ -243,6 +243,44 @@ public class PreferenceManager {
         return prefs.getBoolean(Constants.PREF_HIDE_PERMISSION_CHECK, false);
     }
 
+    // ==================== 周计划任务（计划任务） ====================
+
+    public void setWeeklyPlanTasksJson(String weeklyPlanJson) {
+        if (weeklyPlanJson == null || weeklyPlanJson.trim().isEmpty()) {
+            clearWeeklyPlanTasksJson();
+            return;
+        }
+        prefs.edit().putString(Constants.PREF_WEEKLY_PLAN_TASKS, weeklyPlanJson).apply();
+    }
+
+    public String getWeeklyPlanTasksJson() {
+        return prefs.getString(Constants.PREF_WEEKLY_PLAN_TASKS, null);
+    }
+
+    public void clearWeeklyPlanTasksJson() {
+        prefs.edit().remove(Constants.PREF_WEEKLY_PLAN_TASKS).apply();
+    }
+
+    // ==================== 当前预约缓存（用于UI优先展示） ====================
+
+    private static final String KEY_CACHED_CURRENT_RESERVATION = "cached_current_reservation_json";
+
+    public void setCachedCurrentReservation(String reservationJson) {
+        if (reservationJson == null || reservationJson.trim().isEmpty()) {
+            clearCachedCurrentReservation();
+            return;
+        }
+        prefs.edit().putString(KEY_CACHED_CURRENT_RESERVATION, reservationJson).apply();
+    }
+
+    public String getCachedCurrentReservation() {
+        return prefs.getString(KEY_CACHED_CURRENT_RESERVATION, null);
+    }
+
+    public void clearCachedCurrentReservation() {
+        prefs.edit().remove(KEY_CACHED_CURRENT_RESERVATION).apply();
+    }
+
     // ==================== 获取区域信息 ====================
 
     /**

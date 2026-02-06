@@ -66,7 +66,7 @@
                         android:textColor="@color/text_secondary"
                         android:textStyle="bold" />
 
-                    <!-- 无预约时显示 -->
+                    <!-- 无预约/加载时显示 -->
                     <LinearLayout
                         android:id="@+id/layoutNoReservation"
                         android:layout_width="match_parent"
@@ -74,7 +74,7 @@
                         android:orientation="vertical"
                         android:gravity="center"
                         android:padding="32dp"
-                        android:visibility="gone">
+                        android:visibility="visible">
 
                         <ImageView
                             android:layout_width="64dp"
@@ -83,10 +83,11 @@
                             android:alpha="0.3" />
 
                         <TextView
+                            android:id="@+id/tvNoReservationText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="@string/no_reservation"
+                            android:text="@string/loading"
                             android:textSize="16sp"
                             android:textColor="@color/text_hint" />
                     </LinearLayout>
@@ -97,7 +98,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginTop="12dp">
+                        android:layout_marginTop="12dp"
+                        android:visibility="gone">
 
                         <!-- 区域和座位号 -->
                         <LinearLayout
@@ -117,7 +119,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
-                                android:text="三楼301A - 座位088"
+                                android:text=""
                                 android:textSize="18sp"
                                 android:textColor="@color/text_primary"
                                 android:textStyle="bold" />
@@ -142,7 +144,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
-                                android:text="08:00 - 22:00"
+                                android:text=""
                                 android:textSize="14sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
@@ -166,7 +168,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
-                                android:text="已预约"
+                                android:text=""
                                 android:textSize="14sp"
                                 android:textColor="@color/success" />
                         </LinearLayout>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NJFU_LIB</string>
+    <string name="app_name">NJFU LIB</string>
     
     <!-- 登录页面 -->
     <string name="login_subtitle">南京林业大学图书馆座位预约</string>

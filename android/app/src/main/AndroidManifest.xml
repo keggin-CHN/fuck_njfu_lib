@@ -61,6 +61,12 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <!-- 计划任务 -->
+        <activity
+            android:name=".activities.PlanTasksActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <!-- 自动预约服务 -->
         <service
             android:name=".services.AutoReserveService"

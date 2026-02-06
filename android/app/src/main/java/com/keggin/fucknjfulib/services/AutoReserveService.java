@@ -24,6 +24,8 @@ import com.keggin.fucknjfulib.reservation.SeatReservation;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.DateUtils;
 
+import org.json.JSONObject;
+
 import java.util.Calendar;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -173,21 +175,34 @@ public class AutoReserveService extends Service {
                     showResultNotification(false, "自动预约未启用");
                     return;
                 }
-                
-                // 获取预约设置
+
+                // 获取预约设置（默认配置）
                 String areaName = prefs.getString(Constants.PREF_TARGET_AREA, null);
                 int seatNumber = prefs.getInt(Constants.PREF_TARGET_SEAT, 0);
-                String startTime = prefs.getString(Constants.PREF_START_TIME, "09:30");
-                String endTime = prefs.getString(Constants.PREF_END_TIME, "22:00");
+                String startTime = prefs.getString(Constants.PREF_START_TIME, Constants.DEFAULT_START_TIME);
+                String endTime = prefs.getString(Constants.PREF_END_TIME, Constants.DEFAULT_END_TIME);
                 boolean autoFindSeat = prefs.getBoolean(Constants.PREF_AUTO_FIND_SEAT, false);
-                
+
+                // 周计划：优先使用"明天"的计划任务
+                WeeklyPlanConfig weeklyPlan = getTomorrowWeeklyPlan(prefs);
+                if (weeklyPlan != null && weeklyPlan.enabled) {
+                    areaName = weeklyPlan.areaName;
+                    seatNumber = weeklyPlan.seatNumber;
+                    startTime = weeklyPlan.startTime;
+                    endTime = weeklyPlan.endTime;
+                    Log.d(TAG, "使用周计划任务配置: " + areaName + " 座位" + seatNumber + " " + startTime + "-" + endTime);
+                }
+
+                // 闭馆时间截断：周五 20:00，其他 22:00
+                String closeTime = getTomorrowCloseTime();
+                endTime = clampEndTime(endTime, closeTime);
+
                 if (areaName == null || seatNumber <= 0) {
                     Log.e(TAG, "预约设置不完整");
                     showResultNotification(false, "请先设置预约信息");
                     return;
                 }
-                
-                // 执行认证
+
                 // 执行认证
                 Log.d(TAG, "正在认证...");
                 // 强制重新认证，确保 Cookie 是新的
@@ -316,11 +331,128 @@ public class AutoReserveService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .build();
-        
+
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.notify(NOTIFICATION_ID + 2, notification);
     }
-    
+
+    private static class WeeklyPlanConfig {
+        boolean enabled;
+        String areaName;
+        int seatNumber;
+        String startTime;
+        String endTime;
+    }
+
+    @Nullable
+    private WeeklyPlanConfig getTomorrowWeeklyPlan(SharedPreferences prefs) {
+        String json = prefs.getString(Constants.PREF_WEEKLY_PLAN_TASKS, null);
+        if (json == null || json.trim().isEmpty()) {
+            return null;
+        }
+
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        String dayKey = mapDayOfWeekToKey(cal.get(Calendar.DAY_OF_WEEK));
+        if (dayKey == null) {
+            return null;
+        }
+
+        try {
+            JSONObject root = new JSONObject(json);
+            JSONObject obj = root.optJSONObject(dayKey);
+            if (obj == null) {
+                return null;
+            }
+
+            WeeklyPlanConfig cfg = new WeeklyPlanConfig();
+            cfg.enabled = obj.optBoolean("enabled", false);
+            cfg.areaName = obj.optString("area", null);
+            cfg.seatNumber = obj.optInt("seat", 0);
+            cfg.startTime = obj.optString("start", null);
+            cfg.endTime = obj.optString("end", null);
+
+            if (!cfg.enabled) {
+                return cfg;
+            }
+
+            // enabled 时做最基本的完整性校验；不完整则回退到默认配置
+            if (cfg.areaName == null || cfg.areaName.trim().isEmpty()
+                    || cfg.seatNumber <= 0
+                    || cfg.startTime == null || cfg.startTime.trim().isEmpty()
+                    || cfg.endTime == null || cfg.endTime.trim().isEmpty()) {
+                return null;
+            }
+
+            return cfg;
+        } catch (Exception e) {
+            Log.e(TAG, "解析周计划任务失败: " + e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Nullable
+    private String mapDayOfWeekToKey(int dayOfWeek) {
+        switch (dayOfWeek) {
+            case Calendar.MONDAY:
+                return "mon";
+            case Calendar.TUESDAY:
+                return "tue";
+            case Calendar.WEDNESDAY:
+                return "wed";
+            case Calendar.THURSDAY:
+                return "thu";
+            case Calendar.FRIDAY:
+                return "fri";
+            case Calendar.SATURDAY:
+                return "sat";
+            case Calendar.SUNDAY:
+                return "sun";
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * 获取明天的闭馆时间（周五 20:00，其他 22:00）
+     */
+    private String getTomorrowCloseTime() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+        return dayOfWeek == Calendar.FRIDAY ? "20:00" : "22:00";
+    }
+
+    /**
+     * 将结束时间截断到闭馆时间
+     */
+    private String clampEndTime(String endTime, String closeTime) {
+        Integer endMinutes = parseTimeToMinutes(endTime);
+        Integer closeMinutes = parseTimeToMinutes(closeTime);
+        if (endMinutes == null || closeMinutes == null) {
+            return endTime;
+        }
+        if (endMinutes > closeMinutes) {
+            Log.d(TAG, "结束时间 " + endTime + " 超过闭馆时间 " + closeTime + "，自动截断");
+            return closeTime;
+        }
+        return endTime;
+    }
+
+    @Nullable
+    private Integer parseTimeToMinutes(String hhmm) {
+        if (hhmm == null) return null;
+        String[] parts = hhmm.trim().split(":");
+        if (parts.length != 2) return null;
+        try {
+            int h = Integer.parseInt(parts[0]);
+            int m = Integer.parseInt(parts[1]);
+            return h * 60 + m;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

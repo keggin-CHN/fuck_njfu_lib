@@ -161,4 +161,7 @@ public class Constants {
     public static final String PREF_LAST_AUTH_ACC_NO = "last_auth_acc_no";
     public static final String PREF_LAST_AUTH_TIME = "last_auth_time";
     public static final String PREF_HIDE_PERMISSION_CHECK = "hide_permission_check";
+
+    // ==================== 周计划任务（计划任务） ====================
+    public static final String PREF_WEEKLY_PLAN_TASKS = "weekly_plan_tasks_json";
 }
