@@ -107,7 +107,27 @@ public class CASAuthenticator {
         Map<String, String> headers = new HashMap<>();
         headers.put("Accept-Encoding", "identity");
         headers.put("Connection", "close");
-        headers.put("Accept", "*
+        headers.put("Accept", "*/*");
+        Response response = httpClient.get(ApiConstants.getEduLoginPageUrl(), headers);
+        String html = HttpClientManager.getResponseBody(response);
+        if (html == null) {
+            errorMessage = "无法获取登录页面";
+            return false;
+        }
+        Document doc = Jsoup.parse(html);
+        lt = getInputValue(doc, "lt");
+        salt = getInputValue(doc, "pwdDefaultEncryptSalt");
+        dllt = getInputValue(doc, "dllt");
+        execution = getInputValue(doc, "execution");
+        eventId = getInputValue(doc, "_eventId");
+        rmShown = getInputValue(doc, "rmShown");
+        if (lt == null || salt == null) {
+            errorMessage = "无法获取登录参数";
+            return false;
+        }
+        Log.d(TAG, "成功获取登录参数");
+        return true;
+    }
     private String getInputValue(Document doc, String idOrName) {
         Element element = doc.getElementById(idOrName);
         if (element != null) {
@@ -152,7 +172,7 @@ public class CASAuthenticator {
         }
         Map<String, String> formData = new HashMap<>();
         formData.put("vpn-0", "");
-        formData.put("service", "https:
+        formData.put("service", "https://webvpn.njfu.edu.cn/login?cas_login=true");
         formData.put("username", username);
         formData.put("password", encryptedPassword);
         formData.put("lt", lt);
@@ -218,7 +238,13 @@ public class CASAuthenticator {
         Map<String, String> headers = new HashMap<>();
         headers.put("Accept-Encoding", "identity");
         headers.put("Connection", "close");
-        headers.put("Accept", "*
+        headers.put("Accept", "*/*");
+        String url = ApiConstants.FRONTEND_LOGIN_URL + "?ticket=" + ticket;
+        Response response = httpClient.get(url, headers);
+        response.close();
+        Log.d(TAG, "认证完成");
+        return true;
+    }
     public String getCaptchaUrl() {
         return ApiConstants.getCaptchaUrl();
     }

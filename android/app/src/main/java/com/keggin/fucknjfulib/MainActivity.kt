@@ -196,10 +196,10 @@ class MainActivity : AppCompatActivity() {
     }
     private fun formatUrl(raw: String): String {
         val trimmed = raw.trim()
-        return if (trimmed.startsWith("http:
+        return if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             trimmed
         } else {
-            "https:
+            "https://$trimmed"
         }
     }
     companion object {

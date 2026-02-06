@@ -1,6 +1,6 @@
 package com.keggin.fucknjfulib.network;
 public class ApiConstants {
-    public static final String BASE_URL = "https:
+    public static final String BASE_URL = "https://webvpn.njfu.edu.cn";
     private static final String VPN_PREFIX = "/webvpn/LjIwMS4xNjkuMjE4LjE2OC4xNjc=";
     private static final String LIB_SUFFIX = "/LjIwNS4xNTguMjAwLjE3MS4xNTMuMTUwLjIxNi45Ny4yMTEuMTU2LjE1OC4xNzMuMTQ4LjE1NS4xNTUuMjE3LjEwMC4xNTAuMTY1";
     private static final String EDU_SUFFIX = "/LjIxNC4xNTguMTk5LjEwMi4xNjIuMTU5LjIwMi4xNjguMTQ3LjE1MS4xNTYuMTczLjE0OC4xNTMuMTY1";
@@ -41,7 +41,8 @@ public class ApiConstants {
         return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/ic-web/reserve";
     }
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-    public static final String ACCEPT_HTML = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,**";
+    public static final String ACCEPT_HTML = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
+    public static final String ACCEPT_JSON = "application/json, text/plain, */*";
     public static final String CONTENT_TYPE_JSON = "application/json;charset=UTF-8";
     public static final String CONTENT_TYPE_FORM = "application/x-www-form-urlencoded";
 }
