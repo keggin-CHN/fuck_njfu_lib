@@ -233,6 +233,9 @@ public class CASAuthenticator {
             return false;
         }
     }
+    private boolean isRedirect(int statusCode) {
+        return statusCode >= 300 && statusCode < 400;
+    }
     private boolean completeAuthWithTicket(String ticket) throws IOException {
         Log.d(TAG, "用 ticket 完成认证...");
         Map<String, String> headers = new HashMap<>();
