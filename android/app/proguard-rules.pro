@@ -18,6 +18,7 @@
 # ================= JSoup =================
 -keeppackagenames org.jsoup.nodes
 -keep class org.jsoup.** { *; }
+-dontwarn org.jspecify.annotations.**
 
 # ================= Security Crypto =================
 -keep class androidx.security.crypto.** { *; }
