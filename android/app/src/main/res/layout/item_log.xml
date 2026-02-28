@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="?attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        
+        <TextView
+            android:id="@+id/tvLogTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:textStyle="bold" />
+            
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+            
+        <TextView
+            android:id="@+id/tvLogLevel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="#4CAF50" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvLogTag"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="12sp"
+        android:textColor="#2196F3"
+        android:textStyle="italic" />
+
+    <TextView
+        android:id="@+id/tvLogMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="14sp"
+        android:textColor="#333333" />
+        
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:background="#EEEEEE" />
+</LinearLayout>

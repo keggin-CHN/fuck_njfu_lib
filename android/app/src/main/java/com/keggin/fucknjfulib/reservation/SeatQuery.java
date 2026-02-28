@@ -19,11 +19,11 @@ public class SeatQuery {
     private AuthManager authManager;
     private final HttpClientManager httpClient;
     public SeatQuery() {
-        this.httpClient = HttpClientManager.getInstance();
+        this.httpClient = HttpClientManager.getInstance(null);
     }
     public SeatQuery(AuthManager authManager) {
         this.authManager = authManager;
-        this.httpClient = HttpClientManager.getInstance();
+        this.httpClient = HttpClientManager.getInstance(null);
     }
     public void setAuthManager(AuthManager authManager) {
         this.authManager = authManager;

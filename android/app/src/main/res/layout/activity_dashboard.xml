@@ -20,6 +20,16 @@
             app:titleTextColor="@color/text_white">
 
             
+            <TextView
+                android:id="@+id/btnLogs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:padding="16dp"
+                android:text="日志"
+                android:textStyle="bold"
+                android:textColor="@color/text_white" />
+
             <ImageButton
                 android:id="@+id/btnSettings"
                 android:layout_width="48dp"
@@ -421,7 +431,7 @@
                             android:id="@+id/tvAutoReserveStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="已开启"
+                        android:text="自动化状态"
                             android:textSize="12sp"
                             android:textColor="@color/success" />
                     </LinearLayout>
@@ -454,7 +464,7 @@
                             android:id="@+id/tvLateProtectionStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="未开启"
+                        android:text="自动化状态"
                             android:textSize="12sp"
                             android:textColor="@color/text_hint" />
                     </LinearLayout>
@@ -487,7 +497,7 @@
                             android:id="@+id/tvAutoFindStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="未开启"
+                        android:text="自动化状态"
                             android:textSize="12sp"
                             android:textColor="@color/text_hint" />
                     </LinearLayout>

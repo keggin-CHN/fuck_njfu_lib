@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 public class DashboardActivity extends AppCompatActivity {
     private Toolbar toolbar;
-    private ImageButton btnSettings;
+    private ImageButton btnSettings; private android.widget.TextView btnLogs;
     private MaterialCardView cardCurrentReservation;
     private LinearLayout layoutNoReservation;
     private TextView tvNoReservationText;
@@ -67,7 +67,7 @@ public class DashboardActivity extends AppCompatActivity {
     }
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-        btnSettings = findViewById(R.id.btnSettings);
+        btnSettings = findViewById(R.id.btnSettings); btnLogs = findViewById(R.id.btnLogs);
         cardCurrentReservation = findViewById(R.id.cardCurrentReservation);
         layoutNoReservation = findViewById(R.id.layoutNoReservation);
         tvNoReservationText = findViewById(R.id.tvNoReservationText);
@@ -90,7 +90,7 @@ public class DashboardActivity extends AppCompatActivity {
         loadingOverlay = findViewById(R.id.loadingOverlay);
     }
     private void setupClickListeners() {
-        btnSettings.setOnClickListener(v -> navigateToSettings());
+        btnSettings.setOnClickListener(v -> navigateToSettings()); btnLogs.setOnClickListener(v -> startActivity(new Intent(this, LogActivity.class)));
         cardReserveNow.setOnClickListener(v -> reserveNow());
         cardQuerySeats.setOnClickListener(v -> navigateToSeatQuery());
         cardCheckTraffic.setOnClickListener(v -> checkTraffic());

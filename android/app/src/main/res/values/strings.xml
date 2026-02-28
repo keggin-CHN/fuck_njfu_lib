@@ -9,7 +9,7 @@
     <string name="hint_lib_password">图书馆密码</string>
     <string name="hint_lib_password_helper">通常为:njfu+身份证后六位+!</string>
     <string name="btn_login">登录</string>
-    <string name="login_footer">本应用仅供学习使用\n数据安全存储在本地</string>
+    <string name="login_footer"> </string>
     <string name="login_status_cas">正在登录统一认证...</string>
     <string name="login_status_lib">正在登录图书馆...</string>
     <string name="login_success">登录成功</string>

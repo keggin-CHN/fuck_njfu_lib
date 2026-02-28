@@ -23,7 +23,7 @@ public class TrafficQuery {
     public static TrafficInfo queryCurrentTraffic() {
         TrafficInfo info = new TrafficInfo();
         try {
-            HttpClientManager httpClient = HttpClientManager.getInstance();
+            HttpClientManager httpClient = HttpClientManager.getInstance(null);
             Map<String, String> headers = new HashMap<>();
             headers.put("Accept", "application/json, text/plain, */*");
             headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");

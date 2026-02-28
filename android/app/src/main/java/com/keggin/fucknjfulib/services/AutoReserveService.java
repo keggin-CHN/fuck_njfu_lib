@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
+import com.keggin.fucknjfulib.utils.LocalLogManager;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import com.keggin.fucknjfulib.R;
@@ -48,7 +49,7 @@ public class AutoReserveService extends Service {
             return START_NOT_STICKY;
         }
         String action = intent.getAction();
-        Log.d(TAG, "收到动作: " + action);
+        LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "收到动作: " + action);
         if (ACTION_SCHEDULE.equals(action)) {
             scheduleAutoReserve();
             showScheduledNotification();
@@ -79,7 +80,7 @@ public class AutoReserveService extends Service {
         if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
             calendar.add(Calendar.DAY_OF_MONTH, 1);
         }
-        Log.d(TAG, "设置定时预约: " + calendar.getTime());
+        LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "设置定时预约: " + calendar.getTime());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(
@@ -118,11 +119,11 @@ public class AutoReserveService extends Service {
         }
         executor.execute(() -> {
             try {
-                Log.d(TAG, "开始执行自动预约...");
+                LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "开始执行自动预约...");
                 AuthManager authManager = AuthManager.getInstance(this);
                 SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
                 if (!prefs.getBoolean(Constants.PREF_AUTO_RESERVE, false)) {
-                    Log.d(TAG, "自动预约未启用");
+                    LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "自动预约未启用");
                     showResultNotification(false, "自动预约未启用");
                     return;
                 }
@@ -137,18 +138,18 @@ public class AutoReserveService extends Service {
                     seatNumber = weeklyPlan.seatNumber;
                     startTime = weeklyPlan.startTime;
                     endTime = weeklyPlan.endTime;
-                    Log.d(TAG, "使用周计划任务配置: " + areaName + " 座位" + seatNumber + " " + startTime + "-" + endTime);
+                    LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "使用周计划任务配置: " + areaName + " 座位" + seatNumber + " " + startTime + "-" + endTime);
                 }
                 String closeTime = getTomorrowCloseTime();
                 endTime = clampEndTime(endTime, closeTime);
                 if (areaName == null || seatNumber <= 0) {
-                    Log.e(TAG, "预约设置不完整");
+                    LocalLogManager.getInstance(AutoReserveService.this).e(TAG, "预约设置不完整");
                     showResultNotification(false, "请先设置预约信息");
                     return;
                 }
-                Log.d(TAG, "正在认证...");
+                LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "正在认证...");
                 if (!authManager.refreshAuth()) {
-                    Log.e(TAG, "认证失败: " + authManager.getErrorMessage());
+                    LocalLogManager.getInstance(AutoReserveService.this).e(TAG, "认证失败: " + authManager.getErrorMessage());
                     showResultNotification(false, "认证失败: " + authManager.getErrorMessage());
                     return;
                 }
@@ -173,7 +174,7 @@ public class AutoReserveService extends Service {
                 }
                 scheduleAutoReserve();
             } catch (Exception e) {
-                Log.e(TAG, "自动预约出错: " + e.getMessage(), e);
+                LocalLogManager.getInstance(AutoReserveService.this).e(TAG, "自动预约出错: " + e.getMessage(), e);
                 showResultNotification(false, "自动预约出错: " + e.getMessage());
             } finally {
                 if (wakeLock != null && wakeLock.isHeld()) {
@@ -198,7 +199,7 @@ public class AutoReserveService extends Service {
                 .edit()
                 .remove("next_reserve_time")
                 .apply();
-        Log.d(TAG, "自动预约已取消");
+        LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "自动预约已取消");
     }
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -289,7 +290,7 @@ public class AutoReserveService extends Service {
             }
             return cfg;
         } catch (Exception e) {
-            Log.e(TAG, "解析周计划任务失败: " + e.getMessage(), e);
+            LocalLogManager.getInstance(AutoReserveService.this).e(TAG, "解析周计划任务失败: " + e.getMessage(), e);
             return null;
         }
     }
@@ -327,7 +328,7 @@ public class AutoReserveService extends Service {
             return endTime;
         }
         if (endMinutes > closeMinutes) {
-            Log.d(TAG, "结束时间 " + endTime + " 超过闭馆时间 " + closeTime + "，自动截断");
+            LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "结束时间 " + endTime + " 超过闭馆时间 " + closeTime + "，自动截断");
             return closeTime;
         }
         return endTime;

@@ -18,7 +18,7 @@ public class SeatReservation {
     private final HttpClientManager httpClient;
     public SeatReservation(AuthManager authManager) {
         this.authManager = authManager;
-        this.httpClient = HttpClientManager.getInstance();
+        this.httpClient = HttpClientManager.getInstance(null);
     }
     public static class ReservationResult {
         public boolean success;

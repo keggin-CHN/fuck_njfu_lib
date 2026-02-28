@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import android.content.Context;
 import okhttp3.Response;
 public class LibraryAuthenticator {
     private static final String TAG = "LibraryAuthenticator";
@@ -17,10 +18,12 @@ public class LibraryAuthenticator {
     private String accNo;
     private long lastAuthTime;
     private String errorMessage;
-    public LibraryAuthenticator(String username, String libPassword) {
+    private final Context context;
+    public LibraryAuthenticator(Context context, String username, String libPassword) {
+        this.context = context.getApplicationContext();
         this.username = username;
         this.libPassword = libPassword;
-        this.httpClient = HttpClientManager.getInstance();
+        this.httpClient = HttpClientManager.getInstance(this.context);
     }
     public boolean authenticate() {
         return authenticate(5); 

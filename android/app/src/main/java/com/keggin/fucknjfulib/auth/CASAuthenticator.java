@@ -1,4 +1,5 @@
 package com.keggin.fucknjfulib.auth;
+
 import android.util.Log;
 import com.keggin.fucknjfulib.crypto.AESCipher;
 import com.keggin.fucknjfulib.network.ApiConstants;
@@ -11,7 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import android.content.Context;
 import okhttp3.Response;
+
 public class CASAuthenticator {
     private static final String TAG = "CASAuthenticator";
     private final String username;
@@ -26,11 +29,15 @@ public class CASAuthenticator {
     private boolean needCaptcha = false;
     private String clientTicket;
     private String errorMessage;
-    public CASAuthenticator(String username, String eduPassword) {
+    private final Context context;
+
+    public CASAuthenticator(Context context, String username, String eduPassword) {
+        this.context = context.getApplicationContext();
         this.username = username;
         this.eduPassword = eduPassword;
-        this.httpClient = HttpClientManager.getInstance();
+        this.httpClient = HttpClientManager.getInstance(this.context);
     }
+
     public boolean authenticate() {
         try {
             if (!getInitialClientTicket()) {
@@ -53,6 +60,7 @@ public class CASAuthenticator {
             return false;
         }
     }
+
     public boolean authenticateWithCaptcha(String captcha) {
         try {
             if (salt == null) {
@@ -72,6 +80,7 @@ public class CASAuthenticator {
             return false;
         }
     }
+
     private boolean getInitialClientTicket() throws IOException {
         Log.d(TAG, "获取初始 client ticket...");
         Response response = httpClient.get(ApiConstants.FRONTEND_LOGIN_URL);
@@ -86,6 +95,7 @@ public class CASAuthenticator {
         Log.e(TAG, "获取 client ticket 失败");
         return false;
     }
+
     private void getRouteCookie() {
         try {
             Log.d(TAG, "获取 route cookie...");
@@ -95,13 +105,16 @@ public class CASAuthenticator {
                 Pattern pattern = Pattern.compile("route=([^;]+)");
                 Matcher matcher = pattern.matcher(body);
                 if (matcher.find()) {
-                    Log.d(TAG, "成功获取 route cookie: " + matcher.group(1));
+                    String route = matcher.group(1);
+                    Log.d(TAG, "成功获取 route cookie: " + route);
+                    httpClient.addCookie("webvpn.njfu.edu.cn", "route", route);
                 }
             }
         } catch (Exception e) {
             Log.w(TAG, "获取 route cookie 失败（可以继续）: " + e.getMessage());
         }
     }
+
     private boolean fetchLoginPageParams() throws IOException {
         Log.d(TAG, "获取登录页面参数...");
         Map<String, String> headers = new HashMap<>();
@@ -128,6 +141,7 @@ public class CASAuthenticator {
         Log.d(TAG, "成功获取登录参数");
         return true;
     }
+
     private String getInputValue(Document doc, String idOrName) {
         Element element = doc.getElementById(idOrName);
         if (element != null) {
@@ -139,6 +153,7 @@ public class CASAuthenticator {
         }
         return null;
     }
+
     private boolean checkNeedCaptcha() {
         try {
             String url = ApiConstants.getNeedCaptchaUrl(username, salt);
@@ -157,12 +172,15 @@ public class CASAuthenticator {
         Log.d(TAG, "不需要验证码");
         return false;
     }
+
     private boolean submitLogin() throws IOException {
         return doSubmitLogin(null);
     }
+
     private boolean submitLoginWithCaptcha(String captcha) throws IOException {
         return doSubmitLogin(captcha);
     }
+
     private boolean doSubmitLogin(String captcha) throws IOException {
         Log.d(TAG, "提交登录...");
         String encryptedPassword = AESCipher.encrypt(eduPassword, salt);
@@ -233,9 +251,11 @@ public class CASAuthenticator {
             return false;
         }
     }
+
     private boolean isRedirect(int statusCode) {
         return statusCode >= 300 && statusCode < 400;
     }
+
     private boolean completeAuthWithTicket(String ticket) throws IOException {
         Log.d(TAG, "用 ticket 完成认证...");
         Map<String, String> headers = new HashMap<>();
@@ -248,9 +268,11 @@ public class CASAuthenticator {
         Log.d(TAG, "认证完成");
         return true;
     }
+
     public String getCaptchaUrl() {
         return ApiConstants.getCaptchaUrl();
     }
+
     public byte[] getCaptchaImage() {
         try {
             if (salt == null) {
@@ -267,12 +289,15 @@ public class CASAuthenticator {
         }
         return null;
     }
+
     public boolean isNeedCaptcha() {
         return needCaptcha;
     }
+
     public String getErrorMessage() {
         return errorMessage;
     }
+
     public String getClientTicket() {
         return clientTicket;
     }

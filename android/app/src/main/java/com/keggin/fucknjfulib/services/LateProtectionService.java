@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
+import com.keggin.fucknjfulib.utils.LocalLogManager;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import com.keggin.fucknjfulib.R;
@@ -48,7 +49,7 @@ public class LateProtectionService extends Service {
             return START_NOT_STICKY;
         }
         String action = intent.getAction();
-        Log.d(TAG, "收到动作: " + action);
+        LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "收到动作: " + action);
         if (ACTION_SCHEDULE.equals(action)) {
             scheduleCheckForTodayReservations();
         } else if (ACTION_CHECK.equals(action)) {
@@ -65,12 +66,12 @@ public class LateProtectionService extends Service {
                 AuthManager authManager = AuthManager.getInstance(this);
                 SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
                 if (!prefs.getBoolean(Constants.PREF_PREVENT_LATE, false)) {
-                    Log.d(TAG, "迟到保护未启用");
+                    LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "迟到保护未启用");
                     return;
                 }
                 if (!authManager.isAuthenticated()) {
                     if (!authManager.authenticate()) {
-                        Log.e(TAG, "认证失败，无法检查预约");
+                        LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "认证失败，无法检查预约");
                         return;
                     }
                 }
@@ -78,14 +79,14 @@ public class LateProtectionService extends Service {
                 List<SeatReservation.ReservationInfo> todayReservations = 
                         reservation.getTodayReservations();
                 if (todayReservations.isEmpty()) {
-                    Log.d(TAG, "今日无预约");
+                    LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "今日无预约");
                     return;
                 }
                 for (SeatReservation.ReservationInfo info : todayReservations) {
                     scheduleCheckForReservation(info);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "设置迟到检查任务出错: " + e.getMessage(), e);
+                LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "设置迟到检查任务出错: " + e.getMessage(), e);
             }
         });
     }
@@ -93,10 +94,10 @@ public class LateProtectionService extends Service {
         long checkTime = info.beginTime - Constants.LATE_CHECK_MINUTES_BEFORE * 60 * 1000;
         long now = System.currentTimeMillis();
         if (checkTime <= now) {
-            Log.d(TAG, "预约 " + info.uuid + " 的检查时间已过");
+            LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "预约 " + info.uuid + " 的检查时间已过");
             return;
         }
-        Log.d(TAG, "设置迟到检查: " + info.seatName + ", 检查时间: " + 
+        LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "设置迟到检查: " + info.seatName + ", 检查时间: " + 
                 DateUtils.formatTimestamp(checkTime));
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this, LateProtectionReceiver.class);
@@ -130,16 +131,16 @@ public class LateProtectionService extends Service {
         }
         executor.execute(() -> {
             try {
-                Log.d(TAG, "执行迟到检查: " + uuid);
+                LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "执行迟到检查: " + uuid);
                 AuthManager authManager = AuthManager.getInstance(this);
                 SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
                 if (!prefs.getBoolean(Constants.PREF_PREVENT_LATE, false)) {
-                    Log.d(TAG, "迟到保护已关闭");
+                    LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "迟到保护已关闭");
                     return;
                 }
                 if (!authManager.isAuthenticated()) {
                     if (!authManager.authenticate()) {
-                        Log.e(TAG, "认证失败");
+                        LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "认证失败");
                         showResultNotification(false, "迟到保护检查失败：认证失败");
                         return;
                     }
@@ -155,23 +156,23 @@ public class LateProtectionService extends Service {
                     }
                 }
                 if (targetResv == null) {
-                    Log.d(TAG, "预约不存在或已被取消");
+                    LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "预约不存在或已被取消");
                     return;
                 }
                 String status = targetResv.statusName;
                 if (status != null && (status.contains("使用") || status.contains("签到"))) {
-                    Log.d(TAG, "用户已签到，无需保护");
+                    LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "用户已签到，无需保护");
                     showResultNotification(true, "您已签到，无需迟到保护");
                     return;
                 }
-                Log.d(TAG, "用户未签到，执行迟到保护...");
+                LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "用户未签到，执行迟到保护...");
                 SeatReservation.ReserveResult cancelResult = reservation.cancelReservation(uuid);
                 if (!cancelResult.success) {
-                    Log.e(TAG, "取消预约失败: " + cancelResult.message);
+                    LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "取消预约失败: " + cancelResult.message);
                     showResultNotification(false, "迟到保护失败：无法取消原预约");
                     return;
                 }
-                Log.d(TAG, "已取消原预约，准备重新预约...");
+                LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "已取消原预约，准备重新预约...");
                 showResultNotification(true, "迟到保护：已取消原预约，正在重新预约...");
                 String newStartTime = DateUtils.addHours(
                         DateUtils.formatTimestampToTime(beginTime), 
@@ -180,7 +181,7 @@ public class LateProtectionService extends Service {
                 int seatNumber = prefs.getInt(Constants.PREF_TARGET_SEAT, 0);
                 String endTime = prefs.getString(Constants.PREF_END_TIME, "22:00");
                 if (!DateUtils.isValidDuration(newStartTime, endTime + ":00", 2)) {
-                    Log.d(TAG, "剩余时间不足2小时，不再重新预约");
+                    LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "剩余时间不足2小时，不再重新预约");
                     showResultNotification(true, 
                             "迟到保护：已取消原预约，剩余时间不足2小时，不再重新预约");
                     return;
@@ -188,7 +189,7 @@ public class LateProtectionService extends Service {
                 SeatReservation.ReserveResult reserveResult = reservation.reserveTodaySeat(
                         areaName, seatNumber, newStartTime, endTime + ":00");
                 if (reserveResult.success) {
-                    Log.d(TAG, "迟到保护重新预约成功");
+                    LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "迟到保护重新预约成功");
                     showResultNotification(true, 
                             "迟到保护成功：已重新预约，新开始时间 " + newStartTime);
                     Calendar cal = DateUtils.parseTimeToCalendar(
@@ -201,12 +202,12 @@ public class LateProtectionService extends Service {
                         scheduleCheckForReservation(newInfo);
                     }
                 } else {
-                    Log.e(TAG, "迟到保护重新预约失败: " + reserveResult.message);
+                    LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "迟到保护重新预约失败: " + reserveResult.message);
                     showResultNotification(false, 
                             "迟到保护：已取消原预约，但重新预约失败：" + reserveResult.message);
                 }
             } catch (Exception e) {
-                Log.e(TAG, "迟到检查出错: " + e.getMessage(), e);
+                LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "迟到检查出错: " + e.getMessage(), e);
                 showResultNotification(false, "迟到保护出错: " + e.getMessage());
             } finally {
                 if (wakeLock != null && wakeLock.isHeld()) {
