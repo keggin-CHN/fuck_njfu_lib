@@ -9,8 +9,8 @@ android {
         applicationId 'com.keggin.fucknjfulib'
         minSdk 24
         targetSdk 34
-        versionCode 7
-        versionName '1.0.9'
+        versionCode 9
+        versionName '1.1.1'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         vectorDrawables.useSupportLibrary = true
         buildConfigField "String", "DEFAULT_SERVER_URL", "\"https://libseat.njfu.edu.cn\""

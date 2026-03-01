@@ -88,53 +88,8 @@ public class SystemPermissionChecker {
         String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase();
         boolean isHuaweiFamily = manufacturer.contains("huawei") || manufacturer.contains("honor");
 
-        // HarmonyOS/EMUI：避免走会弹“没有应用可执行此操作”的隐式 Intent，优先显式组件
+        // Mate60/HarmonyOS 稳定策略：直接打开当前应用详情页，避免 ROM 私有页面兼容性问题
         if (isHuaweiFamily) {
-            if (tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.optimize.process.ProtectActivity")) {
-                return;
-            }
-            if (tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity")) {
-                return;
-            }
-            if (tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.startupmgr.ui.StartupAwakedAppListActivity")) {
-                return;
-            }
-            if (tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity")) {
-                return;
-            }
-            if (tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.optimize.bootstart.BootStartActivity")) {
-                return;
-            }
-            if (tryStartActivity(context, "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.power.ui.HwPowerManagerActivity")) {
-                return;
-            }
-            if (tryStartActivity(context, "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.MainActivity")) {
-                return;
-            }
-
-            // 补充华为 Action 入口（有解析器才会执行，不会再弹“没有应用可执行此操作”）
-            if (tryStartActionIntent(context, "huawei.intent.action.HSM_BOOTAPP_MANAGER",
-                    "com.huawei.systemmanager", true)) {
-                return;
-            }
-            if (tryStartActionIntent(context, "huawei.intent.action.HSM_PROTECTED_APPS",
-                    "com.huawei.systemmanager", true)) {
-                return;
-            }
-
-            // 兜底1：拉起系统管家首页
-            if (tryLaunchPackage(context, "com.huawei.systemmanager")) {
-                return;
-            }
-
-            // 兜底2：应用详情页（可进入电池/启动管理相关项）
             openAppDetailsSettings(context);
             return;
         }
@@ -184,40 +139,9 @@ public class SystemPermissionChecker {
                         "com.miui.powerkeeper.ui.HiddenAppsContainerManagementActivity");
             }
         } else if (manufacturer.contains("huawei") || manufacturer.contains("honor")) {
-            success = tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity");
-            if (!success) {
-                success = tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                        "com.huawei.systemmanager.startupmgr.ui.StartupAwakedAppListActivity");
-            }
-            if (!success) {
-                success = tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                        "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity");
-            }
-            if (!success) {
-                success = tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                        "com.huawei.systemmanager.optimize.bootstart.BootStartActivity");
-            }
-            if (!success) {
-                success = tryStartActionIntent(context, "huawei.intent.action.HSM_BOOTAPP_MANAGER",
-                        "com.huawei.systemmanager", true);
-            }
-            if (!success) {
-                success = tryStartActionIntent(context, "huawei.intent.action.HSM_PROTECTED_APPS",
-                        "com.huawei.systemmanager", true);
-            }
-            if (!success) {
-                success = tryStartActivityWithPackageExtra(context, "com.huawei.systemmanager",
-                        "com.huawei.systemmanager.optimize.process.ProtectActivity");
-            }
-            if (!success) {
-                success = tryStartActivity(context, "com.huawei.systemmanager",
-                        "com.huawei.systemmanager.power.ui.HwPowerManagerActivity");
-            }
-            if (!success) {
-                success = tryStartActivity(context, "com.huawei.systemmanager",
-                        "com.huawei.systemmanager.MainActivity");
-            }
+            // Mate60/HarmonyOS 稳定策略：直接打开应用详情页，由用户进入“启动管理/电池”
+            openAppDetailsSettings(context);
+            return;
         } else if (manufacturer.contains("oppo") || manufacturer.contains("realme") || manufacturer.contains("oneplus")) {
             success = tryStartActivity(context, "com.coloros.safecenter",
                     "com.coloros.safecenter.permission.startup.StartupAppListActivity");
@@ -260,11 +184,6 @@ public class SystemPermissionChecker {
                     "com.lenovo.security.purebackground.PureBackgroundActivity");
         }
 
-        if (!success) {
-            if (manufacturer.contains("huawei") || manufacturer.contains("honor")) {
-                success = tryLaunchPackage(context, "com.huawei.systemmanager");
-            }
-        }
         if (!success) {
             openAppDetailsSettings(context);
         }

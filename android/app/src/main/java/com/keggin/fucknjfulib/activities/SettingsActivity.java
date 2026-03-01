@@ -197,9 +197,20 @@ public class SettingsActivity extends AppCompatActivity {
     private void setupClickListeners() {
         layoutNotificationPermission.setOnClickListener(v -> SystemPermissionChecker.openNotificationSettings(this));
         layoutExactAlarmPermission.setOnClickListener(v -> SystemPermissionChecker.openExactAlarmSettings(this));
-        layoutBatteryOptimization
-                .setOnClickListener(v -> SystemPermissionChecker.openBatteryOptimizationSettings(this));
-        layoutAutoStartPermission.setOnClickListener(v -> SystemPermissionChecker.openAutoStartSettings(this));
+        layoutBatteryOptimization.setOnClickListener(v -> {
+            if (isHuaweiFamilyDevice()) {
+                Toast.makeText(this, "华为/荣耀设备将打开应用信息页，请在“电池/后台运行”中手动允许后台运行", Toast.LENGTH_LONG)
+                        .show();
+            }
+            SystemPermissionChecker.openBatteryOptimizationSettings(this);
+        });
+        layoutAutoStartPermission.setOnClickListener(v -> {
+            if (isHuaweiFamilyDevice()) {
+                Toast.makeText(this, "华为/荣耀设备将打开应用信息页，请在“启动管理”中允许自启动与关联启动", Toast.LENGTH_LONG)
+                        .show();
+            }
+            SystemPermissionChecker.openAutoStartSettings(this);
+        });
         checkboxHidePermissionCard.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setHidePermissionCheck(isChecked);
             updatePermissionCardVisibility();
@@ -409,6 +420,11 @@ public class SettingsActivity extends AppCompatActivity {
         finish();
     }
 
+    private boolean isHuaweiFamilyDevice() {
+        String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase();
+        return manufacturer.contains("huawei") || manufacturer.contains("honor");
+    }
+
     private void checkSystemPermissions() {
         boolean hasNotification = SystemPermissionChecker.isNotificationPermissionGranted(this);
         tvNotificationStatus.setText(hasNotification
@@ -422,12 +438,19 @@ public class SettingsActivity extends AppCompatActivity {
                 : getString(R.string.permission_status_not_granted));
         tvExactAlarmStatus.setTextColor(getResources().getColor(
                 hasExactAlarm ? R.color.success : R.color.error, null));
-        boolean batteryOptDisabled = SystemPermissionChecker.isBatteryOptimizationDisabled(this);
-        tvBatteryOptimizationStatus.setText(batteryOptDisabled
-                ? getString(R.string.permission_status_granted)
-                : getString(R.string.permission_status_not_granted));
-        tvBatteryOptimizationStatus.setTextColor(getResources().getColor(
-                batteryOptDisabled ? R.color.success : R.color.error, null));
+        boolean isHuaweiFamily = isHuaweiFamilyDevice();
+        if (isHuaweiFamily) {
+            // HarmonyOS/EMUI 无法稳定读取后台运行与自启动状态，统一改为手动检查提示
+            tvBatteryOptimizationStatus.setText(getString(R.string.permission_status_check_manually));
+            tvBatteryOptimizationStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        } else {
+            boolean batteryOptDisabled = SystemPermissionChecker.isBatteryOptimizationDisabled(this);
+            tvBatteryOptimizationStatus.setText(batteryOptDisabled
+                    ? getString(R.string.permission_status_granted)
+                    : getString(R.string.permission_status_not_granted));
+            tvBatteryOptimizationStatus.setTextColor(getResources().getColor(
+                    batteryOptDisabled ? R.color.success : R.color.error, null));
+        }
         tvAutoStartStatus.setText(getString(R.string.permission_status_check_manually));
         tvAutoStartStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
     }

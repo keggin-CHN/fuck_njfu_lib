@@ -55,8 +55,9 @@ public class DashboardActivity extends AppCompatActivity {
     private TextView tvTomorrowReservationSeat;
     private TextView tvTomorrowReservationTime;
     private TextView tvTomorrowReservationStatus;
-    private MaterialButton btnSignIn;
-    private MaterialButton btnCancelReservation;
+    private MaterialButton btnTodaySignIn;
+    private MaterialButton btnTodayCancelReservation;
+    private MaterialButton btnTomorrowCancelReservation;
     private MaterialCardView cardReserveNow;
     private MaterialCardView cardQuerySeats;
     private MaterialCardView cardCheckTraffic;
@@ -74,6 +75,8 @@ public class DashboardActivity extends AppCompatActivity {
     private ExecutorService executor;
     private PreferenceManager preferenceManager;
     private SeatReservation.ReservationInfo currentReservation;
+    private SeatReservation.ReservationInfo todayReservationForActions;
+    private SeatReservation.ReservationInfo tomorrowReservationForActions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,8 +116,9 @@ public class DashboardActivity extends AppCompatActivity {
         tvTomorrowReservationSeat = findViewById(R.id.tvTomorrowReservationSeat);
         tvTomorrowReservationTime = findViewById(R.id.tvTomorrowReservationTime);
         tvTomorrowReservationStatus = findViewById(R.id.tvTomorrowReservationStatus);
-        btnSignIn = findViewById(R.id.btnSignIn);
-        btnCancelReservation = findViewById(R.id.btnCancelReservation);
+        btnTodaySignIn = findViewById(R.id.btnTodaySignIn);
+        btnTodayCancelReservation = findViewById(R.id.btnTodayCancelReservation);
+        btnTomorrowCancelReservation = findViewById(R.id.btnTomorrowCancelReservation);
         cardReserveNow = findViewById(R.id.cardReserveNow);
         cardQuerySeats = findViewById(R.id.cardQuerySeats);
         cardCheckTraffic = findViewById(R.id.cardCheckTraffic);
@@ -138,8 +142,15 @@ public class DashboardActivity extends AppCompatActivity {
         cardQuerySeats.setOnClickListener(v -> navigateToVisualSeat());
         cardCheckTraffic.setOnClickListener(v -> checkTraffic());
         cardSettings.setOnClickListener(v -> navigateToSettings());
-        btnSignIn.setOnClickListener(v -> signIn());
-        btnCancelReservation.setOnClickListener(v -> cancelReservation());
+        if (btnTodaySignIn != null) {
+            btnTodaySignIn.setOnClickListener(v -> signIn(todayReservationForActions));
+        }
+        if (btnTodayCancelReservation != null) {
+            btnTodayCancelReservation.setOnClickListener(v -> cancelReservation(todayReservationForActions, "今天"));
+        }
+        if (btnTomorrowCancelReservation != null) {
+            btnTomorrowCancelReservation.setOnClickListener(v -> cancelReservation(tomorrowReservationForActions, "明天"));
+        }
         if (cardAccountInfo != null)
             cardAccountInfo.setOnClickListener(v -> navigateToAccountInfo());
         if (cardPlanTasks != null)
@@ -271,7 +282,9 @@ public class DashboardActivity extends AppCompatActivity {
                 } else if (tomorrow.equals(info.onDate)) {
                     tomorrowReservation = info;
                 } else {
-                    todayReservation = info;
+                    preferenceManager.clearCachedCurrentReservation();
+                    showReservationLoadingState();
+                    return false;
                 }
 
                 currentReservation = selectPrimaryReservation(todayReservation, tomorrowReservation);
@@ -343,13 +356,18 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void updateReservationUI(SeatReservation.ReservationInfo todayReservation,
             SeatReservation.ReservationInfo tomorrowReservation) {
-        if (todayReservation == null && tomorrowReservation == null) {
+        boolean hasTodayReservation = todayReservation != null && todayReservation.hasReservation;
+        boolean hasTomorrowReservation = tomorrowReservation != null && tomorrowReservation.hasReservation;
+
+        if (!hasTodayReservation && !hasTomorrowReservation) {
             if (tvNoReservationText != null) {
                 tvNoReservationText.setText(R.string.no_reservation);
             }
             layoutNoReservation.setVisibility(View.VISIBLE);
             layoutReservationInfo.setVisibility(View.GONE);
-            updateActionButtonsForReservation(null);
+            todayReservationForActions = null;
+            tomorrowReservationForActions = null;
+            updateActionButtonsForReservations(null, null);
             return;
         }
 
@@ -360,11 +378,25 @@ public class DashboardActivity extends AppCompatActivity {
             ((View) tvReservationSeat.getParent()).setVisibility(View.GONE);
         }
 
-        bindDayReservation(todayReservation, true);
-        bindDayReservation(tomorrowReservation, false);
+        if (layoutTodayReservation != null) {
+            layoutTodayReservation.setVisibility(hasTodayReservation ? View.VISIBLE : View.GONE);
+        }
+        if (layoutTomorrowReservation != null) {
+            layoutTomorrowReservation.setVisibility(hasTomorrowReservation ? View.VISIBLE : View.GONE);
+        }
 
-        currentReservation = selectPrimaryReservation(todayReservation, tomorrowReservation);
-        updateActionButtonsForReservation(currentReservation);
+        if (hasTodayReservation) {
+            bindDayReservation(todayReservation, true);
+        }
+        if (hasTomorrowReservation) {
+            bindDayReservation(tomorrowReservation, false);
+        }
+
+        todayReservationForActions = hasTodayReservation ? todayReservation : null;
+        tomorrowReservationForActions = hasTomorrowReservation ? tomorrowReservation : null;
+
+        currentReservation = selectPrimaryReservation(todayReservationForActions, tomorrowReservationForActions);
+        updateActionButtonsForReservations(todayReservationForActions, tomorrowReservationForActions);
     }
 
     private String formatSeatLine(SeatReservation.ReservationInfo reservation) {
@@ -384,30 +416,29 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private void bindDayReservation(SeatReservation.ReservationInfo reservation, boolean isToday) {
-        String defaultDate = isToday ? DateUtils.getTodayDate() : DateUtils.getTomorrowDate();
         TextView labelView = isToday ? tvTodayReservationLabel : tvTomorrowReservationLabel;
         TextView seatView = isToday ? tvTodayReservationSeat : tvTomorrowReservationSeat;
         TextView timeView = isToday ? tvTodayReservationTime : tvTomorrowReservationTime;
         TextView statusView = isToday ? tvTodayReservationStatus : tvTomorrowReservationStatus;
         LinearLayout container = isToday ? layoutTodayReservation : layoutTomorrowReservation;
 
+        if (reservation == null || !reservation.hasReservation) {
+            if (container != null) {
+                container.setVisibility(View.GONE);
+            }
+            return;
+        }
+
         if (container != null) {
             container.setVisibility(View.VISIBLE);
         }
 
+        String defaultDate = isToday ? DateUtils.getTodayDate() : DateUtils.getTomorrowDate();
         String dayPrefix = isToday ? "今天" : "明天";
-        String dateText = reservation != null && reservation.onDate != null && !reservation.onDate.trim().isEmpty()
+        String dateText = reservation.onDate != null && !reservation.onDate.trim().isEmpty()
                 ? reservation.onDate
                 : defaultDate;
         labelView.setText(dayPrefix + " · " + dateText);
-
-        if (reservation == null || !reservation.hasReservation) {
-            seatView.setText(formatSeatLine(null));
-            timeView.setText("--:-- - --:--");
-            statusView.setText("暂无预约");
-            statusView.setTextColor(getColor(R.color.text_hint));
-            return;
-        }
 
         seatView.setText(formatSeatLine(reservation));
         String start = reservation.startTime != null && !reservation.startTime.trim().isEmpty() ? reservation.startTime : "--:--";
@@ -449,23 +480,33 @@ public class DashboardActivity extends AppCompatActivity {
         return null;
     }
 
-    private void updateActionButtonsForReservation(SeatReservation.ReservationInfo reservation) {
-        if (reservation == null || !reservation.hasReservation) {
-            btnSignIn.setVisibility(View.GONE);
-            btnCancelReservation.setVisibility(View.GONE);
-            return;
+    private void updateActionButtonsForReservations(SeatReservation.ReservationInfo todayReservation,
+            SeatReservation.ReservationInfo tomorrowReservation) {
+        if (btnTodaySignIn != null) {
+            btnTodaySignIn.setVisibility(View.GONE);
+        }
+        if (btnTodayCancelReservation != null) {
+            btnTodayCancelReservation.setVisibility(View.GONE);
+        }
+        if (btnTomorrowCancelReservation != null) {
+            btnTomorrowCancelReservation.setVisibility(View.GONE);
         }
 
-        btnCancelReservation.setVisibility(View.VISIBLE);
-        boolean isTodayReservation = reservation.onDate != null
-                && reservation.onDate.equals(DateUtils.getTodayDate());
-
-        if (!isTodayReservation) {
-            btnSignIn.setVisibility(View.GONE);
-            return;
+        if (todayReservation != null && todayReservation.hasReservation) {
+            if (btnTodayCancelReservation != null) {
+                btnTodayCancelReservation.setVisibility(View.VISIBLE);
+            }
+            if (btnTodaySignIn != null) {
+                btnTodaySignIn.setVisibility(View.VISIBLE);
+                updateButtonVisibility(btnTodaySignIn, todayReservation.state);
+            }
         }
 
-        updateButtonVisibility(reservation.state);
+        if (tomorrowReservation != null && tomorrowReservation.hasReservation) {
+            if (btnTomorrowCancelReservation != null) {
+                btnTomorrowCancelReservation.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
     private String getStatusText(String state) {
@@ -502,18 +543,21 @@ public class DashboardActivity extends AppCompatActivity {
         }
     }
 
-    private void updateButtonVisibility(String state) {
+    private void updateButtonVisibility(MaterialButton actionButton, String state) {
+        if (actionButton == null) {
+            return;
+        }
         if ("RESERVE".equals(state) || "LATE".equals(state)) {
-            btnSignIn.setVisibility(View.VISIBLE);
-            btnSignIn.setText(R.string.btn_sign_in);
+            actionButton.setVisibility(View.VISIBLE);
+            actionButton.setText(R.string.btn_sign_in);
         } else if ("CHECK_IN".equals(state)) {
-            btnSignIn.setVisibility(View.VISIBLE);
-            btnSignIn.setText(R.string.btn_sign_out);
+            actionButton.setVisibility(View.VISIBLE);
+            actionButton.setText(R.string.btn_sign_out);
         } else if ("AWAY".equals(state)) {
-            btnSignIn.setVisibility(View.VISIBLE);
-            btnSignIn.setText("返回");
+            actionButton.setVisibility(View.VISIBLE);
+            actionButton.setText("返回");
         } else {
-            btnSignIn.setVisibility(View.GONE);
+            actionButton.setVisibility(View.GONE);
         }
     }
 
@@ -708,8 +752,8 @@ public class DashboardActivity extends AppCompatActivity {
         });
     }
 
-    private void signIn() {
-        if (currentReservation == null)
+    private void signIn(SeatReservation.ReservationInfo targetReservation) {
+        if (targetReservation == null || !targetReservation.hasReservation)
             return;
         showLoading(true);
         executor.execute(() -> {
@@ -717,16 +761,16 @@ public class DashboardActivity extends AppCompatActivity {
                 AuthManager authManager = AuthManager.getInstance(this);
                 SeatReservation seatReservation = new SeatReservation(authManager);
                 SeatReservation.OperationResult result;
-                if ("CHECK_IN".equals(currentReservation.state)) {
+                if ("CHECK_IN".equals(targetReservation.state)) {
                     result = seatReservation.signOut(
                             authManager.getToken(),
                             authManager.getAccNo(),
-                            currentReservation.resvId);
+                            targetReservation.resvId);
                 } else {
                     result = seatReservation.signIn(
                             authManager.getToken(),
                             authManager.getAccNo(),
-                            currentReservation.resvId);
+                            targetReservation.resvId);
                 }
                 runOnUiThread(() -> {
                     showLoading(false);
@@ -746,20 +790,20 @@ public class DashboardActivity extends AppCompatActivity {
         });
     }
 
-    private void cancelReservation() {
-        if (currentReservation == null)
+    private void cancelReservation(SeatReservation.ReservationInfo targetReservation, String dayLabel) {
+        if (targetReservation == null || !targetReservation.hasReservation)
             return;
         new AlertDialog.Builder(this)
                 .setTitle("确认取消")
-                .setMessage("确定要取消当前预约吗？")
+                .setMessage("确定要取消" + dayLabel + "的预约吗？")
                 .setPositiveButton("确定", (dialog, which) -> {
-                    performCancelReservation();
+                    performCancelReservation(targetReservation);
                 })
                 .setNegativeButton("取消", null)
                 .show();
     }
 
-    private void performCancelReservation() {
+    private void performCancelReservation(SeatReservation.ReservationInfo targetReservation) {
         showLoading(true);
         executor.execute(() -> {
             try {
@@ -768,7 +812,7 @@ public class DashboardActivity extends AppCompatActivity {
                 SeatReservation.OperationResult result = seatReservation.cancelReservation(
                         authManager.getToken(),
                         authManager.getAccNo(),
-                        currentReservation.resvId);
+                        targetReservation.resvId);
                 runOnUiThread(() -> {
                     showLoading(false);
                     if (result.success) {
