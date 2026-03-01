@@ -1,6 +1,7 @@
 package com.keggin.fucknjfulib.activities;
 
 import android.app.AlertDialog;
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import okhttp3.Response;
@@ -129,8 +131,11 @@ public class SettingsActivity extends AppCompatActivity {
         String areaKey = preferenceManager.getTargetArea();
         tvTargetArea.setText(preferenceManager.getAreaName(areaKey));
         tvTargetSeat.setText(String.valueOf(preferenceManager.getTargetSeat()));
-        tvStartTime.setText(preferenceManager.getStartTime());
-        tvEndTime.setText(preferenceManager.getEndTime());
+
+        String startTime = preferenceManager.getStartTime();
+        String endTime = preferenceManager.getEndTime();
+        tvStartTime.setText(preferenceManager.hasStartTimeConfigured() ? startTime : "--:--");
+        tvEndTime.setText(preferenceManager.hasEndTimeConfigured() ? endTime : "--:--");
         switchAutoReserve.setChecked(preferenceManager.isAutoReserveEnabled());
         switchLateProtection.setChecked(preferenceManager.isLateProtectionEnabled());
         switchAutoFindSeat.setChecked(preferenceManager.isAutoFindSeatEnabled());
@@ -342,19 +347,14 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void showTimePicker(boolean isStartTime) {
-        String[] timeOptions = getResources().getStringArray(R.array.time_options);
+        String fallback = isStartTime ? Constants.DEFAULT_START_TIME : Constants.DEFAULT_END_TIME;
         String currentTime = isStartTime ? preferenceManager.getStartTime() : preferenceManager.getEndTime();
-        int currentIndex = 0;
-        for (int i = 0; i < timeOptions.length; i++) {
-            if (timeOptions[i].equals(currentTime)) {
-                currentIndex = i;
-                break;
-            }
-        }
-        new AlertDialog.Builder(this)
-                .setTitle(isStartTime ? "选择开始时间" : "选择结束时间")
-                .setSingleChoiceItems(timeOptions, currentIndex, (dialog, which) -> {
-                    String selectedTime = timeOptions[which];
+        int[] hm = parseTimeOrDefault(currentTime, fallback);
+
+        new TimePickerDialog(
+                this,
+                (view, hourOfDay, minute) -> {
+                    String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
                     if (isStartTime) {
                         preferenceManager.setStartTime(selectedTime);
                         tvStartTime.setText(selectedTime);
@@ -362,10 +362,31 @@ public class SettingsActivity extends AppCompatActivity {
                         preferenceManager.setEndTime(selectedTime);
                         tvEndTime.setText(selectedTime);
                     }
-                    dialog.dismiss();
-                })
-                .setNegativeButton("取消", null)
-                .show();
+                },
+                hm[0],
+                hm[1],
+                true).show();
+    }
+
+    private int[] parseTimeOrDefault(String value, String fallback) {
+        String target = (value == null || value.trim().isEmpty()) ? fallback : value.trim();
+        try {
+            String[] parts = target.split(":");
+            if (parts.length >= 2) {
+                int h = Integer.parseInt(parts[0]);
+                int m = Integer.parseInt(parts[1]);
+                if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+                    return new int[] { h, m };
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            String[] parts = fallback.split(":");
+            return new int[] { Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) };
+        } catch (Exception ignored) {
+            return new int[] { 7, 30 };
+        }
     }
 
     private void showLogoutConfirm() {

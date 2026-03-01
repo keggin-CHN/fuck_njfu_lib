@@ -130,9 +130,9 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
-                                android:text=""
-                                android:textSize="18sp"
-                                android:textColor="@color/text_primary"
+                                android:text="按日期分别展示座位"
+                                android:textSize="15sp"
+                                android:textColor="@color/text_secondary"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -156,10 +156,19 @@
                                 android:textStyle="bold" />
 
                             <TextView
-                                android:id="@+id/tvTodayReservationTime"
+                                android:id="@+id/tvTodayReservationSeat"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
+                                android:text="座位：--"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/tvTodayReservationTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
                                 android:text="--:-- - --:--"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="13sp" />
@@ -194,10 +203,19 @@
                                 android:textStyle="bold" />
 
                             <TextView
-                                android:id="@+id/tvTomorrowReservationTime"
+                                android:id="@+id/tvTomorrowReservationSeat"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
+                                android:text="座位：--"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/tvTomorrowReservationTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
                                 android:text="--:-- - --:--"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="13sp" />
@@ -333,7 +351,7 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardPlanTasks"
                     android:layout_width="0dp"
-                    android:layout_height="168dp"
+                    android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     app:cardCornerRadius="12dp"
@@ -374,7 +392,7 @@
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardAccountInfo"
                     android:layout_width="0dp"
-                    android:layout_height="168dp"
+                    android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     app:cardCornerRadius="12dp"

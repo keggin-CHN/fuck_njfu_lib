@@ -316,10 +316,7 @@ public class AutoReserveService extends Service {
         }
     }
     private String getTomorrowCloseTime() {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_MONTH, 1);
-        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-        return dayOfWeek == Calendar.FRIDAY ? "20:00" : "22:00";
+        return DateUtils.getEndTimeWithoutSeconds(DateUtils.getTomorrowDate());
     }
     private String clampEndTime(String endTime, String closeTime) {
         Integer endMinutes = parseTimeToMinutes(endTime);

@@ -47,10 +47,12 @@ public class DashboardActivity extends AppCompatActivity {
     private TextView tvReservationSeat;
     private LinearLayout layoutTodayReservation;
     private TextView tvTodayReservationLabel;
+    private TextView tvTodayReservationSeat;
     private TextView tvTodayReservationTime;
     private TextView tvTodayReservationStatus;
     private LinearLayout layoutTomorrowReservation;
     private TextView tvTomorrowReservationLabel;
+    private TextView tvTomorrowReservationSeat;
     private TextView tvTomorrowReservationTime;
     private TextView tvTomorrowReservationStatus;
     private MaterialButton btnSignIn;
@@ -103,10 +105,12 @@ public class DashboardActivity extends AppCompatActivity {
         tvReservationSeat = findViewById(R.id.tvReservationSeat);
         layoutTodayReservation = findViewById(R.id.layoutTodayReservation);
         tvTodayReservationLabel = findViewById(R.id.tvTodayReservationLabel);
+        tvTodayReservationSeat = findViewById(R.id.tvTodayReservationSeat);
         tvTodayReservationTime = findViewById(R.id.tvTodayReservationTime);
         tvTodayReservationStatus = findViewById(R.id.tvTodayReservationStatus);
         layoutTomorrowReservation = findViewById(R.id.layoutTomorrowReservation);
         tvTomorrowReservationLabel = findViewById(R.id.tvTomorrowReservationLabel);
+        tvTomorrowReservationSeat = findViewById(R.id.tvTomorrowReservationSeat);
         tvTomorrowReservationTime = findViewById(R.id.tvTomorrowReservationTime);
         tvTomorrowReservationStatus = findViewById(R.id.tvTomorrowReservationStatus);
         btnSignIn = findViewById(R.id.btnSignIn);
@@ -352,8 +356,9 @@ public class DashboardActivity extends AppCompatActivity {
         layoutNoReservation.setVisibility(View.GONE);
         layoutReservationInfo.setVisibility(View.VISIBLE);
 
-        SeatReservation.ReservationInfo seatSource = todayReservation != null ? todayReservation : tomorrowReservation;
-        tvReservationSeat.setText(formatSeatText(seatSource));
+        if (tvReservationSeat != null && tvReservationSeat.getParent() instanceof View) {
+            ((View) tvReservationSeat.getParent()).setVisibility(View.GONE);
+        }
 
         bindDayReservation(todayReservation, true);
         bindDayReservation(tomorrowReservation, false);
@@ -362,23 +367,26 @@ public class DashboardActivity extends AppCompatActivity {
         updateActionButtonsForReservation(currentReservation);
     }
 
-    private String formatSeatText(SeatReservation.ReservationInfo reservation) {
-        if (reservation == null) {
-            return "暂无预约";
+    private String formatSeatLine(SeatReservation.ReservationInfo reservation) {
+        if (reservation == null || !reservation.hasReservation) {
+            return "座位：暂无预约";
         }
-        String area = reservation.areaName != null ? reservation.areaName : "--";
-        String seatLabel = reservation.seatLabel;
-        if (seatLabel == null || seatLabel.trim().isEmpty()) {
-            seatLabel = reservation.seatName != null ? reservation.seatName : "--";
-        } else {
-            seatLabel = "座位" + seatLabel;
+        String area = reservation.areaName != null && !reservation.areaName.trim().isEmpty()
+                ? reservation.areaName
+                : "--";
+        if (reservation.seatLabel != null && !reservation.seatLabel.trim().isEmpty()) {
+            return "座位：" + area + " · " + reservation.seatLabel + "号";
         }
-        return area + " - " + seatLabel;
+        if (reservation.seatName != null && !reservation.seatName.trim().isEmpty()) {
+            return "座位：" + area + " · " + reservation.seatName;
+        }
+        return "座位：" + area;
     }
 
     private void bindDayReservation(SeatReservation.ReservationInfo reservation, boolean isToday) {
         String defaultDate = isToday ? DateUtils.getTodayDate() : DateUtils.getTomorrowDate();
         TextView labelView = isToday ? tvTodayReservationLabel : tvTomorrowReservationLabel;
+        TextView seatView = isToday ? tvTodayReservationSeat : tvTomorrowReservationSeat;
         TextView timeView = isToday ? tvTodayReservationTime : tvTomorrowReservationTime;
         TextView statusView = isToday ? tvTodayReservationStatus : tvTomorrowReservationStatus;
         LinearLayout container = isToday ? layoutTodayReservation : layoutTomorrowReservation;
@@ -394,12 +402,14 @@ public class DashboardActivity extends AppCompatActivity {
         labelView.setText(dayPrefix + " · " + dateText);
 
         if (reservation == null || !reservation.hasReservation) {
+            seatView.setText(formatSeatLine(null));
             timeView.setText("--:-- - --:--");
             statusView.setText("暂无预约");
             statusView.setTextColor(getColor(R.color.text_hint));
             return;
         }
 
+        seatView.setText(formatSeatLine(reservation));
         String start = reservation.startTime != null && !reservation.startTime.trim().isEmpty() ? reservation.startTime : "--:--";
         String end = reservation.endTime != null && !reservation.endTime.trim().isEmpty() ? reservation.endTime : "--:--";
         timeView.setText(start + " - " + end);

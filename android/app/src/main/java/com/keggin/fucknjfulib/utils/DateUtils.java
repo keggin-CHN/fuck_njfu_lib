@@ -87,22 +87,22 @@ public class DateUtils {
         try {
             Date date = DATE_FORMAT.parse(dateStr);
             if (date == null) {
-                return "22:00:00";
+                return Constants.DEFAULT_END_TIME + ":00";
             }
             Calendar cal = Calendar.getInstance();
             cal.setTime(date);
             if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY) {
                 return "20:00:00";
             }
-            return "22:00:00";
+            return Constants.DEFAULT_END_TIME + ":00";
         } catch (ParseException e) {
-            return "22:00:00";
+            return Constants.DEFAULT_END_TIME + ":00";
         }
     }
 
     public static String getEndTimeWithoutSeconds(String dateStr) {
         String full = getEndTime(dateStr);
-        return full.substring(0, 5); // Returns "22:00" or "20:00"
+        return full.substring(0, 5); // 返回闭馆时间（去掉秒）
     }
 
     public static boolean isFriday(String dateStr) {

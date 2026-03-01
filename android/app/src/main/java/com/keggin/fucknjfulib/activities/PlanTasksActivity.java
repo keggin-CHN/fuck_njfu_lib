@@ -1,4 +1,5 @@
 package com.keggin.fucknjfulib.activities;
+import android.app.TimePickerDialog;
 import android.text.InputType;
 import android.os.Bundle;
 import android.view.View;
@@ -276,41 +277,47 @@ public class PlanTasksActivity extends AppCompatActivity {
         void onSelected(String time);
     }
     private void showTimePickerForDay(String dayKey, boolean isStart, TextView tvValue, TimeSelectedCallback callback) {
-        String[] allTimeOptions = getResources().getStringArray(R.array.time_options);
-        String[] timeOptions = getTimeOptionsForDayKey(dayKey, allTimeOptions);
-        String current = tvValue.getText().toString();
-        int currentIndex = 0;
-        for (int i = 0; i < timeOptions.length; i++) {
-            if (timeOptions[i].equals(current)) {
-                currentIndex = i;
-                break;
+        String fallback = isStart ? Constants.DEFAULT_START_TIME : getDefaultCloseTime(dayKey);
+        int[] hm = parseTimeOrDefault(tvValue.getText().toString(), fallback);
+
+        new TimePickerDialog(this, (view, hourOfDay, minute) -> {
+            String selected = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
+
+            if (!isStart) {
+                String closeTime = getDefaultCloseTime(dayKey);
+                Integer selectedMinutes = parseTimeToMinutes(selected);
+                Integer closeMinutes = parseTimeToMinutes(closeTime);
+                if (selectedMinutes != null && closeMinutes != null && selectedMinutes > closeMinutes) {
+                    selected = closeTime;
+                    Toast.makeText(this, "结束时间已自动限制到闭馆时间 " + closeTime, Toast.LENGTH_SHORT).show();
+                }
             }
-        }
-        new AlertDialog.Builder(this)
-                .setTitle(isStart ? "选择开始时间" : "选择结束时间")
-                .setSingleChoiceItems(timeOptions, currentIndex, (dialog, which) -> {
-                    String selected = timeOptions[which];
-                    tvValue.setText(selected);
-                    callback.onSelected(selected);
-                    dialog.dismiss();
-                })
-                .setNegativeButton("取消", null)
-                .show();
+
+            tvValue.setText(selected);
+            callback.onSelected(selected);
+        }, hm[0], hm[1], true).show();
     }
-    private String[] getTimeOptionsForDayKey(String dayKey, String[] allTimeOptions) {
-        String closeTime = getDefaultCloseTime(dayKey);
-        Integer closeMinutes = parseTimeToMinutes(closeTime);
-        if (closeMinutes == null) {
-            return allTimeOptions;
-        }
-        List<String> filtered = new ArrayList<>();
-        for (String opt : allTimeOptions) {
-            Integer m = parseTimeToMinutes(opt);
-            if (m != null && m <= closeMinutes) {
-                filtered.add(opt);
+
+    private int[] parseTimeOrDefault(String value, String fallback) {
+        String target = (value == null || value.trim().isEmpty()) ? fallback : value.trim();
+        try {
+            String[] parts = target.split(":");
+            if (parts.length >= 2) {
+                int h = Integer.parseInt(parts[0]);
+                int m = Integer.parseInt(parts[1]);
+                if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+                    return new int[] { h, m };
+                }
             }
+        } catch (Exception ignored) {
         }
-        return filtered.toArray(new String[0]);
+
+        try {
+            String[] parts = fallback.split(":");
+            return new int[] { Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) };
+        } catch (Exception ignored) {
+            return new int[] { 7, 30 };
+        }
     }
     private void showAreaPicker(DayPlan plan, TextView tvAreaValue) {
         List<String> areaKeys = new ArrayList<>(Constants.SEAT_AREAS_MAP.keySet());
@@ -406,20 +413,15 @@ public class PlanTasksActivity extends AppCompatActivity {
     }
     private String getDefaultStartTimeFromPhone() {
         Calendar cal = Calendar.getInstance();
-        int minute = cal.get(Calendar.MINUTE);
-        int rounded = ((minute + 29) / 30) * 30;
-        if (rounded >= 60) {
-            cal.add(Calendar.HOUR_OF_DAY, 1);
-            rounded = 0;
-        }
         int hour = cal.get(Calendar.HOUR_OF_DAY);
-        return String.format(Locale.getDefault(), "%02d:%02d", hour, rounded);
+        int minute = cal.get(Calendar.MINUTE);
+        return String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
     }
     private String getDefaultCloseTime(String dayKey) {
         if (KEY_FRI.equals(dayKey)) {
             return "20:00";
         }
-        return "22:00";
+        return Constants.DEFAULT_END_TIME;
     }
     @Nullable
     private Integer parseTimeToMinutes(String hhmm) {

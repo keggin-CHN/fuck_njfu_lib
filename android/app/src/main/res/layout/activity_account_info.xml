@@ -262,15 +262,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Hint -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="违约记录来源：图书馆座位预约系统\n如有疑问请联系图书馆管理员"
-                android:textSize="11sp"
-                android:textColor="@color/text_hint"
-                android:gravity="center"
-                android:layout_marginBottom="8dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
