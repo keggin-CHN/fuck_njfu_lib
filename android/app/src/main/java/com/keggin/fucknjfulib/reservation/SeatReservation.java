@@ -1,4 +1,5 @@
 package com.keggin.fucknjfulib.reservation;
+
 import android.util.Log;
 import com.keggin.fucknjfulib.auth.AuthManager;
 import com.keggin.fucknjfulib.network.ApiConstants;
@@ -12,64 +13,77 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import okhttp3.Response;
+
 public class SeatReservation {
     private static final String TAG = "SeatReservation";
     private final AuthManager authManager;
     private final HttpClientManager httpClient;
+
     public SeatReservation(AuthManager authManager) {
         this.authManager = authManager;
         this.httpClient = HttpClientManager.getInstance(null);
     }
+
     public static class ReservationResult {
         public boolean success;
         public String message;
         public String uuid;
+
         public ReservationResult(boolean success, String message) {
             this.success = success;
             this.message = message;
         }
+
         public ReservationResult(boolean success, String message, String uuid) {
             this.success = success;
             this.message = message;
             this.uuid = uuid;
         }
     }
+
     public static class ReserveResult {
         public boolean success;
         public String message;
         public String uuid;
+
         public ReserveResult(boolean success, String message) {
             this.success = success;
             this.message = message;
         }
+
         public ReserveResult(boolean success, String message, String uuid) {
             this.success = success;
             this.message = message;
             this.uuid = uuid;
         }
     }
+
     public static class OperationResult {
         public boolean success;
         public String message;
+
         public OperationResult(boolean success, String message) {
             this.success = success;
             this.message = message;
         }
     }
+
     public static class ReservationInfo {
         public boolean hasReservation = false;
         public String uuid;
-        public String resvId;  
+        public String resvId;
         public String areaName;
         public String seatLabel;
         public String seatName;
         public int devId;
+        public String onDate;
         public String startTime;
         public String endTime;
         public long beginTime;
         public long endTimestamp;
         public String state;
         public String statusName;
+
         @Override
         public String toString() {
             return "ReservationInfo{" +
@@ -80,8 +94,9 @@ public class SeatReservation {
                     '}';
         }
     }
-    public ReserveResult reserveSeat(String areaName, int seatNumber, 
-                                     String dateStr, String startTime, String endTime) {
+
+    public ReserveResult reserveSeat(String areaName, int seatNumber,
+            String dateStr, String startTime, String endTime) {
         Constants.SeatArea area = Constants.getAreaByName(areaName);
         if (area == null) {
             return new ReserveResult(false, "无效的区域: " + areaName);
@@ -102,8 +117,9 @@ public class SeatReservation {
         String fullEndTime = dateStr + " " + endTime;
         return doReserve(seatId, beginTime, fullEndTime);
     }
+
     public ReservationResult reserveSeat(String token, String accNo, Constants.AreaInfo areaInfo,
-                                         int seatNumber, String startTime, String endTime, String dateStr) {
+            int seatNumber, String startTime, String endTime, String dateStr) {
         if (areaInfo == null) {
             return new ReservationResult(false, "区域信息无效");
         }
@@ -121,8 +137,9 @@ public class SeatReservation {
         ReserveResult result = doReserve(seatId, beginTime, fullEndTime);
         return new ReservationResult(result.success, result.message, result.uuid);
     }
+
     private ReserveResult doReserve(int seatId, String beginTime, String endTime) {
-        if (!authManager.refreshAuth()) {
+        if (!authManager.ensureLoggedIn()) {
             return new ReserveResult(false, "认证失败: " + authManager.getErrorMessage());
         }
         String token = authManager.getToken();
@@ -147,8 +164,21 @@ public class SeatReservation {
             headers.put("token", token);
             headers.put("lan", "1");
             Log.d(TAG, "发起预约请求: seatId=" + seatId + ", time=" + beginTime + " ~ " + endTime);
-            Response response = httpClient.postJson(ApiConstants.getReserveUrl(), 
+            Response response = httpClient.postJson(ApiConstants.getReserveUrl(),
                     payload.toString(), headers);
+
+            if (response.code() == 302 || response.code() == 301) {
+                Log.w(TAG, "WebVPN session Expired (302) in doReserve, forcing re-auth...");
+                response.close();
+                if (authManager.refreshAuth()) {
+                    token = authManager.getToken();
+                    headers.put("token", token);
+                    response = httpClient.postJson(ApiConstants.getReserveUrl(), payload.toString(), headers);
+                } else {
+                    return new ReserveResult(false, "重新认证失败: " + authManager.getErrorMessage());
+                }
+            }
+
             if (!response.isSuccessful()) {
                 String msg = "预约请求失败，状态码: " + response.code();
                 response.close();
@@ -178,11 +208,12 @@ public class SeatReservation {
             return new ReserveResult(false, "预约过程出错: " + e.getMessage());
         }
     }
+
     public ReserveResult cancelReservation(String uuid) {
         if (uuid == null || uuid.isEmpty()) {
             return new ReserveResult(false, "预约UUID无效");
         }
-        if (!authManager.refreshAuth()) {
+        if (!authManager.ensureLoggedIn()) {
             return new ReserveResult(false, "认证失败: " + authManager.getErrorMessage());
         }
         String token = authManager.getToken();
@@ -195,8 +226,21 @@ public class SeatReservation {
             Map<String, String> headers = new HashMap<>();
             headers.put("token", token);
             headers.put("lan", "1");
-            String url = ApiConstants.getCancelReserveUrl() + "?vpn-12-libseat.njfu.edu.cn=";
+            String url = ApiConstants.getCancelReserveUrl() + "?vpn-12-libseat.njfu.edu.cn";
             Response response = httpClient.postJson(url, payload.toString(), headers);
+
+            if (response.code() == 302 || response.code() == 301) {
+                Log.w(TAG, "WebVPN session Expired (302) in cancelReservation, forcing re-auth...");
+                response.close();
+                if (authManager.refreshAuth()) {
+                    token = authManager.getToken();
+                    headers.put("token", token);
+                    response = httpClient.postJson(url, payload.toString(), headers);
+                } else {
+                    return new ReserveResult(false, "重新认证失败: " + authManager.getErrorMessage());
+                }
+            }
+
             if (!response.isSuccessful()) {
                 String msg = "取消预约请求失败，状态码: " + response.code();
                 response.close();
@@ -220,10 +264,12 @@ public class SeatReservation {
             return new ReserveResult(false, "取消预约过程出错: " + e.getMessage());
         }
     }
+
     public OperationResult cancelReservation(String token, String accNo, String resvId) {
         ReserveResult result = cancelReservation(resvId);
         return new OperationResult(result.success, result.message);
     }
+
     public ReservationInfo getCurrentReservation(String token, String accNo) {
         ReservationInfo info = new ReservationInfo();
         try {
@@ -231,7 +277,7 @@ public class SeatReservation {
             if (!reservations.isEmpty()) {
                 ReservationInfo first = reservations.get(0);
                 first.hasReservation = true;
-                first.resvId = first.uuid;  
+                first.resvId = first.uuid;
                 return first;
             }
         } catch (Exception e) {
@@ -240,20 +286,25 @@ public class SeatReservation {
         info.hasReservation = false;
         return info;
     }
+
     public OperationResult signIn(String token, String accNo, String resvId) {
         return performAction(resvId, "in");
     }
+
     public OperationResult signOut(String token, String accNo, String resvId) {
         return performAction(resvId, "over");
     }
+
     public OperationResult away(String resvId) {
         return performAction(resvId, "away");
     }
+
     public OperationResult back(String resvId) {
         return performAction(resvId, "back");
     }
+
     private OperationResult performAction(String resvId, String action) {
-        if (!authManager.refreshAuth()) {
+        if (!authManager.ensureLoggedIn()) {
             return new OperationResult(false, "认证失败: " + authManager.getErrorMessage());
         }
         String token = authManager.getToken();
@@ -262,13 +313,26 @@ public class SeatReservation {
         }
         try {
             String url = ApiConstants.BASE_URL + "/wengine-vpn/443/https/libseat.njfu.edu.cn/ic-web/reserve/"
-                    + action + "?vpn-12-libseat.njfu.edu.cn=";
+                    + action + "?vpn-12-libseat.njfu.edu.cn";
             JSONObject payload = new JSONObject();
             payload.put("uuid", resvId);
             Map<String, String> headers = new HashMap<>();
             headers.put("token", token);
             headers.put("lan", "1");
             Response response = httpClient.postJson(url, payload.toString(), headers);
+
+            if (response.code() == 302 || response.code() == 301) {
+                Log.w(TAG, "WebVPN session Expired (302) in performAction, forcing re-auth...");
+                response.close();
+                if (authManager.refreshAuth()) {
+                    token = authManager.getToken();
+                    headers.put("token", token);
+                    response = httpClient.postJson(url, payload.toString(), headers);
+                } else {
+                    return new OperationResult(false, "重新认证失败: " + authManager.getErrorMessage());
+                }
+            }
+
             if (!response.isSuccessful()) {
                 response.close();
                 return new OperationResult(false, "操作失败，状态码: " + response.code());
@@ -288,9 +352,10 @@ public class SeatReservation {
             return new OperationResult(false, "操作失败: " + e.getMessage());
         }
     }
+
     public List<ReservationInfo> getReservations(String beginDate, String endDate) {
         List<ReservationInfo> result = new ArrayList<>();
-        if (!authManager.refreshAuth()) {
+        if (!authManager.ensureLoggedIn()) {
             Log.e(TAG, "获取预约列表失败: 认证失败 - " + authManager.getErrorMessage());
             return result;
         }
@@ -300,8 +365,8 @@ public class SeatReservation {
             return result;
         }
         try {
-            String url = ApiConstants.getReservationInfoUrl() 
-                    + "?vpn-12-libseat.njfu.edu.cn="
+            String url = ApiConstants.getReservationInfoUrl()
+                    + "?vpn-12-libseat.njfu.edu.cn"
                     + "&needStatus=8454"
                     + "&unneedStatus=128"
                     + "&beginDate=" + beginDate
@@ -311,6 +376,20 @@ public class SeatReservation {
             headers.put("lan", "1");
             headers.put("Accept", ApiConstants.ACCEPT_JSON);
             Response response = httpClient.get(url, headers);
+
+            if (response.code() == 302 || response.code() == 301) {
+                Log.w(TAG, "WebVPN session Expired (302) in getReservations, forcing re-auth...");
+                response.close();
+                if (authManager.refreshAuth()) {
+                    token = authManager.getToken();
+                    headers.put("token", token);
+                    response = httpClient.get(url, headers);
+                } else {
+                    Log.e(TAG, "重新认证失败: " + authManager.getErrorMessage());
+                    return result;
+                }
+            }
+
             if (!response.isSuccessful()) {
                 Log.e(TAG, "获取预约列表失败，状态码: " + response.code());
                 response.close();
@@ -333,6 +412,8 @@ public class SeatReservation {
                         info.endTimestamp = item.optLong("resvEndTime");
                         info.statusName = item.optString("statusName");
                         info.state = convertStatusToState(info.statusName);
+                        info.onDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                .format(new java.util.Date(info.beginTime));
                         info.startTime = DateUtils.formatTimestampToTime(info.beginTime);
                         info.endTime = DateUtils.formatTimestampToTime(info.endTimestamp);
                         JSONArray devInfoList = item.optJSONArray("resvDevInfoList");
@@ -360,8 +441,10 @@ public class SeatReservation {
         }
         return result;
     }
+
     private String convertStatusToState(String statusName) {
-        if (statusName == null) return null;
+        if (statusName == null)
+            return null;
         if (statusName.contains("预约") && !statusName.contains("使用")) {
             return "RESERVE";
         } else if (statusName.contains("使用") || statusName.contains("签到")) {
@@ -373,21 +456,25 @@ public class SeatReservation {
         }
         return statusName;
     }
+
     public List<ReservationInfo> getTodayReservations() {
         String today = DateUtils.getTodayDate();
         return getReservations(today, today);
     }
+
     public List<ReservationInfo> getTodayAndTomorrowReservations() {
         String today = DateUtils.getTodayDate();
         String tomorrow = DateUtils.getTomorrowDate();
         return getReservations(today, tomorrow);
     }
-    public ReserveResult reserveTodaySeat(String areaName, int seatNumber, 
-                                          String startTime, String endTime) {
+
+    public ReserveResult reserveTodaySeat(String areaName, int seatNumber,
+            String startTime, String endTime) {
         return reserveSeat(areaName, seatNumber, DateUtils.getTodayDate(), startTime, endTime);
     }
-    public ReserveResult reserveTomorrowSeat(String areaName, int seatNumber, 
-                                              String startTime, String endTime) {
+
+    public ReserveResult reserveTomorrowSeat(String areaName, int seatNumber,
+            String startTime, String endTime) {
         return reserveSeat(areaName, seatNumber, DateUtils.getTomorrowDate(), startTime, endTime);
     }
 }

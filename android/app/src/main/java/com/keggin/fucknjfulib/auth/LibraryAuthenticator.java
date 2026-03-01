@@ -1,4 +1,5 @@
 package com.keggin.fucknjfulib.auth;
+
 import android.util.Log;
 import com.keggin.fucknjfulib.crypto.RSACipher;
 import com.keggin.fucknjfulib.network.ApiConstants;
@@ -9,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import android.content.Context;
 import okhttp3.Response;
+
 public class LibraryAuthenticator {
     private static final String TAG = "LibraryAuthenticator";
     private final String username;
@@ -19,15 +21,18 @@ public class LibraryAuthenticator {
     private long lastAuthTime;
     private String errorMessage;
     private final Context context;
+
     public LibraryAuthenticator(Context context, String username, String libPassword) {
         this.context = context.getApplicationContext();
         this.username = username;
         this.libPassword = libPassword;
         this.httpClient = HttpClientManager.getInstance(this.context);
     }
+
     public boolean authenticate() {
-        return authenticate(5); 
+        return authenticate(5);
     }
+
     public boolean authenticate(int maxAttempts) {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             Log.d(TAG, "图书馆认证尝试 " + attempt + "/" + maxAttempts);
@@ -59,6 +64,7 @@ public class LibraryAuthenticator {
         }
         return false;
     }
+
     private String[] getPublicKeyAndNonce() {
         try {
             Map<String, String> headers = new HashMap<>();
@@ -83,12 +89,13 @@ public class LibraryAuthenticator {
             String publicKey = data.getString("publicKey");
             String nonce = data.getString("nonceStr");
             Log.d(TAG, "成功获取公钥和 nonce");
-            return new String[]{publicKey, nonce};
+            return new String[] { publicKey, nonce };
         } catch (Exception e) {
             Log.e(TAG, "获取公钥出错: " + e.getMessage(), e);
             return null;
         }
     }
+
     private boolean submitLogin(String encryptedPassword) throws IOException {
         Log.d(TAG, "提交图书馆登录...");
         JSONObject payload = new JSONObject();
@@ -136,6 +143,7 @@ public class LibraryAuthenticator {
             return false;
         }
     }
+
     public boolean isTokenValid() {
         if (token == null || accNo == null) {
             return false;
@@ -144,8 +152,8 @@ public class LibraryAuthenticator {
             String url = ApiConstants.getReservationInfoUrl();
             String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                     .format(new java.util.Date());
-            url += "?vpn-12-libseat.njfu.edu.cn=&needStatus=8454&unneedStatus=128&beginDate=" 
-                   + today + "&endDate=" + today;
+            url += "?vpn-12-libseat.njfu.edu.cn&needStatus=8454&unneedStatus=128&beginDate="
+                    + today + "&endDate=" + today;
             Map<String, String> headers = new HashMap<>();
             headers.put("Accept", ApiConstants.ACCEPT_JSON);
             headers.put("token", token);
@@ -161,20 +169,25 @@ public class LibraryAuthenticator {
         }
         return false;
     }
+
     public void setTokenFromCache(String token, String accNo) {
         this.token = token;
         this.accNo = accNo;
         this.lastAuthTime = System.currentTimeMillis();
     }
+
     public String getToken() {
         return token;
     }
+
     public String getAccNo() {
         return accNo;
     }
+
     public long getLastAuthTime() {
         return lastAuthTime;
     }
+
     public String getErrorMessage() {
         return errorMessage;
     }

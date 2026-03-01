@@ -1,0 +1,14 @@
+<html><head><script type="text/javascript">
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/frontend_static/webvpn/fpx.js', { scope: '/' }).then(function(registration) {
+        registration.unregister().then(function(boolean) {
+          
+        });
+      }).catch(function(err) {
+        // registration failed :(
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
+  function go(){document.getElementById("url").click();}</script></head><body onload="go()"><a href="https://webvpn.njfu.edu.cn:443/webvpn/LjIwMS4xNjkuMjE4LjE2OC4xNjc=/LjIxNC4xNTguMTk5LjEwMi4xNjIuMTU5LjIwMi4xNjguMTQ3LjE1MS4xNTYuMTczLjE0OC4xNTMuMTY1/authserver/login?service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F" id="url" style='text-decoration:none;text-align: center;left: 40%;top: 40%;position: absolute;'>统一认证中心跳转中...</a></body></html>

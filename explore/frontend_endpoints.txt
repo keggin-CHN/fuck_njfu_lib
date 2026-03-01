@@ -1,0 +1,4 @@
+auth/address
+auth/userInfo
+auth/webapp
+reserve/punishInfo

@@ -38,6 +38,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_settings"
                 android:contentDescription="设置"
+                android:visibility="gone"
                 app:tint="@color/text_white" />
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
@@ -137,50 +138,79 @@
 
                         
                         <LinearLayout
+                            android:id="@+id/layoutTodayReservation"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginTop="8dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/ic_time"
-                                app:tint="@color/text_secondary" />
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_stat_item"
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
                             <TextView
-                                android:id="@+id/tvReservationTime"
+                                android:id="@+id/tvTodayReservationLabel"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:text=""
+                                android:text="今天 · --"
+                                android:textColor="@color/text_primary"
                                 android:textSize="14sp"
-                                android:textColor="@color/text_secondary" />
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvTodayReservationTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="--:-- - --:--"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/tvTodayReservationStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="状态未知"
+                                android:textColor="@color/text_hint"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
 
-                        
                         <LinearLayout
+                            android:id="@+id/layoutTomorrowReservation"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_marginTop="8dp">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/ic_status"
-                                app:tint="@color/success" />
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_stat_item"
+                            android:orientation="vertical"
+                            android:padding="12dp">
 
                             <TextView
-                                android:id="@+id/tvReservationStatus"
+                                android:id="@+id/tvTomorrowReservationLabel"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:text=""
+                                android:text="明天 · --"
+                                android:textColor="@color/text_primary"
                                 android:textSize="14sp"
-                                android:textColor="@color/success" />
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvTomorrowReservationTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="--:-- - --:--"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/tvTomorrowReservationStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="状态未知"
+                                android:textColor="@color/text_hint"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
                         </LinearLayout>
 
                         
@@ -230,10 +260,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:columnCount="2"
-                android:rowCount="2"
+                android:rowCount="3"
                 android:useDefaultMargins="true">
 
-                
+                <!-- 1: 立即预约 -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardReserveNow"
                     android:layout_width="0dp"
@@ -245,20 +275,17 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp"
                         android:gravity="center">
-
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:src="@drawable/ic_add_reservation"
                             app:tint="@color/primary" />
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -269,7 +296,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                
+                <!-- 2: 可视化选座 -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardQuerySeats"
                     android:layout_width="0dp"
@@ -281,31 +308,110 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp"
                         android:gravity="center">
-
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
-                            android:src="@drawable/ic_search"
+                            android:src="@drawable/ic_seat"
                             app:tint="@color/primary" />
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="@string/btn_query_seats"
+                            android:text="可视化选座"
                             android:textSize="14sp"
                             android:textColor="@color/text_primary" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                
+                <!-- 3: 计划任务 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardPlanTasks"
+                    android:layout_width="0dp"
+                    android:layout_height="168dp"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_time"
+                            app:tint="@color/primary" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="计划任务"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="每周任务管理"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_hint" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 4: 账号信息 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardAccountInfo"
+                    android:layout_width="0dp"
+                    android:layout_height="168dp"
+                    android:layout_columnWeight="1"
+                    android:layout_margin="4dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:gravity="center">
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_people"
+                            app:tint="@color/primary" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="账号信息"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary" />
+                        <TextView
+                            android:id="@+id/tvViolationBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_hint"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 5: 查看人数 -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardCheckTraffic"
                     android:layout_width="0dp"
@@ -317,20 +423,17 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp"
                         android:gravity="center">
-
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:src="@drawable/ic_people"
                             app:tint="@color/primary" />
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -341,7 +444,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                
+                <!-- 6: 设置 -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardSettings"
                     android:layout_width="0dp"
@@ -353,25 +456,22 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?attr/selectableItemBackground">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:padding="16dp"
                         android:gravity="center">
-
                         <ImageView
                             android:layout_width="48dp"
                             android:layout_height="48dp"
                             android:src="@drawable/ic_settings"
                             app:tint="@color/primary" />
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="@string/settings_title"
+                            android:text="设置"
                             android:textSize="14sp"
                             android:textColor="@color/text_primary" />
                     </LinearLayout>
@@ -379,7 +479,6 @@
 
             </GridLayout>
 
-            
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardAutoStatus"
                 android:layout_width="match_parent"

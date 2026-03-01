@@ -83,8 +83,8 @@ public class CASAuthenticator {
 
     private boolean getInitialClientTicket() throws IOException {
         Log.d(TAG, "获取初始 client ticket...");
-        Response response = httpClient.get(ApiConstants.FRONTEND_LOGIN_URL);
-        if (response.isSuccessful()) {
+        Response response = followRedirects(ApiConstants.FRONTEND_LOGIN_URL, null);
+        if (response != null && response.isSuccessful()) {
             response.close();
             clientTicket = httpClient.getClientTicket();
             if (clientTicket != null) {
@@ -92,6 +92,8 @@ public class CASAuthenticator {
                 return true;
             }
         }
+        if (response != null)
+            response.close();
         Log.e(TAG, "获取 client ticket 失败");
         return false;
     }
@@ -121,12 +123,13 @@ public class CASAuthenticator {
         headers.put("Accept-Encoding", "identity");
         headers.put("Connection", "close");
         headers.put("Accept", "*/*");
-        Response response = httpClient.get(ApiConstants.getEduLoginPageUrl(), headers);
+        Response response = followRedirects(ApiConstants.getEduLoginPageUrl(), headers);
         String html = HttpClientManager.getResponseBody(response);
         if (html == null) {
             errorMessage = "无法获取登录页面";
             return false;
         }
+        Log.d(TAG, "登录页面响应长度: " + html.length());
         Document doc = Jsoup.parse(html);
         lt = getInputValue(doc, "lt");
         salt = getInputValue(doc, "pwdDefaultEncryptSalt");
@@ -135,6 +138,8 @@ public class CASAuthenticator {
         eventId = getInputValue(doc, "_eventId");
         rmShown = getInputValue(doc, "rmShown");
         if (lt == null || salt == null) {
+            Log.e(TAG, "登录参数解析失败, lt=" + lt + ", salt=" + salt);
+            Log.e(TAG, "HTML前500字符: " + html.substring(0, Math.min(500, html.length())));
             errorMessage = "无法获取登录参数";
             return false;
         }
@@ -151,6 +156,38 @@ public class CASAuthenticator {
         if (element != null) {
             return element.attr("value");
         }
+        return null;
+    }
+
+    /**
+     * 手动跟随重定向，因为 OkHttp 全局禁用了自动重定向。
+     * 对于 GET 请求（如获取登录页面）需要跟随重定向才能拿到实际内容。
+     */
+    private Response followRedirects(String url, Map<String, String> headers) throws IOException {
+        int maxRedirects = 10;
+        String currentUrl = url;
+        for (int i = 0; i < maxRedirects; i++) {
+            Response response = httpClient.get(currentUrl, headers);
+            int code = response.code();
+            if (code >= 300 && code < 400) {
+                String location = response.header("Location");
+                response.close();
+                if (location == null) {
+                    Log.e(TAG, "重定向无 Location 头");
+                    return null;
+                }
+                // Handle relative URLs
+                if (location.startsWith("/")) {
+                    java.net.URL base = new java.net.URL(currentUrl);
+                    location = base.getProtocol() + "://" + base.getHost() + location;
+                }
+                Log.d(TAG, "跟随重定向 -> " + location);
+                currentUrl = location;
+            } else {
+                return response;
+            }
+        }
+        Log.e(TAG, "超过最大重定向次数");
         return null;
     }
 
@@ -190,7 +227,7 @@ public class CASAuthenticator {
         }
         Map<String, String> formData = new HashMap<>();
         formData.put("vpn-0", "");
-        formData.put("service", "https://webvpn.njfu.edu.cn/login?cas_login=true");
+        formData.put("service", "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/");
         formData.put("username", username);
         formData.put("password", encryptedPassword);
         formData.put("lt", lt);
@@ -262,10 +299,11 @@ public class CASAuthenticator {
         headers.put("Accept-Encoding", "identity");
         headers.put("Connection", "close");
         headers.put("Accept", "*/*");
-        String url = ApiConstants.FRONTEND_LOGIN_URL + "?ticket=" + ticket;
+        String url = ApiConstants.getFinalAuthUrl(ticket);
         Response response = httpClient.get(url, headers);
         response.close();
-        Log.d(TAG, "认证完成");
+        clientTicket = httpClient.getClientTicket();
+        Log.d(TAG, "认证完成, clientTicket: " + (clientTicket != null ? "已获取" : "未获取"));
         return true;
     }
 

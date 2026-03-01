@@ -1,8 +1,10 @@
 package com.keggin.fucknjfulib.activities;
+
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -17,14 +19,25 @@ import androidx.cardview.widget.CardView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.keggin.fucknjfulib.BuildConfig;
 import com.keggin.fucknjfulib.R;
+import com.keggin.fucknjfulib.auth.AuthManager;
+import com.keggin.fucknjfulib.network.ApiConstants;
+import com.keggin.fucknjfulib.network.HttpClientManager;
 import com.keggin.fucknjfulib.services.AutoReserveService;
 import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.SystemPermissionChecker;
+import org.json.JSONObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import okhttp3.Response;
+
 public class SettingsActivity extends AppCompatActivity {
+    private static final String TAG = "SettingsActivity";
     private Toolbar toolbar;
     private CardView cardPermissionCheck;
     private LinearLayout layoutNotificationPermission;
@@ -36,7 +49,7 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvBatteryOptimizationStatus;
     private TextView tvAutoStartStatus;
     private CheckBox checkboxHidePermissionCard;
-    private LinearLayout layoutPlanTasks;
+
     private LinearLayout layoutTargetArea;
     private LinearLayout layoutTargetSeat;
     private LinearLayout layoutStartTime;
@@ -52,18 +65,24 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvStudentId;
     private LinearLayout layoutLogout;
     private TextView tvVersion;
+    private TextView tvUserCredit;
     private LinearLayout layoutGithub;
     private PreferenceManager preferenceManager;
+    private ExecutorService executor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         preferenceManager = new PreferenceManager(this);
+        executor = Executors.newSingleThreadExecutor();
         initViews();
         setupToolbar();
         loadSettings();
         setupClickListeners();
+        loadUserProfile();
     }
+
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         cardPermissionCheck = findViewById(R.id.cardPermissionCheck);
@@ -76,7 +95,7 @@ public class SettingsActivity extends AppCompatActivity {
         tvBatteryOptimizationStatus = findViewById(R.id.tvBatteryOptimizationStatus);
         tvAutoStartStatus = findViewById(R.id.tvAutoStartStatus);
         checkboxHidePermissionCard = findViewById(R.id.checkboxHidePermissionCard);
-        layoutPlanTasks = findViewById(R.id.layoutPlanTasks);
+
         layoutTargetArea = findViewById(R.id.layoutTargetArea);
         layoutTargetSeat = findViewById(R.id.layoutTargetSeat);
         layoutStartTime = findViewById(R.id.layoutStartTime);
@@ -92,8 +111,10 @@ public class SettingsActivity extends AppCompatActivity {
         tvStudentId = findViewById(R.id.tvStudentId);
         layoutLogout = findViewById(R.id.layoutLogout);
         tvVersion = findViewById(R.id.tvVersion);
+        tvUserCredit = findViewById(R.id.tvUserCredit);
         layoutGithub = findViewById(R.id.layoutGithub);
     }
+
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -101,6 +122,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> finish());
     }
+
     private void loadSettings() {
         checkSystemPermissions();
         updatePermissionCardVisibility();
@@ -116,22 +138,68 @@ public class SettingsActivity extends AppCompatActivity {
         tvStudentId.setText("学号：" + preferenceManager.getStudentId());
         tvVersion.setText(BuildConfig.VERSION_NAME);
     }
+
+    private void loadUserProfile() {
+        executor.execute(() -> {
+            try {
+                AuthManager authManager = AuthManager.getInstance(this);
+                if (!authManager.ensureLoggedIn())
+                    return;
+                String token = authManager.getToken();
+                if (token == null)
+                    return;
+                HttpClientManager httpClient = HttpClientManager.getInstance(null);
+                String url = ApiConstants.getUserInfoUrl();
+                Map<String, String> headers = new HashMap<>();
+                headers.put("token", token);
+                headers.put("lan", "1");
+                headers.put("Accept", ApiConstants.ACCEPT_JSON);
+                Response response = httpClient.get(url, headers);
+                try {
+                    if (response.isSuccessful()) {
+                        String body = HttpClientManager.getResponseBody(response);
+                        if (body != null) {
+                            JSONObject json = new JSONObject(body);
+                            if (json.optInt("code") == 0) {
+                                JSONObject data = json.optJSONObject("data");
+                                if (data != null) {
+                                    String name = data.optString("trueName", "");
+                                    int credit = data.optInt("creditScore", -1);
+                                    int limit = data.optInt("limitScore", -1);
+                                    runOnUiThread(() -> {
+                                        if (!name.isEmpty()) {
+                                            tvStudentId.setText(name + "（" + preferenceManager.getStudentId() + "）");
+                                        }
+                                        if (tvUserCredit != null && credit >= 0) {
+                                            tvUserCredit.setVisibility(View.VISIBLE);
+                                            tvUserCredit
+                                                    .setText("信用分: " + credit + (limit >= 0 ? " / 扣分: " + limit : ""));
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                    response.close();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "加载用户信息失败: " + e.getMessage());
+            }
+        });
+    }
+
     private void setupClickListeners() {
-        layoutNotificationPermission.setOnClickListener(v ->
-            SystemPermissionChecker.openNotificationSettings(this));
-        layoutExactAlarmPermission.setOnClickListener(v ->
-            SystemPermissionChecker.openExactAlarmSettings(this));
-        layoutBatteryOptimization.setOnClickListener(v ->
-            SystemPermissionChecker.openBatteryOptimizationSettings(this));
-        layoutAutoStartPermission.setOnClickListener(v ->
-            SystemPermissionChecker.openAutoStartSettings(this));
+        layoutNotificationPermission.setOnClickListener(v -> SystemPermissionChecker.openNotificationSettings(this));
+        layoutExactAlarmPermission.setOnClickListener(v -> SystemPermissionChecker.openExactAlarmSettings(this));
+        layoutBatteryOptimization
+                .setOnClickListener(v -> SystemPermissionChecker.openBatteryOptimizationSettings(this));
+        layoutAutoStartPermission.setOnClickListener(v -> SystemPermissionChecker.openAutoStartSettings(this));
         checkboxHidePermissionCard.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setHidePermissionCheck(isChecked);
             updatePermissionCardVisibility();
         });
-        if (layoutPlanTasks != null) {
-            layoutPlanTasks.setOnClickListener(v -> openPlanTasks());
-        }
+
         layoutTargetArea.setOnClickListener(v -> showAreaPicker());
         layoutTargetSeat.setOnClickListener(v -> showSeatPicker());
         layoutStartTime.setOnClickListener(v -> showTimePicker(true));
@@ -173,10 +241,7 @@ public class SettingsActivity extends AppCompatActivity {
         layoutLogout.setOnClickListener(v -> showLogoutConfirm());
         layoutGithub.setOnClickListener(v -> openGithubPage());
     }
-    private void openPlanTasks() {
-        Intent intent = new Intent(this, PlanTasksActivity.class);
-        startActivity(intent);
-    }
+
     private void scheduleAutoReserve() {
         Intent serviceIntent = new Intent(this, AutoReserveService.class);
         serviceIntent.setAction(AutoReserveService.ACTION_SCHEDULE);
@@ -186,11 +251,13 @@ public class SettingsActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
     }
+
     private void cancelAutoReserve() {
         Intent serviceIntent = new Intent(this, AutoReserveService.class);
         serviceIntent.setAction(AutoReserveService.ACTION_CANCEL);
         startService(serviceIntent);
     }
+
     private void scheduleLateProtection() {
         Intent serviceIntent = new Intent(this, LateProtectionService.class);
         serviceIntent.setAction(LateProtectionService.ACTION_SCHEDULE);
@@ -200,6 +267,7 @@ public class SettingsActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
     }
+
     private void showAreaPicker() {
         List<String> areaKeys = new ArrayList<>(Constants.SEAT_AREAS_MAP.keySet());
         String[] areaNames = new String[areaKeys.size()];
@@ -209,7 +277,8 @@ public class SettingsActivity extends AppCompatActivity {
         }
         String currentArea = preferenceManager.getTargetArea();
         int currentIndex = areaKeys.indexOf(currentArea);
-        if (currentIndex < 0) currentIndex = 0;
+        if (currentIndex < 0)
+            currentIndex = 0;
         new AlertDialog.Builder(this)
                 .setTitle("选择目标区域")
                 .setSingleChoiceItems(areaNames, currentIndex, (dialog, which) -> {
@@ -226,6 +295,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
+
     private void showSeatPicker() {
         String areaKey = preferenceManager.getTargetArea();
         Constants.AreaInfo areaInfo = Constants.SEAT_AREAS_MAP.get(areaKey);
@@ -243,8 +313,7 @@ public class SettingsActivity extends AppCompatActivity {
         FrameLayout container = new FrameLayout(this);
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-        );
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         params.leftMargin = padding;
         params.rightMargin = padding;
         input.setLayoutParams(params);
@@ -254,7 +323,8 @@ public class SettingsActivity extends AppCompatActivity {
                 .setView(container)
                 .setPositiveButton("确定", (dialog, which) -> {
                     String text = input.getText().toString();
-                    if (text.isEmpty()) return;
+                    if (text.isEmpty())
+                        return;
                     try {
                         int seatNum = Integer.parseInt(text);
                         if (seatNum < 1 || seatNum > maxSeat) {
@@ -270,11 +340,10 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
+
     private void showTimePicker(boolean isStartTime) {
         String[] timeOptions = getResources().getStringArray(R.array.time_options);
-        String currentTime = isStartTime ? 
-                preferenceManager.getStartTime() : 
-                preferenceManager.getEndTime();
+        String currentTime = isStartTime ? preferenceManager.getStartTime() : preferenceManager.getEndTime();
         int currentIndex = 0;
         for (int i = 0; i < timeOptions.length; i++) {
             if (timeOptions[i].equals(currentTime)) {
@@ -298,6 +367,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
+
     private void showLogoutConfirm() {
         new AlertDialog.Builder(this)
                 .setTitle("退出登录")
@@ -308,6 +378,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
+
     private void performLogout() {
         cancelAutoReserve();
         preferenceManager.clearCredentials();
@@ -316,6 +387,7 @@ public class SettingsActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
+
     private void checkSystemPermissions() {
         boolean hasNotification = SystemPermissionChecker.isNotificationPermissionGranted(this);
         tvNotificationStatus.setText(hasNotification
@@ -338,6 +410,7 @@ public class SettingsActivity extends AppCompatActivity {
         tvAutoStartStatus.setText(getString(R.string.permission_status_check_manually));
         tvAutoStartStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
     }
+
     private void updatePermissionCardVisibility() {
         boolean allGranted = SystemPermissionChecker.areAllPermissionsGranted(this);
         boolean hideByUser = preferenceManager.isHidePermissionCheck();
@@ -348,6 +421,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
         checkboxHidePermissionCard.setChecked(hideByUser);
     }
+
     private void openGithubPage() {
         String url = getString(R.string.setting_github_url);
         try {
@@ -358,10 +432,19 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show();
         }
     }
+
     @Override
     protected void onResume() {
         super.onResume();
         checkSystemPermissions();
         updatePermissionCardVisibility();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
     }
 }

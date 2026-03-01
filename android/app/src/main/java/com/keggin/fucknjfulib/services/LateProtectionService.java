@@ -179,15 +179,21 @@ public class LateProtectionService extends Service {
                         Constants.LATE_PROTECTION_DELAY_HOURS);
                 String areaName = prefs.getString(Constants.PREF_TARGET_AREA, null);
                 int seatNumber = prefs.getInt(Constants.PREF_TARGET_SEAT, 0);
-                String endTime = prefs.getString(Constants.PREF_END_TIME, "22:00");
-                if (!DateUtils.isValidDuration(newStartTime, endTime + ":00", 2)) {
+                String prefEndTime = prefs.getString(Constants.PREF_END_TIME, Constants.DEFAULT_END_TIME);
+                String closeTime = DateUtils.getEndTimeWithoutSeconds(DateUtils.getTodayDate());
+                String endTime = clampEndTime(
+                        (prefEndTime == null || prefEndTime.trim().isEmpty()) ? closeTime : prefEndTime,
+                        closeTime);
+                String normalizedEndTime = DateUtils.normalizeTimeFormat(endTime);
+
+                if (!DateUtils.isValidDuration(newStartTime, normalizedEndTime, 2)) {
                     LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "剩余时间不足2小时，不再重新预约");
-                    showResultNotification(true, 
+                    showResultNotification(true,
                             "迟到保护：已取消原预约，剩余时间不足2小时，不再重新预约");
                     return;
                 }
                 SeatReservation.ReserveResult reserveResult = reservation.reserveTodaySeat(
-                        areaName, seatNumber, newStartTime, endTime + ":00");
+                        areaName, seatNumber, newStartTime, endTime);
                 if (reserveResult.success) {
                     LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "迟到保护重新预约成功");
                     showResultNotification(true, 
@@ -217,6 +223,31 @@ public class LateProtectionService extends Service {
             }
         });
     }
+    private String clampEndTime(String endTime, String closeTime) {
+        Integer endMinutes = parseTimeToMinutes(endTime);
+        Integer closeMinutes = parseTimeToMinutes(closeTime);
+        if (endMinutes == null || closeMinutes == null) {
+            return endTime;
+        }
+        return endMinutes > closeMinutes ? closeTime : endTime;
+    }
+
+    @Nullable
+    private Integer parseTimeToMinutes(String hhmm) {
+        if (hhmm == null)
+            return null;
+        String[] parts = hhmm.trim().split(":");
+        if (parts.length < 2)
+            return null;
+        try {
+            int h = Integer.parseInt(parts[0]);
+            int m = Integer.parseInt(parts[1]);
+            return h * 60 + m;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
