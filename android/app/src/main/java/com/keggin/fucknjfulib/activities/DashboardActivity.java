@@ -153,6 +153,12 @@ public class DashboardActivity extends AppCompatActivity {
         cardQuerySeats.setOnClickListener(v -> navigateToVisualSeat());
         cardCheckTraffic.setOnClickListener(v -> checkTraffic());
         cardSettings.setOnClickListener(v -> navigateToSettings());
+        if (layoutTodayReservation != null) {
+            layoutTodayReservation.setOnClickListener(v -> showModifyReservationDialog(todayReservationForActions, "今天"));
+        }
+        if (layoutTomorrowReservation != null) {
+            layoutTomorrowReservation.setOnClickListener(v -> showModifyReservationDialog(tomorrowReservationForActions, "明天"));
+        }
         if (btnTodaySignIn != null) {
             btnTodaySignIn.setOnClickListener(v -> signIn(todayReservationForActions));
         }
@@ -765,12 +771,16 @@ public class DashboardActivity extends AppCompatActivity {
                             clampedEndTime,
                             true
                     );
+                    final String fDate = date;
+                    final String fStart = startTime;
+                    final String fEnd = clampedEndTime;
                     runOnUiThread(() -> {
                         showLoading(false);
                         if (findResult.success) {
-                            String successMsg = (findResult.reservedSeat != null)
-                                    ? "自动寻座成功，已预约：" + findResult.reservedSeat.devName
-                                    : "预约成功！";
+                            String seatDesc = (findResult.reservedSeat != null)
+                                    ? findResult.reservedSeat.devName : "未知座位";
+                            String successMsg = "自动寻座成功，已预约：" + seatDesc
+                                    + "\n日期：" + fDate + "  时段：" + fStart + " - " + fEnd;
                             Toast.makeText(this, successMsg, Toast.LENGTH_SHORT).show();
                             showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座成功", successMsg);
                             loadCurrentReservation();
@@ -890,6 +900,223 @@ public class DashboardActivity extends AppCompatActivity {
         });
     }
 
+    private void showModifyReservationDialog(SeatReservation.ReservationInfo targetReservation, String dayLabel) {
+        if (targetReservation == null || !targetReservation.hasReservation) {
+            Toast.makeText(this, "暂无可修改的预约", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Constants.AreaInfo areaInfo = resolveAreaInfoForReservation(targetReservation);
+        int seatNumber = resolveSeatNumberForReservation(targetReservation);
+        if (areaInfo == null || seatNumber <= 0 || seatNumber > areaInfo.seatCount) {
+            Toast.makeText(this, "无法识别当前预约座位，无法修改", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        final String date = (targetReservation.onDate != null && !targetReservation.onDate.trim().isEmpty())
+                ? targetReservation.onDate
+                : DateUtils.getTodayDate();
+        final String closeTime = DateUtils.getEndTimeWithoutSeconds(date);
+
+        String defaultStart = (targetReservation.startTime != null && !targetReservation.startTime.trim().isEmpty())
+                ? targetReservation.startTime
+                : Constants.DEFAULT_START_TIME;
+        String defaultEnd = (targetReservation.endTime != null && !targetReservation.endTime.trim().isEmpty())
+                ? targetReservation.endTime
+                : closeTime;
+        defaultEnd = clampEndTime(defaultEnd, closeTime);
+
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_simple_reserve, null);
+        TextView tvSeatInfo = dialogView.findViewById(R.id.tvSeatInfo);
+        TextInputEditText etStartTime = dialogView.findViewById(R.id.etStartTime);
+        TextInputEditText etEndTime = dialogView.findViewById(R.id.etEndTime);
+        MaterialButton btnCancelReserve = dialogView.findViewById(R.id.btnCancelReserve);
+        MaterialButton btnConfirmReserve = dialogView.findViewById(R.id.btnConfirmReserve);
+
+        tvSeatInfo.setText(dayLabel + " · " + date + " · " + areaInfo.name + " " + seatNumber + "号");
+        etStartTime.setText(defaultStart);
+        etEndTime.setText(defaultEnd);
+        btnConfirmReserve.setText("确认修改");
+
+        etStartTime.setOnClickListener(v -> {
+            String cur = etStartTime.getText() != null ? etStartTime.getText().toString().trim() : defaultStart;
+            int h = 7, m = 30;
+            try {
+                String[] p = cur.split(":");
+                h = Integer.parseInt(p[0]);
+                m = Integer.parseInt(p[1]);
+            } catch (Exception ignored) {
+            }
+            new TimePickerDialog(this,
+                    (tp, hour, minute) -> etStartTime.setText(String.format("%02d:%02d", hour, minute)),
+                    h, m, true).show();
+        });
+
+        etEndTime.setOnClickListener(v -> {
+            String cur = etEndTime.getText() != null ? etEndTime.getText().toString().trim() : closeTime;
+            int h = Integer.parseInt(closeTime.split(":")[0]), m = 0;
+            try {
+                String[] p = cur.split(":");
+                h = Integer.parseInt(p[0]);
+                m = Integer.parseInt(p[1]);
+            } catch (Exception ignored) {
+            }
+            new TimePickerDialog(this,
+                    (tp, hour, minute) -> etEndTime.setText(String.format("%02d:%02d", hour, minute)),
+                    h, m, true).show();
+        });
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        btnCancelReserve.setOnClickListener(v -> dialog.dismiss());
+        btnConfirmReserve.setOnClickListener(v -> {
+            String startInput = etStartTime.getText() != null ? etStartTime.getText().toString().trim() : "";
+            String endInput = etEndTime.getText() != null ? etEndTime.getText().toString().trim() : "";
+            if (startInput.isEmpty() || endInput.isEmpty()) {
+                Toast.makeText(this, "请完整选择开始和结束时间", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String normalizedStart = DateUtils.normalizeTimeFormat(startInput);
+            String normalizedEnd = DateUtils.normalizeTimeFormat(clampEndTime(endInput, closeTime));
+            if (!DateUtils.isValidDuration(normalizedStart, normalizedEnd, 2)) {
+                Toast.makeText(this, "预约时长必须至少2小时", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dialog.dismiss();
+            performModifyReservation(targetReservation, areaInfo, seatNumber, startInput, normalizedEnd.substring(0, 5), date);
+        });
+
+        dialog.show();
+    }
+
+    private void performModifyReservation(SeatReservation.ReservationInfo targetReservation,
+            Constants.AreaInfo areaInfo, int seatNumber, String startTime, String endTime, String date) {
+        showLoading(true);
+        executor.execute(() -> {
+            try {
+                AuthManager authManager = AuthManager.getInstance(this);
+                if (!authManager.ensureLoggedIn()) {
+                    runOnUiThread(() -> {
+                        showLoading(false);
+                        Toast.makeText(this, "登录已过期，请重新登录", Toast.LENGTH_SHORT).show();
+                        navigateToLogin();
+                    });
+                    return;
+                }
+
+                String resvId = (targetReservation.resvId != null && !targetReservation.resvId.trim().isEmpty())
+                        ? targetReservation.resvId
+                        : targetReservation.uuid;
+                if (resvId == null || resvId.trim().isEmpty()) {
+                    runOnUiThread(() -> {
+                        showLoading(false);
+                        Toast.makeText(this, "当前预约ID无效，无法修改", Toast.LENGTH_LONG).show();
+                    });
+                    return;
+                }
+
+                SeatReservation seatReservation = new SeatReservation(authManager);
+                SeatReservation.OperationResult cancelResult = seatReservation.cancelReservation(
+                        authManager.getToken(), authManager.getAccNo(), resvId);
+                if (!cancelResult.success) {
+                    runOnUiThread(() -> {
+                        showLoading(false);
+                        Toast.makeText(this, "修改失败：取消原预约失败\n" + cancelResult.message, Toast.LENGTH_LONG).show();
+                    });
+                    return;
+                }
+
+                SeatReservation.ReservationResult reserveResult = seatReservation.reserveSeat(
+                        authManager.getToken(),
+                        authManager.getAccNo(),
+                        areaInfo,
+                        seatNumber,
+                        startTime,
+                        endTime,
+                        date);
+
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    if (reserveResult.success) {
+                        Toast.makeText(this, "预约时间修改成功", Toast.LENGTH_SHORT).show();
+                        loadCurrentReservation();
+                        ensureLateProtectionScheduleIfEnabled();
+                    } else {
+                        Toast.makeText(
+                                this,
+                                "原预约已取消，但重新预约失败：\n" + reserveResult.message,
+                                Toast.LENGTH_LONG).show();
+                        loadCurrentReservation();
+                    }
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    showLoading(false);
+                    Toast.makeText(this, "修改预约失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    loadCurrentReservation();
+                });
+            }
+        });
+    }
+
+    private Constants.AreaInfo resolveAreaInfoForReservation(SeatReservation.ReservationInfo reservation) {
+        if (reservation == null) {
+            return null;
+        }
+        if (reservation.areaName != null && !reservation.areaName.trim().isEmpty()) {
+            Constants.AreaInfo info = Constants.SEAT_AREAS_MAP.get(reservation.areaName);
+            if (info != null) {
+                return info;
+            }
+        }
+        if (reservation.devId > 0) {
+            String[] areaAndSeat = Constants.getAreaAndSeatNumber(reservation.devId);
+            if (areaAndSeat != null && areaAndSeat.length >= 1) {
+                return Constants.SEAT_AREAS_MAP.get(areaAndSeat[0]);
+            }
+        }
+        return null;
+    }
+
+    private int resolveSeatNumberForReservation(SeatReservation.ReservationInfo reservation) {
+        if (reservation == null) {
+            return 0;
+        }
+        Integer fromLabel = tryParsePositiveInt(reservation.seatLabel);
+        if (fromLabel != null) {
+            return fromLabel;
+        }
+        if (reservation.devId > 0) {
+            String[] areaAndSeat = Constants.getAreaAndSeatNumber(reservation.devId);
+            if (areaAndSeat != null && areaAndSeat.length >= 2) {
+                Integer fromDev = tryParsePositiveInt(areaAndSeat[1]);
+                if (fromDev != null) {
+                    return fromDev;
+                }
+            }
+        }
+        return 0;
+    }
+
+    private Integer tryParsePositiveInt(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            int value = Integer.parseInt(raw.trim());
+            return value > 0 ? value : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private void checkTraffic() {
         showLoading(true);
         executor.execute(() -> {
@@ -965,6 +1192,7 @@ public class DashboardActivity extends AppCompatActivity {
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .setContentTitle(title)
                     .setContentText(message)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true);
             NotificationManagerCompat.from(this).notify(notifyId, builder.build());

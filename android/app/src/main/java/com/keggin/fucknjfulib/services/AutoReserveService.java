@@ -142,20 +142,21 @@ public class AutoReserveService extends Service {
                     endTime = weeklyPlan.endTime;
                     LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "使用周计划任务配置: " + areaName + " 座位" + seatNumber + " " + startTime + "-" + endTime);
                 }
-                String closeTime = getTomorrowCloseTime();
+                String tomorrow = DateUtils.getTomorrowDate();
+                String closeTime = DateUtils.getEndTimeWithoutSeconds(tomorrow);
                 endTime = clampEndTime(endTime, closeTime);
-                if (areaName == null || seatNumber <= 0) {
+                String reservationDetail = buildReservationDetail(tomorrow, areaName, seatNumber, startTime, endTime);
+                if (areaName == null || areaName.trim().isEmpty() || seatNumber <= 0) {
                     LocalLogManager.getInstance(AutoReserveService.this).e(TAG, "预约设置不完整");
-                    showResultNotification(false, "请先设置预约信息");
+                    showResultNotification(false, "请先设置预约信息\n" + reservationDetail);
                     return;
                 }
                 LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "正在认证...");
                 if (!authManager.refreshAuth()) {
                     LocalLogManager.getInstance(AutoReserveService.this).e(TAG, "认证失败: " + authManager.getErrorMessage());
-                    showResultNotification(false, "认证失败: " + authManager.getErrorMessage());
+                    showResultNotification(false, "认证失败: " + authManager.getErrorMessage() + "\n" + reservationDetail);
                     return;
                 }
-                String tomorrow = DateUtils.getTomorrowDate();
                 boolean reserveSucceeded = false;
                 SeatReservation.ReserveResult result;
                 if (autoFindSeat) {
@@ -164,18 +165,19 @@ public class AutoReserveService extends Service {
                             areaName, seatNumber, tomorrow, startTime, endTime, true);
                     if (findResult.success) {
                         reserveSucceeded = true;
-                        String msg = findResult.reservedSeat != null
-                                ? "自动寻座成功: " + findResult.reservedSeat.devName
-                                : "预约成功";
-                        showResultNotification(true, msg);
+                        String actualSeat = findResult.reservedSeat != null
+                                ? findResult.reservedSeat.devName
+                                : (resolveAreaDisplayName(areaName) + " " + seatNumber + "号");
+                        showResultNotification(true,
+                                "自动寻座成功：已预约 " + actualSeat + "\n" + reservationDetail);
                     } else {
-                        showResultNotification(false, findResult.message);
+                        showResultNotification(false, findResult.message + "\n" + reservationDetail);
                     }
                 } else {
                     SeatReservation reservation = new SeatReservation(authManager);
                     result = reservation.reserveSeat(areaName, seatNumber, tomorrow, startTime, endTime);
                     reserveSucceeded = result.success;
-                    showResultNotification(result.success, result.message);
+                    showResultNotification(result.success, result.message + "\n" + reservationDetail);
                 }
 
                 if (reserveSucceeded) {
@@ -238,14 +240,35 @@ public class AutoReserveService extends Service {
                 .build();
     }
     private void showScheduledNotification() {
-        long nextTime = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE)
-                .getLong("next_reserve_time", 0);
-        String timeStr = nextTime > 0 
+        SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
+        long nextTime = prefs.getLong("next_reserve_time", 0);
+        String timeStr = nextTime > 0
                 ? DateUtils.formatTimestamp(nextTime)
                 : "未设置";
+        String reserveDate = getReservationDateForExecution(nextTime);
+
+        String areaName = prefs.getString(Constants.PREF_TARGET_AREA, null);
+        int seatNumber = prefs.getInt(Constants.PREF_TARGET_SEAT, 0);
+        String startTime = prefs.getString(Constants.PREF_START_TIME, Constants.DEFAULT_START_TIME);
+        String endTime = prefs.getString(Constants.PREF_END_TIME, Constants.DEFAULT_END_TIME);
+
+        WeeklyPlanConfig weeklyPlan = getTomorrowWeeklyPlan(prefs);
+        if (weeklyPlan != null && weeklyPlan.enabled) {
+            areaName = weeklyPlan.areaName;
+            seatNumber = weeklyPlan.seatNumber;
+            startTime = weeklyPlan.startTime;
+            endTime = weeklyPlan.endTime;
+        }
+
+        String closeTime = DateUtils.getEndTimeWithoutSeconds(reserveDate);
+        endTime = clampEndTime(endTime, closeTime);
+        String detail = buildReservationDetail(reserveDate, areaName, seatNumber, startTime, endTime);
+        String message = "下次执行时间：" + timeStr + "\n" + detail;
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("自动预约已开启")
-                .setContentText("下次预约时间: " + timeStr)
+                .setContentText(message)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build();
@@ -256,12 +279,52 @@ public class AutoReserveService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(success ? "预约成功" : "预约失败")
                 .setContentText(message)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .build();
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.notify(NOTIFICATION_ID + 2, notification);
+    }
+
+    private String buildReservationDetail(String reservationDate, String areaName, int seatNumber, String startTime, String endTime) {
+        String dateText = (reservationDate == null || reservationDate.trim().isEmpty())
+                ? DateUtils.getTomorrowDate()
+                : reservationDate;
+        String displayArea = resolveAreaDisplayName(areaName);
+        String seatText = seatNumber > 0 ? seatNumber + "号" : "未设置座位";
+        String startText = (startTime == null || startTime.trim().isEmpty())
+                ? Constants.DEFAULT_START_TIME
+                : startTime;
+        String endText = (endTime == null || endTime.trim().isEmpty())
+                ? Constants.DEFAULT_END_TIME
+                : endTime;
+        return "预约日期：" + dateText
+                + "\n目标座位：" + displayArea + " " + seatText
+                + "\n预约时段：" + startText + " - " + endText;
+    }
+
+    private String resolveAreaDisplayName(String areaName) {
+        if (areaName == null || areaName.trim().isEmpty()) {
+            return "未设置区域";
+        }
+        Constants.AreaInfo info = Constants.SEAT_AREAS_MAP.get(areaName);
+        if (info != null && info.name != null && !info.name.trim().isEmpty()) {
+            return info.name;
+        }
+        return areaName;
+    }
+
+    private String getReservationDateForExecution(long executeAtMillis) {
+        if (executeAtMillis <= 0) {
+            return DateUtils.getTomorrowDate();
+        }
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(executeAtMillis);
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        return new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(cal.getTime());
     }
     private static class WeeklyPlanConfig {
         boolean enabled;

@@ -408,6 +408,9 @@ public class VisualSeatActivity extends AppCompatActivity {
                 }
 
                 boolean autoFindSeat = preferenceManager != null && preferenceManager.isAutoFindSeatEnabled();
+                final String fDate = selectedDateStr;
+                final String fStart = start;
+                final String fEnd = end;
                 if (autoFindSeat) {
                     AutoFinder autoFinder = new AutoFinder(authManager);
                     AutoFinder.AutoFindResult findResult = autoFinder.tryReserveWithAutoFind(
@@ -421,15 +424,18 @@ public class VisualSeatActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         showLoading(false);
                         if (findResult.success) {
-                            String successMsg = (findResult.reservedSeat != null)
-                                    ? "自动寻座成功，已预约：" + findResult.reservedSeat.devName
-                                    : "预约成功！";
+                            String seatDesc = (findResult.reservedSeat != null)
+                                    ? findResult.reservedSeat.devName : "未知座位";
+                            String successMsg = "自动寻座成功，已预约：" + seatDesc
+                                    + "\n日期：" + fDate + "  时段：" + fStart + " - " + fEnd;
                             Toast.makeText(this, successMsg, Toast.LENGTH_LONG).show();
                             showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座成功", successMsg);
                             scheduleLateProtectionIfEnabled();
                             performQuery(); // 刷新布局状态
                         } else {
-                            showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座失败", findResult.message);
+                            String failMsg = findResult.message
+                                    + "\n日期：" + fDate + "  时段：" + fStart + " - " + fEnd;
+                            showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座失败", failMsg);
                             new AlertDialog.Builder(this)
                                     .setTitle("预约失败")
                                     .setMessage(findResult.message)
@@ -492,6 +498,7 @@ public class VisualSeatActivity extends AppCompatActivity {
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .setContentTitle(title)
                     .setContentText(message)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true);
             NotificationManagerCompat.from(this).notify(notifyId, builder.build());

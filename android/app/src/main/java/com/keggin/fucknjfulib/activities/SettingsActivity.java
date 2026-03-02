@@ -230,36 +230,57 @@ public class SettingsActivity extends AppCompatActivity {
         layoutEndTime.setOnClickListener(v -> showTimePicker(false));
         switchAutoReserve.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoReserveEnabled(isChecked);
+            String targetSummary = buildTargetConfigSummary();
             if (isChecked) {
                 scheduleAutoReserve();
                 Toast.makeText(this, "自动预约已开启，将在每天7点执行", Toast.LENGTH_SHORT).show();
-                showFeatureNotification(NOTIFY_ID_AUTO_RESERVE, "自动预约已开启", "每日 07:00 自动执行预约任务");
+                showFeatureNotification(
+                        NOTIFY_ID_AUTO_RESERVE,
+                        "自动预约已开启",
+                        "每日 07:00 自动执行预约任务\n" + targetSummary);
             } else {
                 cancelAutoReserve();
                 Toast.makeText(this, "自动预约已关闭", Toast.LENGTH_SHORT).show();
-                showFeatureNotification(NOTIFY_ID_AUTO_RESERVE, "自动预约已关闭", "已取消自动预约任务");
+                showFeatureNotification(
+                        NOTIFY_ID_AUTO_RESERVE,
+                        "自动预约已关闭",
+                        "已取消自动预约任务\n" + targetSummary);
             }
         });
         switchLateProtection.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setLateProtectionEnabled(isChecked);
+            String targetSummary = buildTargetConfigSummary();
             if (isChecked) {
                 scheduleLateProtection();
                 Toast.makeText(this, "迟到保护已开启", Toast.LENGTH_SHORT).show();
-                showFeatureNotification(NOTIFY_ID_LATE_PROTECTION, "迟到保护已开启", "已开始安排迟到保护检查任务");
+                showFeatureNotification(
+                        NOTIFY_ID_LATE_PROTECTION,
+                        "迟到保护已开启",
+                        "已开始安排迟到保护检查任务\n" + targetSummary);
             } else {
                 cancelLateProtection();
                 Toast.makeText(this, "迟到保护已关闭", Toast.LENGTH_SHORT).show();
-                showFeatureNotification(NOTIFY_ID_LATE_PROTECTION, "迟到保护已关闭", "已取消迟到保护任务");
+                showFeatureNotification(
+                        NOTIFY_ID_LATE_PROTECTION,
+                        "迟到保护已关闭",
+                        "已取消迟到保护任务\n" + targetSummary);
             }
         });
         switchAutoFindSeat.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoFindSeatEnabled(isChecked);
+            String targetSummary = buildTargetConfigSummary();
             if (isChecked) {
                 Toast.makeText(this, "自动寻座已开启", Toast.LENGTH_SHORT).show();
-                showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座已开启", "目标座位冲突时将自动尝试备选座位");
+                showFeatureNotification(
+                        NOTIFY_ID_AUTO_FIND,
+                        "自动寻座已开启",
+                        "目标座位冲突时将自动尝试备选座位\n" + targetSummary);
             } else {
                 Toast.makeText(this, "自动寻座已关闭", Toast.LENGTH_SHORT).show();
-                showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座已关闭", "将不再自动尝试备选座位");
+                showFeatureNotification(
+                        NOTIFY_ID_AUTO_FIND,
+                        "自动寻座已关闭",
+                        "将不再自动尝试备选座位\n" + targetSummary);
             }
         });
         switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -442,6 +463,28 @@ public class SettingsActivity extends AppCompatActivity {
         finish();
     }
 
+    private String buildTargetConfigSummary() {
+        String areaKey = preferenceManager.getTargetArea();
+        String areaName = preferenceManager.getAreaName(areaKey);
+        if (areaName == null || areaName.trim().isEmpty()) {
+            areaName = "未设置区域";
+        }
+
+        int seatNumber = preferenceManager.getTargetSeat();
+        String seatText = seatNumber > 0 ? seatNumber + "号" : "未设置座位";
+
+        String startTime = preferenceManager.getStartTime();
+        String endTime = preferenceManager.getEndTime();
+        if (startTime == null || startTime.trim().isEmpty()) {
+            startTime = Constants.DEFAULT_START_TIME;
+        }
+        if (endTime == null || endTime.trim().isEmpty()) {
+            endTime = Constants.DEFAULT_END_TIME;
+        }
+
+        return "目标：" + areaName + " " + seatText + "\n时段：" + startTime + " - " + endTime;
+    }
+
     private void showFeatureNotification(int notifyId, String title, String message) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -459,6 +502,7 @@ public class SettingsActivity extends AppCompatActivity {
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .setContentTitle(title)
                     .setContentText(message)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true);
             NotificationManagerCompat.from(this).notify(notifyId, builder.build());
