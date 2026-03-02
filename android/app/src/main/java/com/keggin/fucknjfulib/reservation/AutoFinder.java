@@ -36,11 +36,15 @@ public class AutoFinder {
             AutoFindResult findResult = new AutoFindResult(true, "预约成功: " + result.message);
             return findResult;
         }
-        String errorMsg = result.message != null ? result.message.toLowerCase() : "";
-        boolean isSeatOccupied = errorMsg.contains("已被预约") 
-                || errorMsg.contains("已预约")
-                || errorMsg.contains("被占用")
-                || errorMsg.contains("正在被预约");
+        String errorMsg = result.message != null ? result.message : "";
+        String normalizedMsg = errorMsg.toLowerCase();
+        boolean isSeatOccupied = normalizedMsg.contains("已被预约")
+                || normalizedMsg.contains("已预约")
+                || normalizedMsg.contains("被占用")
+                || normalizedMsg.contains("正在被预约")
+                || normalizedMsg.contains("time conflict")
+                || (errorMsg.contains("时间段") && (errorMsg.contains("预约") || errorMsg.contains("占用")))
+                || (errorMsg.contains("该时间段") && (errorMsg.contains("预约") || errorMsg.contains("占用")));
         if (!isSeatOccupied) {
             Log.d(TAG, "非座位占用错误，不进行自动寻座: " + result.message);
             return new AutoFindResult(false, result.message);

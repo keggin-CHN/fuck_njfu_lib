@@ -1,1 +1,0 @@
-window.__MAP_META__ = {"roomId": 111488396, "date": "20260301", "bg": {"contentPath": "upload/sysInfo/37cad5494ae34ce1bb098b953cef5f5d-七层南侧新-3.jpg", "downloadRef": "ic-web/upload/sysInfo/37cad5494ae34ce1bb098b953cef5f5d-七层南侧新-3.jpg", "saved": true, "fileName": "room_bg.jpg", "localPath": "./data/room_bg.jpg"}, "featureNote": "桌子/卫生间/楼道通常在背景底图里，不在座位点数据中单独返回。"};

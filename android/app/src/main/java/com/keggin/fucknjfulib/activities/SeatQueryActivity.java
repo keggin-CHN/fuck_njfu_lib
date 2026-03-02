@@ -117,6 +117,9 @@ public class SeatQueryActivity extends AppCompatActivity {
                 this, android.R.layout.simple_spinner_item, dateOptions);
         dateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerDate.setAdapter(dateAdapter);
+        if (dateOptions.size() > 1) {
+            spinnerDate.setSelection(1, false); // 默认明天
+        }
     }
 
     private void setupClickListeners() {

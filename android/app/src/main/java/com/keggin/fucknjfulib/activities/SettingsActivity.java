@@ -1,6 +1,8 @@
 package com.keggin.fucknjfulib.activities;
 
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Build;
@@ -18,6 +20,8 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import com.keggin.fucknjfulib.BuildConfig;
 import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
@@ -40,6 +44,10 @@ import okhttp3.Response;
 
 public class SettingsActivity extends AppCompatActivity {
     private static final String TAG = "SettingsActivity";
+    private static final String FEATURE_NOTIFY_CHANNEL_ID = "feature_status_channel";
+    private static final int NOTIFY_ID_AUTO_RESERVE = 3201;
+    private static final int NOTIFY_ID_LATE_PROTECTION = 3202;
+    private static final int NOTIFY_ID_AUTO_FIND = 3203;
     private Toolbar toolbar;
     private CardView cardPermissionCheck;
     private LinearLayout layoutNotificationPermission;
@@ -225,9 +233,11 @@ public class SettingsActivity extends AppCompatActivity {
             if (isChecked) {
                 scheduleAutoReserve();
                 Toast.makeText(this, "自动预约已开启，将在每天7点执行", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(NOTIFY_ID_AUTO_RESERVE, "自动预约已开启", "每日 07:00 自动执行预约任务");
             } else {
                 cancelAutoReserve();
                 Toast.makeText(this, "自动预约已关闭", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(NOTIFY_ID_AUTO_RESERVE, "自动预约已关闭", "已取消自动预约任务");
             }
         });
         switchLateProtection.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -235,16 +245,21 @@ public class SettingsActivity extends AppCompatActivity {
             if (isChecked) {
                 scheduleLateProtection();
                 Toast.makeText(this, "迟到保护已开启", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(NOTIFY_ID_LATE_PROTECTION, "迟到保护已开启", "已开始安排迟到保护检查任务");
             } else {
+                cancelLateProtection();
                 Toast.makeText(this, "迟到保护已关闭", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(NOTIFY_ID_LATE_PROTECTION, "迟到保护已关闭", "已取消迟到保护任务");
             }
         });
         switchAutoFindSeat.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoFindSeatEnabled(isChecked);
             if (isChecked) {
                 Toast.makeText(this, "自动寻座已开启", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座已开启", "目标座位冲突时将自动尝试备选座位");
             } else {
                 Toast.makeText(this, "自动寻座已关闭", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座已关闭", "将不再自动尝试备选座位");
             }
         });
         switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -282,6 +297,12 @@ public class SettingsActivity extends AppCompatActivity {
         } else {
             startService(serviceIntent);
         }
+    }
+
+    private void cancelLateProtection() {
+        Intent serviceIntent = new Intent(this, LateProtectionService.class);
+        serviceIntent.setAction(LateProtectionService.ACTION_CANCEL);
+        startService(serviceIntent);
     }
 
     private void showAreaPicker() {
@@ -413,11 +434,37 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void performLogout() {
         cancelAutoReserve();
+        cancelLateProtection();
         preferenceManager.clearCredentials();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private void showFeatureNotification(int notifyId, String title, String message) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        FEATURE_NOTIFY_CHANNEL_ID,
+                        "功能状态通知",
+                        NotificationManager.IMPORTANCE_DEFAULT);
+                channel.setDescription("自动预约/迟到保护/自动寻座状态通知");
+                NotificationManager nm = getSystemService(NotificationManager.class);
+                if (nm != null) {
+                    nm.createNotificationChannel(channel);
+                }
+            }
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, FEATURE_NOTIFY_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true);
+            NotificationManagerCompat.from(this).notify(notifyId, builder.build());
+        } catch (SecurityException ignored) {
+            // Android 13+ 未授予通知权限时忽略
+        }
     }
 
     private boolean isHuaweiFamilyDevice() {

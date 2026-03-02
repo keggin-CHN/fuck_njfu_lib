@@ -82,6 +82,11 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".activities.UserGuideActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         
         <service
             android:name=".services.AutoReserveService"

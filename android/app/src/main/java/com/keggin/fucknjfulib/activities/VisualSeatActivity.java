@@ -1,6 +1,10 @@
 package com.keggin.fucknjfulib.activities;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.TimePickerDialog;
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,13 +19,17 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
+import com.keggin.fucknjfulib.reservation.AutoFinder;
 import com.keggin.fucknjfulib.reservation.SeatQuery;
 import com.keggin.fucknjfulib.reservation.SeatReservation;
+import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.DateUtils;
@@ -40,6 +48,8 @@ import java.util.concurrent.Executors;
 public class VisualSeatActivity extends AppCompatActivity {
 
     private static final String TAG = "VisualSeatActivity";
+    private static final String FEATURE_NOTIFY_CHANNEL_ID = "feature_status_channel";
+    private static final int NOTIFY_ID_AUTO_FIND = 3301;
 
     private Toolbar toolbar;
     private Spinner spinnerArea;
@@ -123,6 +133,9 @@ public class VisualSeatActivity extends AppCompatActivity {
                 this, android.R.layout.simple_spinner_item, dateOptions);
         dateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerDate.setAdapter(dateAdapter);
+        if (dateOptions.size() > 1) {
+            spinnerDate.setSelection(1, false); // 默认明天
+        }
     }
 
     private void setupClickListeners() {
@@ -169,7 +182,7 @@ public class VisualSeatActivity extends AppCompatActivity {
                     showLoading(false);
                     if (result.success && result.seatsData != null) {
                         seatMapView.setSeats(result.seatsData);
-                        seatMapView.setBackground(result.background);
+                        seatMapView.setRoomBackground(currentAreaInfo != null ? currentAreaInfo.roomId : -1);
                         if (result.seatsData.isEmpty()) {
                             tvEmptyHint.setText("当前区域暂无座位布局数据");
                             tvEmptyHint.setVisibility(View.VISIBLE);
@@ -394,28 +407,61 @@ public class VisualSeatActivity extends AppCompatActivity {
                     return;
                 }
 
-                SeatReservation.ReservationResult result = res.reserveSeat(
-                        authManager.getToken(),
-                        authManager.getAccNo(),
-                        currentAreaInfo,
-                        seatNumber,
-                        start,
-                        end,
-                        selectedDateStr);
+                boolean autoFindSeat = preferenceManager != null && preferenceManager.isAutoFindSeatEnabled();
+                if (autoFindSeat) {
+                    AutoFinder autoFinder = new AutoFinder(authManager);
+                    AutoFinder.AutoFindResult findResult = autoFinder.tryReserveWithAutoFind(
+                            currentAreaInfo.name,
+                            seatNumber,
+                            selectedDateStr,
+                            start,
+                            end,
+                            true);
 
-                runOnUiThread(() -> {
-                    showLoading(false);
-                    if (result.success) {
-                        Toast.makeText(this, "预约成功！", Toast.LENGTH_LONG).show();
-                        performQuery(); // 刷新布局状态
-                    } else {
-                        new AlertDialog.Builder(this)
-                                .setTitle("预约失败")
-                                .setMessage(result.message)
-                                .setPositiveButton("确定", null)
-                                .show();
-                    }
-                });
+                    runOnUiThread(() -> {
+                        showLoading(false);
+                        if (findResult.success) {
+                            String successMsg = (findResult.reservedSeat != null)
+                                    ? "自动寻座成功，已预约：" + findResult.reservedSeat.devName
+                                    : "预约成功！";
+                            Toast.makeText(this, successMsg, Toast.LENGTH_LONG).show();
+                            showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座成功", successMsg);
+                            scheduleLateProtectionIfEnabled();
+                            performQuery(); // 刷新布局状态
+                        } else {
+                            showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座失败", findResult.message);
+                            new AlertDialog.Builder(this)
+                                    .setTitle("预约失败")
+                                    .setMessage(findResult.message)
+                                    .setPositiveButton("确定", null)
+                                    .show();
+                        }
+                    });
+                } else {
+                    SeatReservation.ReservationResult result = res.reserveSeat(
+                            authManager.getToken(),
+                            authManager.getAccNo(),
+                            currentAreaInfo,
+                            seatNumber,
+                            start,
+                            end,
+                            selectedDateStr);
+
+                    runOnUiThread(() -> {
+                        showLoading(false);
+                        if (result.success) {
+                            Toast.makeText(this, "预约成功！", Toast.LENGTH_LONG).show();
+                            scheduleLateProtectionIfEnabled();
+                            performQuery(); // 刷新布局状态
+                        } else {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("预约失败")
+                                    .setMessage(result.message)
+                                    .setPositiveButton("确定", null)
+                                    .show();
+                        }
+                    });
+                }
             } catch (Exception e) {
                 runOnUiThread(() -> {
                     showLoading(false);
@@ -427,6 +473,44 @@ public class VisualSeatActivity extends AppCompatActivity {
 
     private void showLoading(boolean show) {
         loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void showFeatureNotification(int notifyId, String title, String message) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        FEATURE_NOTIFY_CHANNEL_ID,
+                        "功能状态通知",
+                        NotificationManager.IMPORTANCE_DEFAULT);
+                channel.setDescription("自动寻座等功能状态通知");
+                NotificationManager nm = getSystemService(NotificationManager.class);
+                if (nm != null) {
+                    nm.createNotificationChannel(channel);
+                }
+            }
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, FEATURE_NOTIFY_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true);
+            NotificationManagerCompat.from(this).notify(notifyId, builder.build());
+        } catch (SecurityException ignored) {
+            // Android 13+ 未授予通知权限时忽略
+        }
+    }
+
+    private void scheduleLateProtectionIfEnabled() {
+        if (preferenceManager == null || !preferenceManager.isLateProtectionEnabled()) {
+            return;
+        }
+        Intent serviceIntent = new Intent(this, LateProtectionService.class);
+        serviceIntent.setAction(LateProtectionService.ACTION_SCHEDULE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
     }
 
     @Override

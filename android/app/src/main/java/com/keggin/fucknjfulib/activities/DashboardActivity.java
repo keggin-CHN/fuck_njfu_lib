@@ -1,6 +1,8 @@
 package com.keggin.fucknjfulib.activities;
 
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -21,10 +23,14 @@ import androidx.appcompat.widget.Toolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
+import com.keggin.fucknjfulib.reservation.AutoFinder;
 import com.keggin.fucknjfulib.reservation.SeatReservation;
 import com.keggin.fucknjfulib.reservation.TrafficQuery;
+import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.DateUtils;
@@ -37,9 +43,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class DashboardActivity extends AppCompatActivity {
+    private static final String FEATURE_NOTIFY_CHANNEL_ID = "feature_status_channel";
+    private static final int NOTIFY_ID_AUTO_FIND = 3101;
     private Toolbar toolbar;
     private ImageButton btnSettings;
-    private android.widget.TextView btnLogs;
+    private android.widget.TextView btnGuide;
     private MaterialCardView cardCurrentReservation;
     private LinearLayout layoutNoReservation;
     private TextView tvNoReservationText;
@@ -94,13 +102,14 @@ public class DashboardActivity extends AppCompatActivity {
         boolean hasCache = loadCachedReservation();
         loadCurrentReservation(!hasCache);
         updateAutoStatus();
+        ensureLateProtectionScheduleIfEnabled();
         checkPunishInfo();
     }
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         btnSettings = findViewById(R.id.btnSettings);
-        btnLogs = findViewById(R.id.btnLogs);
+        btnGuide = findViewById(R.id.btnGuide);
         cardCurrentReservation = findViewById(R.id.cardCurrentReservation);
         layoutNoReservation = findViewById(R.id.layoutNoReservation);
         tvNoReservationText = findViewById(R.id.tvNoReservationText);
@@ -137,7 +146,9 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnSettings.setOnClickListener(v -> navigateToSettings());
-        btnLogs.setOnClickListener(v -> startActivity(new Intent(this, LogActivity.class)));
+        if (btnGuide != null) {
+            btnGuide.setOnClickListener(v -> navigateToUserGuide());
+        }
         cardReserveNow.setOnClickListener(v -> showReserveNowDialog());
         cardQuerySeats.setOnClickListener(v -> navigateToVisualSeat());
         cardCheckTraffic.setOnClickListener(v -> checkTraffic());
@@ -163,6 +174,10 @@ public class DashboardActivity extends AppCompatActivity {
 
     private void navigateToPlanTasks() {
         startActivity(new Intent(this, PlanTasksActivity.class));
+    }
+
+    private void navigateToUserGuide() {
+        startActivity(new Intent(this, UserGuideActivity.class));
     }
 
     /**
@@ -593,7 +608,7 @@ public class DashboardActivity extends AppCompatActivity {
         etSeatNumber.setText(lastSeat > 0 ? String.valueOf(lastSeat) : "");
 
         // Date selection: use deep-blue for selected, neutral for unselected
-        final String[] selectedDate = { DateUtils.getTomorrowDate() }; // default tomorrow
+        final String[] selectedDate = { DateUtils.getTodayDate() };
 
         // Helper to apply selected/unselected states
         java.util.function.BiConsumer<MaterialButton, Boolean> applyDateStyle = (btn, selected) -> {
@@ -607,19 +622,28 @@ public class DashboardActivity extends AppCompatActivity {
                 btn.setStrokeColor(android.content.res.ColorStateList.valueOf(getColor(R.color.primary)));
             }
         };
-        // Initial state: tomorrow selected
-        applyDateStyle.accept(btnDateTomorrow, true);
-        applyDateStyle.accept(btnDateToday, false);
+        // Initial state: always today selected
+        applyDateStyle.accept(btnDateToday, true);
+        applyDateStyle.accept(btnDateTomorrow, false);
+
+        Runnable refreshEndTimeByDate = () -> {
+            String closeTimeForDate = DateUtils.getEndTimeWithoutSeconds(selectedDate[0]);
+            String currentEnd = etEndTime.getText() != null ? etEndTime.getText().toString().trim() : "";
+            String endCandidate = currentEnd.isEmpty() ? closeTimeForDate : currentEnd;
+            etEndTime.setText(clampEndTime(endCandidate, closeTimeForDate));
+        };
 
         btnDateToday.setOnClickListener(v -> {
             selectedDate[0] = DateUtils.getTodayDate();
             applyDateStyle.accept(btnDateToday, true);
             applyDateStyle.accept(btnDateTomorrow, false);
+            refreshEndTimeByDate.run();
         });
         btnDateTomorrow.setOnClickListener(v -> {
             selectedDate[0] = DateUtils.getTomorrowDate();
             applyDateStyle.accept(btnDateTomorrow, true);
             applyDateStyle.accept(btnDateToday, false);
+            refreshEndTimeByDate.run();
         });
 
         // Default times
@@ -727,22 +751,57 @@ public class DashboardActivity extends AppCompatActivity {
                     });
                     return;
                 }
-                SeatReservation seatReservation = new SeatReservation(authManager);
-                SeatReservation.ReservationResult result = seatReservation.reserveSeat(
-                        authManager.getToken(), authManager.getAccNo(),
-                        areaInfo, seatNumber, startTime, endTime, date);
-                runOnUiThread(() -> {
-                    showLoading(false);
-                    if (result.success) {
-                        Toast.makeText(this, "预约成功！", Toast.LENGTH_SHORT).show();
-                        loadCurrentReservation();
-                    } else {
-                        new AlertDialog.Builder(this)
-                                .setTitle("预约失败")
-                                .setMessage(result.message)
-                                .setPositiveButton("确定", null).show();
-                    }
-                });
+                String closeTime = DateUtils.getEndTimeWithoutSeconds(date);
+                String clampedEndTime = clampEndTime(endTime, closeTime);
+                boolean autoFindSeat = preferenceManager.isAutoFindSeatEnabled();
+
+                if (autoFindSeat) {
+                    AutoFinder autoFinder = new AutoFinder(authManager);
+                    AutoFinder.AutoFindResult findResult = autoFinder.tryReserveWithAutoFind(
+                            areaInfo.name,
+                            seatNumber,
+                            date,
+                            startTime,
+                            clampedEndTime,
+                            true
+                    );
+                    runOnUiThread(() -> {
+                        showLoading(false);
+                        if (findResult.success) {
+                            String successMsg = (findResult.reservedSeat != null)
+                                    ? "自动寻座成功，已预约：" + findResult.reservedSeat.devName
+                                    : "预约成功！";
+                            Toast.makeText(this, successMsg, Toast.LENGTH_SHORT).show();
+                            showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座成功", successMsg);
+                            loadCurrentReservation();
+                            ensureLateProtectionScheduleIfEnabled();
+                        } else {
+                            showFeatureNotification(NOTIFY_ID_AUTO_FIND, "自动寻座失败", findResult.message);
+                            new AlertDialog.Builder(this)
+                                    .setTitle("预约失败")
+                                    .setMessage(findResult.message)
+                                    .setPositiveButton("确定", null).show();
+                        }
+                    });
+                } else {
+                    SeatReservation seatReservation = new SeatReservation(authManager);
+                    SeatReservation.ReservationResult result = seatReservation.reserveSeat(
+                            authManager.getToken(), authManager.getAccNo(),
+                            areaInfo, seatNumber, startTime, clampedEndTime, date);
+                    runOnUiThread(() -> {
+                        showLoading(false);
+                        if (result.success) {
+                            Toast.makeText(this, "预约成功！", Toast.LENGTH_SHORT).show();
+                            loadCurrentReservation();
+                            ensureLateProtectionScheduleIfEnabled();
+                        } else {
+                            new AlertDialog.Builder(this)
+                                    .setTitle("预约失败")
+                                    .setMessage(result.message)
+                                    .setPositiveButton("确定", null).show();
+                        }
+                    });
+                }
             } catch (Exception e) {
                 runOnUiThread(() -> {
                     showLoading(false);
@@ -889,6 +948,31 @@ public class DashboardActivity extends AppCompatActivity {
         loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
+    private void showFeatureNotification(int notifyId, String title, String message) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        FEATURE_NOTIFY_CHANNEL_ID,
+                        "功能状态通知",
+                        NotificationManager.IMPORTANCE_DEFAULT);
+                channel.setDescription("自动寻座等功能状态通知");
+                NotificationManager nm = getSystemService(NotificationManager.class);
+                if (nm != null) {
+                    nm.createNotificationChannel(channel);
+                }
+            }
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, FEATURE_NOTIFY_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true);
+            NotificationManagerCompat.from(this).notify(notifyId, builder.build());
+        } catch (SecurityException ignored) {
+            // Android 13+ 用户未授予通知权限时忽略异常
+        }
+    }
+
     private void navigateToSettings() {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
@@ -912,6 +996,19 @@ public class DashboardActivity extends AppCompatActivity {
 
     private String getTomorrowCloseTime() {
         return DateUtils.getEndTimeWithoutSeconds(DateUtils.getTomorrowDate());
+    }
+
+    private void ensureLateProtectionScheduleIfEnabled() {
+        if (preferenceManager == null || !preferenceManager.isLateProtectionEnabled()) {
+            return;
+        }
+        Intent serviceIntent = new Intent(this, LateProtectionService.class);
+        serviceIntent.setAction(LateProtectionService.ACTION_SCHEDULE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
     }
 
     private String clampEndTime(String endTime, String closeTime) {

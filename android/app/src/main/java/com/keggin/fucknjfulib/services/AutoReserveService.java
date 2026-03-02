@@ -115,9 +115,10 @@ public class AutoReserveService extends Service {
     }
     private void executeAutoReserve() {
         if (wakeLock != null && !wakeLock.isHeld()) {
-            wakeLock.acquire(5 * 60 * 1000L); 
+            wakeLock.acquire(5 * 60 * 1000L);
         }
         executor.execute(() -> {
+            boolean shouldReschedule = false;
             try {
                 LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "开始执行自动预约...");
                 AuthManager authManager = AuthManager.getInstance(this);
@@ -127,6 +128,7 @@ public class AutoReserveService extends Service {
                     showResultNotification(false, "自动预约未启用");
                     return;
                 }
+                shouldReschedule = true;
                 String areaName = prefs.getString(Constants.PREF_TARGET_AREA, null);
                 int seatNumber = prefs.getInt(Constants.PREF_TARGET_SEAT, 0);
                 String startTime = prefs.getString(Constants.PREF_START_TIME, Constants.DEFAULT_START_TIME);
@@ -154,13 +156,15 @@ public class AutoReserveService extends Service {
                     return;
                 }
                 String tomorrow = DateUtils.getTomorrowDate();
+                boolean reserveSucceeded = false;
                 SeatReservation.ReserveResult result;
                 if (autoFindSeat) {
                     AutoFinder autoFinder = new AutoFinder(authManager);
                     AutoFinder.AutoFindResult findResult = autoFinder.tryReserveWithAutoFind(
                             areaName, seatNumber, tomorrow, startTime, endTime, true);
                     if (findResult.success) {
-                        String msg = findResult.reservedSeat != null 
+                        reserveSucceeded = true;
+                        String msg = findResult.reservedSeat != null
                                 ? "自动寻座成功: " + findResult.reservedSeat.devName
                                 : "预约成功";
                         showResultNotification(true, msg);
@@ -170,13 +174,24 @@ public class AutoReserveService extends Service {
                 } else {
                     SeatReservation reservation = new SeatReservation(authManager);
                     result = reservation.reserveSeat(areaName, seatNumber, tomorrow, startTime, endTime);
+                    reserveSucceeded = result.success;
                     showResultNotification(result.success, result.message);
                 }
-                scheduleAutoReserve();
+
+                if (reserveSucceeded) {
+                    scheduleLateProtectionIfEnabled();
+                }
             } catch (Exception e) {
                 LocalLogManager.getInstance(AutoReserveService.this).e(TAG, "自动预约出错: " + e.getMessage(), e);
                 showResultNotification(false, "自动预约出错: " + e.getMessage());
             } finally {
+                if (shouldReschedule) {
+                    try {
+                        scheduleAutoReserve();
+                    } catch (Exception e) {
+                        LocalLogManager.getInstance(AutoReserveService.this).e(TAG, "重置下一次自动预约失败: " + e.getMessage(), e);
+                    }
+                }
                 if (wakeLock != null && wakeLock.isHeld()) {
                     wakeLock.release();
                 }
@@ -343,6 +358,21 @@ public class AutoReserveService extends Service {
             return null;
         }
     }
+    private void scheduleLateProtectionIfEnabled() {
+        SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
+        if (!prefs.getBoolean(Constants.PREF_PREVENT_LATE, false)) {
+            return;
+        }
+        Intent serviceIntent = new Intent(this, LateProtectionService.class);
+        serviceIntent.setAction(LateProtectionService.ACTION_SCHEDULE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+        LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "预约成功后已触发迟到保护任务重排");
+    }
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

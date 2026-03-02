@@ -1,1 +1,0 @@
-window.__MAP_META__ = {"roomId": 100455356, "date": "20260301", "bg": {"contentPath": "upload/sysInfo/a1077398bc754fe7a8b632c1d340d7b4-4-A.jpg", "downloadRef": "ic-web/upload/sysInfo/a1077398bc754fe7a8b632c1d340d7b4-4-A.jpg", "saved": true, "fileName": "room_bg.jpg", "localPath": "./data/room_bg.jpg"}, "featureNote": "桌子/卫生间/楼道通常在背景底图里，不在座位点数据中单独返回。"};
