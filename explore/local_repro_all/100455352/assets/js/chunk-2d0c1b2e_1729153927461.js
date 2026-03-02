@@ -1,0 +1,3 @@
+vpn_client((function (){
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["chunk-2d0c1b2e"],{"46c9":function(n,t,e){"use strict";e.r(t);var c=function(){var n=this;n._self._c;return n._m(0)},r=[function(){var n=this,t=n._self._c;return t("div",[t("h3")])}],u=(e("a481"),{data:function(){return{}},beforeRouteEnter:function(n,t,e){e((function(n){n.$router.replace(t.path)}))}}),o=u,a=e("2877"),f=Object(a["a"])(o,c,r,!1,null,"efacf506",null);t["default"]=f.exports}}]);
+}).toString().slice(13, -2),"");

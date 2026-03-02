@@ -1,0 +1,12 @@
+{
+  "roomId": 100455358,
+  "date": "20260301",
+  "bg": {
+    "contentPath": "upload/sysInfo/2ee574fff8ac4162ae4a525288109339-rm100455358.jpg",
+    "downloadRef": "ic-web/upload/sysInfo/2ee574fff8ac4162ae4a525288109339-rm100455358.jpg",
+    "saved": true,
+    "fileName": "room_bg.jpg",
+    "localPath": "./data/room_bg.jpg"
+  },
+  "featureNote": "桌子/卫生间/楼道通常在背景底图里，不在座位点数据中单独返回。"
+}

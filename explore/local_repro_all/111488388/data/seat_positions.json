@@ -1,0 +1,242 @@
+[
+  {
+    "devId": 111488525,
+    "devName": "4FA-013",
+    "coordinate": "81.76401,5.063291",
+    "x": 81.76401,
+    "y": 5.063291,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488536,
+    "devName": "4FA-024",
+    "coordinate": "81.76401,74.05064",
+    "x": 81.76401,
+    "y": 74.05064,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488535,
+    "devName": "4FA-023",
+    "coordinate": "81.76401,66.4557",
+    "x": 81.76401,
+    "y": 66.4557,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488534,
+    "devName": "4FA-022",
+    "coordinate": "81.76401,62.02531",
+    "x": 81.76401,
+    "y": 62.02531,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488533,
+    "devName": "4FA-021",
+    "coordinate": "81.76401,54.43038",
+    "x": 81.76401,
+    "y": 54.43038,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488532,
+    "devName": "4FA-020",
+    "coordinate": "81.76401,48.94515",
+    "x": 81.76401,
+    "y": 48.94515,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488531,
+    "devName": "4FA-019",
+    "coordinate": "81.76401,41.56118",
+    "x": 81.76401,
+    "y": 41.56118,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488530,
+    "devName": "4FA-018",
+    "coordinate": "81.76401,37.1308",
+    "x": 81.76401,
+    "y": 37.1308,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488529,
+    "devName": "4FA-017",
+    "coordinate": "81.76401,29.53587",
+    "x": 81.76401,
+    "y": 29.53587,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488528,
+    "devName": "4FA-016",
+    "coordinate": "81.76401,24.2616",
+    "x": 81.76401,
+    "y": 24.2616,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488527,
+    "devName": "4FA-015",
+    "coordinate": "81.76401,16.66667",
+    "x": 81.76401,
+    "y": 16.66667,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488526,
+    "devName": "4FA-014",
+    "coordinate": "81.76401,12.23629",
+    "x": 81.76401,
+    "y": 12.23629,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488513,
+    "devName": "4FA-001",
+    "coordinate": "14.7795,5.063291",
+    "x": 14.7795,
+    "y": 5.063291,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488524,
+    "devName": "4FA-012",
+    "coordinate": "14.7795,74.05064",
+    "x": 14.7795,
+    "y": 74.05064,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488523,
+    "devName": "4FA-011",
+    "coordinate": "14.7795,66.4557",
+    "x": 14.7795,
+    "y": 66.4557,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488522,
+    "devName": "4FA-010",
+    "coordinate": "14.7795,62.02531",
+    "x": 14.7795,
+    "y": 62.02531,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488521,
+    "devName": "4FA-009",
+    "coordinate": "14.7795,54.43038",
+    "x": 14.7795,
+    "y": 54.43038,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488520,
+    "devName": "4FA-008",
+    "coordinate": "14.7795,48.94515",
+    "x": 14.7795,
+    "y": 48.94515,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488519,
+    "devName": "4FA-007",
+    "coordinate": "14.7795,41.56118",
+    "x": 14.7795,
+    "y": 41.56118,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488518,
+    "devName": "4FA-006",
+    "coordinate": "14.7795,37.1308",
+    "x": 14.7795,
+    "y": 37.1308,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488517,
+    "devName": "4FA-005",
+    "coordinate": "14.7795,29.53587",
+    "x": 14.7795,
+    "y": 29.53587,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488516,
+    "devName": "4FA-004",
+    "coordinate": "14.7795,24.2616",
+    "x": 14.7795,
+    "y": 24.2616,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488515,
+    "devName": "4FA-003",
+    "coordinate": "14.7795,16.66667",
+    "x": 14.7795,
+    "y": 16.66667,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488514,
+    "devName": "4FA-002",
+    "coordinate": "14.7795,12.23629",
+    "x": 14.7795,
+    "y": 12.23629,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  }
+]

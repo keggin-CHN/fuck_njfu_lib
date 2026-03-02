@@ -9,8 +9,8 @@ android {
         applicationId 'com.keggin.fucknjfulib'
         minSdk 24
         targetSdk 34
-        versionCode 9
-        versionName '1.1.1'
+        versionCode 11
+        versionName '1.1.4'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         vectorDrawables.useSupportLibrary = true
         buildConfigField "String", "DEFAULT_SERVER_URL", "\"https://libseat.njfu.edu.cn\""
@@ -34,22 +34,16 @@ android {
     }
 }
 dependencies {
-    // AndroidX 核心库
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    // 安全存储（加密 SharedPreferences）
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
-    // OkHttp 网络请求
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
-    // JSoup HTML 解析
     implementation 'org.jsoup:jsoup:1.17.2'
-    // WorkManager 后台任务（可选）
     implementation 'androidx.work:work-runtime:2.9.0'
-    // 测试
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'

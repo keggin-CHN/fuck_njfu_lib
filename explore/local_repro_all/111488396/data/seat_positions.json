@@ -1,0 +1,1142 @@
+[
+  {
+    "devId": 111488640,
+    "devName": "7F-B001",
+    "coordinate": "1.827040,80.735931",
+    "x": 1.82704,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488641,
+    "devName": "7F-B002",
+    "coordinate": "5.968331,80.735931",
+    "x": 5.968331,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488642,
+    "devName": "7F-B003",
+    "coordinate": "8.891596,80.735931",
+    "x": 8.891596,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488643,
+    "devName": "7F-B004",
+    "coordinate": "12.911084,80.735931",
+    "x": 12.911084,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488644,
+    "devName": "7F-B005",
+    "coordinate": "15.834348,80.735931",
+    "x": 15.834348,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488645,
+    "devName": "7F-B006",
+    "coordinate": "19.732034,80.735931",
+    "x": 19.732034,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488646,
+    "devName": "7F-B007",
+    "coordinate": "22.898904,80.735931",
+    "x": 22.898904,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488647,
+    "devName": "7F-B008",
+    "coordinate": "26.796590,80.735931",
+    "x": 26.79659,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488648,
+    "devName": "7F-B009",
+    "coordinate": "29.841657,80.735931",
+    "x": 29.841657,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488649,
+    "devName": "7F-B010",
+    "coordinate": "33.739342,80.735931",
+    "x": 33.739342,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488650,
+    "devName": "7F-B011",
+    "coordinate": "36.906212,80.735931",
+    "x": 36.906212,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488651,
+    "devName": "7F-B012",
+    "coordinate": "40.682095,80.735931",
+    "x": 40.682095,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488652,
+    "devName": "7F-B013",
+    "coordinate": "43.848965,80.735931",
+    "x": 43.848965,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488653,
+    "devName": "7F-B014",
+    "coordinate": "47.624848,80.735931",
+    "x": 47.624848,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488654,
+    "devName": "7F-B015",
+    "coordinate": "50.791717,80.735931",
+    "x": 50.791717,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488655,
+    "devName": "7F-B016",
+    "coordinate": "54.567600,80.735931",
+    "x": 54.5676,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488656,
+    "devName": "7F-B017",
+    "coordinate": "57.734470,80.735931",
+    "x": 57.73447,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488657,
+    "devName": "7F-B018",
+    "coordinate": "61.632156,80.735931",
+    "x": 61.632156,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488658,
+    "devName": "7F-B019",
+    "coordinate": "64.677223,80.735931",
+    "x": 64.677223,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488659,
+    "devName": "7F-B020",
+    "coordinate": "68.574909,80.735931",
+    "x": 68.574909,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488660,
+    "devName": "7F-B021",
+    "coordinate": "71.741778,80.735931",
+    "x": 71.741778,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488661,
+    "devName": "7F-B022",
+    "coordinate": "75.517661,80.735931",
+    "x": 75.517661,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488662,
+    "devName": "7F-B023",
+    "coordinate": "78.806334,80.735931",
+    "x": 78.806334,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488663,
+    "devName": "7F-B024",
+    "coordinate": "82.460414,80.735931",
+    "x": 82.460414,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488664,
+    "devName": "7F-B025",
+    "coordinate": "85.627284,80.735931",
+    "x": 85.627284,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488665,
+    "devName": "7F-B026",
+    "coordinate": "89.403167,80.735931",
+    "x": 89.403167,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488666,
+    "devName": "7F-B027",
+    "coordinate": "92.570037,80.735931",
+    "x": 92.570037,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488667,
+    "devName": "7F-B028",
+    "coordinate": "96.467722,80.735931",
+    "x": 96.467722,
+    "y": 80.735931,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488668,
+    "devName": "7F-B029",
+    "coordinate": "1.339829,53.896104",
+    "x": 1.339829,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488669,
+    "devName": "7F-B030",
+    "coordinate": "1.339829,46.753247",
+    "x": 1.339829,
+    "y": 46.753247,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488670,
+    "devName": "7F-B031",
+    "coordinate": "1.339829,38.744589",
+    "x": 1.339829,
+    "y": 38.744589,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488671,
+    "devName": "7F-B032",
+    "coordinate": "1.339829,31.385281",
+    "x": 1.339829,
+    "y": 31.385281,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488672,
+    "devName": "7F-B033",
+    "coordinate": "5.359318,53.896104",
+    "x": 5.359318,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488673,
+    "devName": "7F-B034",
+    "coordinate": "5.359318,46.753247",
+    "x": 5.359318,
+    "y": 46.753247,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488674,
+    "devName": "7F-B035",
+    "coordinate": "5.359318,38.744589",
+    "x": 5.359318,
+    "y": 38.744589,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488675,
+    "devName": "7F-B036",
+    "coordinate": "5.359318,31.385281",
+    "x": 5.359318,
+    "y": 31.385281,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488676,
+    "devName": "7F-B037",
+    "coordinate": "7.673569,53.896104",
+    "x": 7.673569,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488677,
+    "devName": "7F-B038",
+    "coordinate": "7.673569,46.753247",
+    "x": 7.673569,
+    "y": 46.753247,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488678,
+    "devName": "7F-B039",
+    "coordinate": "7.673569,38.744589",
+    "x": 7.673569,
+    "y": 38.744589,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488679,
+    "devName": "7F-B040",
+    "coordinate": "7.673569,31.385281",
+    "x": 7.673569,
+    "y": 31.385281,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488680,
+    "devName": "7F-B041",
+    "coordinate": "11.571255,53.896104",
+    "x": 11.571255,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488681,
+    "devName": "7F-B042",
+    "coordinate": "11.571255,46.753247",
+    "x": 11.571255,
+    "y": 46.753247,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488682,
+    "devName": "7F-B043",
+    "coordinate": "11.571255,38.744589",
+    "x": 11.571255,
+    "y": 38.744589,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488683,
+    "devName": "7F-B044",
+    "coordinate": "11.571255,31.385281",
+    "x": 11.571255,
+    "y": 31.385281,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488684,
+    "devName": "7F-B045",
+    "coordinate": "13.885505,53.896104",
+    "x": 13.885505,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488685,
+    "devName": "7F-B046",
+    "coordinate": "13.885505,46.753247",
+    "x": 13.885505,
+    "y": 46.753247,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488686,
+    "devName": "7F-B047",
+    "coordinate": "13.885505,38.744589",
+    "x": 13.885505,
+    "y": 38.744589,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488687,
+    "devName": "7F-B048",
+    "coordinate": "13.885505,31.385281",
+    "x": 13.885505,
+    "y": 31.385281,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488688,
+    "devName": "7F-B049",
+    "coordinate": "17.661389,53.896104",
+    "x": 17.661389,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488689,
+    "devName": "7F-B050",
+    "coordinate": "17.661389,46.753247",
+    "x": 17.661389,
+    "y": 46.753247,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488690,
+    "devName": "7F-B051",
+    "coordinate": "17.661389,38.744589",
+    "x": 17.661389,
+    "y": 38.744589,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488691,
+    "devName": "7F-B052",
+    "coordinate": "17.661389,31.385281",
+    "x": 17.661389,
+    "y": 31.385281,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488692,
+    "devName": "7F-B053",
+    "coordinate": "21.437272,53.896104",
+    "x": 21.437272,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488693,
+    "devName": "7F-B054",
+    "coordinate": "22.655298,50.000000",
+    "x": 22.655298,
+    "y": 50.0,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488694,
+    "devName": "7F-B055",
+    "coordinate": "26.796590,43.506494",
+    "x": 26.79659,
+    "y": 43.506494,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488695,
+    "devName": "7F-B056",
+    "coordinate": "26.796590,33.549784",
+    "x": 26.79659,
+    "y": 33.549784,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488696,
+    "devName": "7F-B057",
+    "coordinate": "24.238733,53.896104",
+    "x": 24.238733,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488697,
+    "devName": "7F-B058",
+    "coordinate": "28.380024,47.186147",
+    "x": 28.380024,
+    "y": 47.186147,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488698,
+    "devName": "7F-B059",
+    "coordinate": "29.354446,43.506494",
+    "x": 29.354446,
+    "y": 43.506494,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488699,
+    "devName": "7F-B060",
+    "coordinate": "29.354446,33.549784",
+    "x": 29.354446,
+    "y": 33.549784,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488700,
+    "devName": "7F-B061",
+    "coordinate": "41.412911,53.896104",
+    "x": 41.412911,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488701,
+    "devName": "7F-B062",
+    "coordinate": "37.393423,47.186147",
+    "x": 37.393423,
+    "y": 47.186147,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488702,
+    "devName": "7F-B063",
+    "coordinate": "36.175396,43.506494",
+    "x": 36.175396,
+    "y": 43.506494,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488703,
+    "devName": "7F-B064",
+    "coordinate": "36.175396,33.549784",
+    "x": 36.175396,
+    "y": 33.549784,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488704,
+    "devName": "7F-B065",
+    "coordinate": "44.214373,53.896104",
+    "x": 44.214373,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488705,
+    "devName": "7F-B066",
+    "coordinate": "42.874543,50.000000",
+    "x": 42.874543,
+    "y": 50.0,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488706,
+    "devName": "7F-B067",
+    "coordinate": "38.855055,43.506494",
+    "x": 38.855055,
+    "y": 43.506494,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488707,
+    "devName": "7F-B068",
+    "coordinate": "38.855055,33.549784",
+    "x": 38.855055,
+    "y": 33.549784,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488708,
+    "devName": "7F-B069",
+    "coordinate": "52.496955,53.896104",
+    "x": 52.496955,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488709,
+    "devName": "7F-B070",
+    "coordinate": "53.836784,50.000000",
+    "x": 53.836784,
+    "y": 50.0,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488710,
+    "devName": "7F-B071",
+    "coordinate": "58.221681,43.506494",
+    "x": 58.221681,
+    "y": 43.506494,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488711,
+    "devName": "7F-B072",
+    "coordinate": "58.221681,33.549784",
+    "x": 58.221681,
+    "y": 33.549784,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488712,
+    "devName": "7F-B073",
+    "coordinate": "55.176614,53.030303",
+    "x": 55.176614,
+    "y": 53.030303,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488713,
+    "devName": "7F-B074",
+    "coordinate": "59.683313,47.186147",
+    "x": 59.683313,
+    "y": 47.186147,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488714,
+    "devName": "7F-B075",
+    "coordinate": "60.779537,43.506494",
+    "x": 60.779537,
+    "y": 43.506494,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488715,
+    "devName": "7F-B076",
+    "coordinate": "60.779537,33.549784",
+    "x": 60.779537,
+    "y": 33.549784,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488716,
+    "devName": "7F-B077",
+    "coordinate": "73.081608,53.896104",
+    "x": 73.081608,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488717,
+    "devName": "7F-B078",
+    "coordinate": "68.818514,47.186147",
+    "x": 68.818514,
+    "y": 47.186147,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488718,
+    "devName": "7F-B079",
+    "coordinate": "67.478685,43.506494",
+    "x": 67.478685,
+    "y": 43.506494,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488719,
+    "devName": "7F-B080",
+    "coordinate": "67.478685,33.549784",
+    "x": 67.478685,
+    "y": 33.549784,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488720,
+    "devName": "7F-B081",
+    "coordinate": "75.639464,53.896104",
+    "x": 75.639464,
+    "y": 53.896104,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488721,
+    "devName": "7F-B082",
+    "coordinate": "74.299635,50.000000",
+    "x": 74.299635,
+    "y": 50.0,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488722,
+    "devName": "7F-B083",
+    "coordinate": "70.036541,43.506494",
+    "x": 70.036541,
+    "y": 43.506494,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488723,
+    "devName": "7F-B084",
+    "coordinate": "70.036541,33.549784",
+    "x": 70.036541,
+    "y": 33.549784,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488724,
+    "devName": "7F-B085",
+    "coordinate": "78.684531,53.463203",
+    "x": 78.684531,
+    "y": 53.463203,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488725,
+    "devName": "7F-B086",
+    "coordinate": "78.684531,46.103896",
+    "x": 78.684531,
+    "y": 46.103896,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488726,
+    "devName": "7F-B087",
+    "coordinate": "78.684531,38.528139",
+    "x": 78.684531,
+    "y": 38.528139,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488727,
+    "devName": "7F-B088",
+    "coordinate": "78.684531,31.168831",
+    "x": 78.684531,
+    "y": 31.168831,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488728,
+    "devName": "7F-B089",
+    "coordinate": "82.095006,53.463203",
+    "x": 82.095006,
+    "y": 53.463203,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488729,
+    "devName": "7F-B090",
+    "coordinate": "82.095006,46.103896",
+    "x": 82.095006,
+    "y": 46.103896,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488730,
+    "devName": "7F-B091",
+    "coordinate": "82.095006,38.528139",
+    "x": 82.095006,
+    "y": 38.528139,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488731,
+    "devName": "7F-B092",
+    "coordinate": "82.095006,31.168831",
+    "x": 82.095006,
+    "y": 31.168831,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488732,
+    "devName": "7F-B093",
+    "coordinate": "84.043849,53.463203",
+    "x": 84.043849,
+    "y": 53.463203,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488733,
+    "devName": "7F-B094",
+    "coordinate": "84.043849,46.103896",
+    "x": 84.043849,
+    "y": 46.103896,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488734,
+    "devName": "7F-B095",
+    "coordinate": "84.043849,38.528139",
+    "x": 84.043849,
+    "y": 38.528139,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488735,
+    "devName": "7F-B096",
+    "coordinate": "84.043849,31.168831",
+    "x": 84.043849,
+    "y": 31.168831,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488736,
+    "devName": "7F-B097",
+    "coordinate": "87.454324,53.463203",
+    "x": 87.454324,
+    "y": 53.463203,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488737,
+    "devName": "7F-B098",
+    "coordinate": "87.454324,46.103896",
+    "x": 87.454324,
+    "y": 46.103896,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488738,
+    "devName": "7F-B099",
+    "coordinate": "87.454324,38.528139",
+    "x": 87.454324,
+    "y": 38.528139,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488739,
+    "devName": "7F-B100",
+    "coordinate": "87.454324,31.168831",
+    "x": 87.454324,
+    "y": 31.168831,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488740,
+    "devName": "7F-B101",
+    "coordinate": "89.403167,53.463203",
+    "x": 89.403167,
+    "y": 53.463203,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488741,
+    "devName": "7F-B102",
+    "coordinate": "89.403167,46.103896",
+    "x": 89.403167,
+    "y": 46.103896,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488742,
+    "devName": "7F-B103",
+    "coordinate": "89.403167,38.528139",
+    "x": 89.403167,
+    "y": 38.528139,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488743,
+    "devName": "7F-B104",
+    "coordinate": "89.403167,31.168831",
+    "x": 89.403167,
+    "y": 31.168831,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488744,
+    "devName": "7F-B105",
+    "coordinate": "92.570037,53.463203",
+    "x": 92.570037,
+    "y": 53.463203,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488745,
+    "devName": "7F-B106",
+    "coordinate": "92.570037,46.103896",
+    "x": 92.570037,
+    "y": 46.103896,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488746,
+    "devName": "7F-B107",
+    "coordinate": "92.570037,38.528139",
+    "x": 92.570037,
+    "y": 38.528139,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488747,
+    "devName": "7F-B108",
+    "coordinate": "92.570037,31.168831",
+    "x": 92.570037,
+    "y": 31.168831,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488748,
+    "devName": "7F-B109",
+    "coordinate": "94.518879,46.103896",
+    "x": 94.518879,
+    "y": 46.103896,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488749,
+    "devName": "7F-B110",
+    "coordinate": "94.518879,38.528139",
+    "x": 94.518879,
+    "y": 38.528139,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488750,
+    "devName": "7F-B111",
+    "coordinate": "94.518879,31.168831",
+    "x": 94.518879,
+    "y": 31.168831,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488751,
+    "devName": "7F-B112",
+    "coordinate": "97.807552,46.103896",
+    "x": 97.807552,
+    "y": 46.103896,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488752,
+    "devName": "7F-B113",
+    "coordinate": "97.807552,38.528139",
+    "x": 97.807552,
+    "y": 38.528139,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488753,
+    "devName": "7F-B114",
+    "coordinate": "97.807552,31.168831",
+    "x": 97.807552,
+    "y": 31.168831,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  }
+]

@@ -87,6 +87,17 @@ public class SeatQuery {
             this.areaName = areaName;
         }
     }
+    public static class RoomBackground {
+        public String contentPath;
+        public String fullUrl;
+        
+        public RoomBackground(String contentPath) {
+            this.contentPath = contentPath;
+            if (contentPath != null && !contentPath.isEmpty()) {
+                this.fullUrl = ApiConstants.BASE_URL + "/" + contentPath;
+            }
+        }
+    }
 
     public static class QueryResult {
         public boolean success;
@@ -95,6 +106,7 @@ public class SeatQuery {
         public int availableCount;
         public Set<Integer> availableSeatIds;
         public List<SeatInfo> seatsData;
+        public RoomBackground background;
 
         public QueryResult(boolean success, String message) {
             this.success = success;
@@ -110,6 +122,9 @@ public class SeatQuery {
             return result;
         }
         String compactDate = dateStr.replace("-", "");
+        
+        // 获取座位数据和背景图信息
+        result.background = getRoomBackground(areaInfo.roomId, compactDate);
         List<SeatInfo> seats = getSeatsData(areaInfo.roomId, compactDate);
         if (seats.isEmpty()) {
             result.message = "获取座位数据失败";
@@ -128,6 +143,74 @@ public class SeatQuery {
             }
         }
         return result;
+    }
+
+    public RoomBackground getRoomBackground(int roomId, String dateStr) {
+        Log.d(TAG, "getRoomBackground: roomId=" + roomId + " date=" + dateStr);
+        
+        if (authManager != null && !authManager.ensureLoggedIn()) {
+            Log.e(TAG, "获取背景图失败: 认证失败");
+            return null;
+        }
+        String token = authManager != null ? authManager.getToken() : null;
+        if (token == null) {
+            Log.e(TAG, "获取背景图失败: token 无效");
+            return null;
+        }
+
+        try {
+            String url = ApiConstants.getSeatQueryUrl()
+                    + "?vpn-12-libseat.njfu.edu.cn"
+                    + "&roomIds=" + roomId
+                    + "&resvDates=" + dateStr
+                    + "&sysKind=8";
+
+            Map<String, String> headers = new HashMap<>();
+            headers.put("token", token);
+            headers.put("lan", "1");
+            headers.put("Accept", ApiConstants.ACCEPT_JSON);
+            headers.put("Referer", ApiConstants.BASE_URL);
+            headers.put("Origin", ApiConstants.BASE_URL);
+            
+            Response response = httpClient.get(url, headers);
+            
+            if (response.code() == 302 || response.code() == 301) {
+                response.close();
+                if (authManager.refreshAuth()) {
+                    token = authManager.getToken();
+                    if (token != null) {
+                        headers.put("token", token);
+                        response = httpClient.get(url, headers);
+                    }
+                }
+            }
+
+            if (!response.isSuccessful()) {
+                Log.e(TAG, "获取背景图失败，状态码: " + response.code());
+                response.close();
+                return null;
+            }
+            
+            String body = HttpClientManager.getResponseBody(response);
+            if (body == null) {
+                return null;
+            }
+
+            JSONObject json = new JSONObject(body);
+            if (json.optInt("code", -1) == 0) {
+                JSONObject sysInfo = json.optJSONObject("sysInfo");
+                if (sysInfo != null) {
+                    String contentPath = sysInfo.optString("contentPath", null);
+                    if (contentPath != null && !contentPath.isEmpty()) {
+                        Log.d(TAG, "找到背景图: " + contentPath);
+                        return new RoomBackground(contentPath);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "获取背景图出错: " + e.getMessage(), e);
+        }
+        return null;
     }
 
     public List<SeatInfo> getSeatsData(int roomId, String dateStr) {

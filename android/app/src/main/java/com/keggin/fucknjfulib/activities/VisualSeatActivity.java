@@ -169,6 +169,7 @@ public class VisualSeatActivity extends AppCompatActivity {
                     showLoading(false);
                     if (result.success && result.seatsData != null) {
                         seatMapView.setSeats(result.seatsData);
+                        seatMapView.setBackground(result.background);
                         if (result.seatsData.isEmpty()) {
                             tvEmptyHint.setText("当前区域暂无座位布局数据");
                             tvEmptyHint.setVisibility(View.VISIBLE);

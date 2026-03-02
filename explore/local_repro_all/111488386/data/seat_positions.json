@@ -1,0 +1,202 @@
+[
+  {
+    "devId": 111488503,
+    "devName": "3FA-011",
+    "coordinate": "81.910112,11.776447",
+    "x": 81.910112,
+    "y": 11.776447,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488512,
+    "devName": "3FA-020",
+    "coordinate": "81.910112,70.259481",
+    "x": 81.910112,
+    "y": 70.259481,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488511,
+    "devName": "3FA-019",
+    "coordinate": "81.910112,62.075848",
+    "x": 81.910112,
+    "y": 62.075848,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488510,
+    "devName": "3FA-018",
+    "coordinate": "81.910112,58.083832",
+    "x": 81.910112,
+    "y": 58.083832,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488509,
+    "devName": "3FA-017",
+    "coordinate": "81.910112,49.900200",
+    "x": 81.910112,
+    "y": 49.9002,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488508,
+    "devName": "3FA-016",
+    "coordinate": "81.910112,45.309381",
+    "x": 81.910112,
+    "y": 45.309381,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488507,
+    "devName": "3FA-015",
+    "coordinate": "81.910112,36.926148",
+    "x": 81.910112,
+    "y": 36.926148,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488506,
+    "devName": "3FA-014",
+    "coordinate": "81.910112,32.734531",
+    "x": 81.910112,
+    "y": 32.734531,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488505,
+    "devName": "3FA-013",
+    "coordinate": "81.910112,24.750499",
+    "x": 81.910112,
+    "y": 24.750499,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488504,
+    "devName": "3FA-012",
+    "coordinate": "81.910112,20.159681",
+    "x": 81.910112,
+    "y": 20.159681,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488493,
+    "devName": "3FA-001",
+    "coordinate": "14.494382,11.776447",
+    "x": 14.494382,
+    "y": 11.776447,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488502,
+    "devName": "3FA-010",
+    "coordinate": "14.494382,70.259481",
+    "x": 14.494382,
+    "y": 70.259481,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488501,
+    "devName": "3FA-009",
+    "coordinate": "14.494382,62.075848",
+    "x": 14.494382,
+    "y": 62.075848,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488500,
+    "devName": "3FA-008",
+    "coordinate": "14.494382,58.083832",
+    "x": 14.494382,
+    "y": 58.083832,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488499,
+    "devName": "3FA-007",
+    "coordinate": "14.494382,49.900200",
+    "x": 14.494382,
+    "y": 49.9002,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488498,
+    "devName": "3FA-006",
+    "coordinate": "14.494382,45.309381",
+    "x": 14.494382,
+    "y": 45.309381,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488497,
+    "devName": "3FA-005",
+    "coordinate": "14.494382,36.926148",
+    "x": 14.494382,
+    "y": 36.926148,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488496,
+    "devName": "3FA-004",
+    "coordinate": "14.494382,32.734531",
+    "x": 14.494382,
+    "y": 32.734531,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488495,
+    "devName": "3FA-003",
+    "coordinate": "14.494382,24.750499",
+    "x": 14.494382,
+    "y": 24.750499,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  },
+  {
+    "devId": 111488494,
+    "devName": "3FA-002",
+    "coordinate": "14.494382,20.159681",
+    "x": 14.494382,
+    "y": 20.159681,
+    "occupied": false,
+    "resvCount": 0,
+    "devStatus": 0
+  }
+]

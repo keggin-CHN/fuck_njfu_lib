@@ -2,10 +2,13 @@ package com.keggin.fucknjfulib.views;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -14,32 +17,25 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import com.keggin.fucknjfulib.reservation.SeatQuery;
+import com.keggin.fucknjfulib.network.ApiConstants;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * 可视化座位地图 — 仿网页版
- * 原理：与网页一致, 使用百分比坐标定位(left%, top%)
- * 内部使用固定虚拟画布(1082x700), 座位圆点大小为12px
- * 支持双指缩放和拖动, 自动检测桌子配对
- */
 public class SeatMapView extends View {
-
     private static final String TAG = "SeatMapView";
-
-    // 虚拟画布 — 网页源码里 boxWidth 参考值就是 1082
     private static final float BOX_W = 1082f;
     private static final float BOX_H = 700f;
-    // 网页的 pointSize = 12
     private static final float POINT_SIZE = 12f;
-
     private List<SeatQuery.SeatInfo> seats = new ArrayList<>();
     private List<TablePair> tables = new ArrayList<>();
-
-    // 画笔
+    private Bitmap backgroundBitmap = null;
+    private Paint bitmapPaint;
     private Paint availablePaint;
     private Paint occupiedPaint;
     private Paint selectedPaint;
@@ -53,24 +49,17 @@ public class SeatMapView extends View {
     private Paint legendTextPaint;
     private Paint seatTextPaint;
     private RectF tmpRect = new RectF();
-
-    // 手势
     private float scaleFactor = 1.0f;
     private float translateX = 0f;
     private float translateY = 0f;
     private ScaleGestureDetector scaleDetector;
     private GestureDetector gestureDetector;
-
     private float density;
-
-    // 选中
     private SeatQuery.SeatInfo selectedSeat = null;
     private OnSeatClickListener onSeatClickListener;
-
     public interface OnSeatClickListener {
         void onSeatClick(SeatQuery.SeatInfo seat);
     }
-
     private static class TablePair {
         SeatQuery.SeatInfo seat1, seat2;
 
@@ -79,25 +68,23 @@ public class SeatMapView extends View {
             seat2 = s2;
         }
     }
-
     public SeatMapView(Context c) {
         super(c);
         init(c);
     }
-
     public SeatMapView(Context c, AttributeSet a) {
         super(c, a);
         init(c);
     }
-
     public SeatMapView(Context c, AttributeSet a, int d) {
         super(c, a, d);
         init(c);
     }
-
     private void init(Context ctx) {
         density = ctx.getResources().getDisplayMetrics().density;
-
+        bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bitmapPaint.setFilterBitmap(true);
+        
         availablePaint = makePaint("#4CAF50");
         occupiedPaint = makePaint("#FF9800");
         selectedPaint = makePaint("#2196F3");
@@ -189,6 +176,56 @@ public class SeatMapView extends View {
         detectTables();
         invalidate();
     }
+    
+    public void setBackground(SeatQuery.RoomBackground background) {
+        if (background != null && background.contentPath != null && !background.contentPath.isEmpty()) {
+            loadBackgroundImage(background.contentPath);
+        } else {
+            backgroundBitmap = null;
+            invalidate();
+        }
+    }
+    
+    private void loadBackgroundImage(String contentPath) {
+        new AsyncTask<String, Void, Bitmap>() {
+            @Override
+            protected Bitmap doInBackground(String... params) {
+                String path = params[0];
+                try {
+                    String imageUrl = ApiConstants.BASE_URL + "/" + path;
+                    Log.d(TAG, "加载背景图: " + imageUrl);
+                    
+                    URL url = new URL(imageUrl);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(10000);
+                    conn.setReadTimeout(10000);
+                    conn.setRequestProperty("Referer", ApiConstants.BASE_URL);
+                    conn.connect();
+                    
+                    if (conn.getResponseCode() == 200) {
+                        InputStream is = conn.getInputStream();
+                        Bitmap bitmap = BitmapFactory.decodeStream(is);
+                        is.close();
+                        Log.d(TAG, "背景图加载成功: " + bitmap.getWidth() + "x" + bitmap.getHeight());
+                        return bitmap;
+                    } else {
+                        Log.e(TAG, "背景图加载失败，状态码: " + conn.getResponseCode());
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "加载背景图出错: " + e.getMessage(), e);
+                }
+                return null;
+            }
+            
+            @Override
+            protected void onPostExecute(Bitmap bitmap) {
+                if (bitmap != null) {
+                    backgroundBitmap = bitmap;
+                    invalidate();
+                }
+            }
+        }.execute(contentPath);
+    }
 
     public SeatQuery.SeatInfo getSelectedSeat() {
         return selectedSeat;
@@ -227,8 +264,6 @@ public class SeatMapView extends View {
     public void setOnSeatClickListener(OnSeatClickListener l) {
         onSeatClickListener = l;
     }
-
-    // 百分比坐标 → 虚拟画布坐标
     private float cx(float pct) {
         return (pct / 100f) * BOX_W;
     }
@@ -246,29 +281,27 @@ public class SeatMapView extends View {
 
         float legendH = 32 * density;
         float drawH = vh - legendH;
-
-        // 适配缩放: 虚拟画布填满视图宽度
         float baseScale = vw / BOX_W;
         float bsH = drawH / BOX_H;
         baseScale = Math.min(baseScale, bsH);
         float ts = baseScale * scaleFactor;
 
-        // 灰色外围背景
         canvas.drawRect(0, 0, vw, vh, bgPaint);
 
         canvas.save();
-        // 将虚拟画布居中显示在视图中
         float offX = (vw - BOX_W * baseScale) / 2f;
         float offY = (drawH - BOX_H * baseScale) / 2f;
         canvas.translate(offX + translateX, offY + translateY);
         canvas.scale(ts, ts);
-
-        // 白色房间
         tmpRect.set(0, 0, BOX_W, BOX_H);
         canvas.drawRect(tmpRect, roomBgPaint);
-        canvas.drawRect(tmpRect, wallPaint);
 
-        // 桌子
+        if (backgroundBitmap != null) {
+            tmpRect.set(0, 0, BOX_W, BOX_H);
+            canvas.drawBitmap(backgroundBitmap, null, tmpRect, bitmapPaint);
+        }
+        tmpRect.set(0, 0, BOX_W, BOX_H);
+        canvas.drawRect(tmpRect, wallPaint);
         float halfPt = POINT_SIZE / 2f;
         for (TablePair t : tables) {
             float x1 = cx(t.seat1.coordX), y1 = cy(t.seat1.coordY);
@@ -283,8 +316,6 @@ public class SeatMapView extends View {
                 canvas.drawRoundRect(tmpRect, 2, 2, tableStrokePaint);
             }
         }
-
-        // 座位 (圆点, 和网页一样大小 12px)
         for (SeatQuery.SeatInfo seat : seats) {
             if (seat.coordX < 0 || seat.coordY < 0)
                 continue;
@@ -296,8 +327,6 @@ public class SeatMapView extends View {
             if (seat == selectedSeat) {
                 canvas.drawCircle(sx, sy, halfPt + 3, selectedStrokePaint);
             }
-
-            // 缩放大时显示座位号
             if (ts > 1.2f) {
                 String num = extractNum(seat.devName);
                 if (num != null)
@@ -306,8 +335,6 @@ public class SeatMapView extends View {
         }
 
         canvas.restore();
-
-        // 图例
         drawLegend(canvas, vw, vh);
     }
 
@@ -332,7 +359,6 @@ public class SeatMapView extends View {
         canvas.drawCircle(x + r, y - r, r, legendPaint);
         canvas.drawText("选中", x + r * 2 + g, y, legendTextPaint);
 
-        // 统计
         int a = 0;
         for (SeatQuery.SeatInfo s : seats)
             if (s.isAvailable())
