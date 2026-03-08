@@ -528,10 +528,13 @@ public class SeatReservation {
         try {
             String url = ApiConstants.getReservationInfoUrl()
                     + "?vpn-12-libseat.njfu.edu.cn"
-                    + "&needStatus=8454"
-                    + "&unneedStatus=128"
                     + "&beginDate=" + beginDate
-                    + "&endDate=" + endDate;
+                    + "&endDate=" + endDate
+                    + "&needStatus=6"
+                    + "&page=1"
+                    + "&pageNum=10"
+                    + "&orderKey=gmt_create"
+                    + "&orderModel=desc";
             Map<String, String> headers = new HashMap<>();
             headers.put("token", token);
             headers.put("lan", "1");
@@ -560,6 +563,7 @@ public class SeatReservation {
             if (body == null) {
                 return result;
             }
+            Log.d(TAG, "预约列表原始响应: " + body);
             JSONObject json = new JSONObject(body);
             if (json.getInt("code") == 0) {
                 JSONArray data = json.optJSONArray("data");
@@ -578,6 +582,13 @@ public class SeatReservation {
                         info.latestCheckInTime = item.optLong("latestCheckInTime", 0);
                         info.statusName = item.optString("statusName", null);
                         info.state = convertStatusToState(info.statusName, info.resvStatus);
+                        Log.d(TAG, "预约 #" + i + ": resvId=" + info.resvIdInt
+                                + " resvStatus=" + info.resvStatus
+                                + " statusName=" + info.statusName
+                                + " → state=" + info.state
+                                + " endEarly=" + info.canEndEarly
+                                + " tempLeaveEndTime=" + info.tempLeaveEndTime
+                                + " latestCheckInTime=" + info.latestCheckInTime);
                         info.onDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                                 .format(new java.util.Date(info.beginTime));
                         info.startTime = DateUtils.formatTimestampToTime(info.beginTime);
