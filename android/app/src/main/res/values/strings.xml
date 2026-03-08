@@ -9,7 +9,7 @@
     <string name="hint_lib_password">图书馆密码</string>
     <string name="hint_lib_password_helper">通常为:njfu+身份证后六位+!</string>
     <string name="btn_login">登录</string>
-    <string name="login_footer">本应用仅供学习使用\n数据安全存储在本地</string>
+    <string name="login_footer"> </string>
     <string name="login_status_cas">正在登录统一认证...</string>
     <string name="login_status_lib">正在登录图书馆...</string>
     <string name="login_success">登录成功</string>
@@ -24,6 +24,9 @@
     <string name="btn_cancel_reservation">取消预约</string>
     <string name="btn_sign_in">签到</string>
     <string name="btn_sign_out">签退</string>
+    <string name="btn_temp_leave">暂时离开</string>
+    <string name="btn_back">返回座位</string>
+    <string name="btn_end_early">提前结束</string>
     <string name="btn_query_seats">查询座位</string>
     <string name="btn_check_traffic">查看人数</string>
     
@@ -98,8 +101,12 @@
     <string name="setting_late_protection_desc">自动处理迟到情况</string>
     <string name="setting_auto_find_seat">自动寻座</string>
     <string name="setting_auto_find_seat_desc">目标座位被占时自动寻找</string>
+    <string name="setting_open_logs">运行日志</string>
+    <string name="setting_open_logs_desc">查看自动预约/认证执行日志</string>
+    <string name="setting_test_auto_reserve">立即测试自动预约</string>
+    <string name="setting_test_auto_reserve_desc">不等待7点，立即执行一次自动预约流程</string>
     <string name="setting_theme">深色模式</string>
-    <string name="setting_theme_desc">切换深色/浅色主题</string>
+    <string name="setting_theme_desc"></string>
 
     <string name="setting_logout">退出登录</string>
     <string name="setting_version">版本</string>
@@ -158,38 +165,6 @@
     <string name="area_501b">五楼501B</string>
     <string name="area_601">六楼601</string>
     
-    
-    <string-array name="time_options">
-        <item>08:00</item>
-        <item>08:30</item>
-        <item>09:00</item>
-        <item>09:30</item>
-        <item>10:00</item>
-        <item>10:30</item>
-        <item>11:00</item>
-        <item>11:30</item>
-        <item>12:00</item>
-        <item>12:30</item>
-        <item>13:00</item>
-        <item>13:30</item>
-        <item>14:00</item>
-        <item>14:30</item>
-        <item>15:00</item>
-        <item>15:30</item>
-        <item>16:00</item>
-        <item>16:30</item>
-        <item>17:00</item>
-        <item>17:30</item>
-        <item>18:00</item>
-        <item>18:30</item>
-        <item>19:00</item>
-        <item>19:30</item>
-        <item>20:00</item>
-        <item>20:30</item>
-        <item>21:00</item>
-        <item>21:30</item>
-        <item>22:00</item>
-    </string-array>
     
     <string name="menu_reload">重新加载</string>
     <string name="menu_change_server">切换服务器</string>

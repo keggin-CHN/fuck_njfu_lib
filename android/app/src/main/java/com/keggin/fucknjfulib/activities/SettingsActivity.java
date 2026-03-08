@@ -1,8 +1,14 @@
 package com.keggin.fucknjfulib.activities;
+
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.content.res.Configuration;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -15,16 +21,35 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import com.keggin.fucknjfulib.BuildConfig;
 import com.keggin.fucknjfulib.R;
+import com.keggin.fucknjfulib.auth.AuthManager;
+import com.keggin.fucknjfulib.network.ApiConstants;
+import com.keggin.fucknjfulib.network.HttpClientManager;
 import com.keggin.fucknjfulib.services.AutoReserveService;
 import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.SystemPermissionChecker;
+import org.json.JSONObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import okhttp3.Response;
+
 public class SettingsActivity extends AppCompatActivity {
+    private static final String TAG = "SettingsActivity";
+    private static final String FEATURE_NOTIFY_CHANNEL_ID = "feature_status_channel";
+    private static final int NOTIFY_ID_AUTO_RESERVE = 3201;
+    private static final int NOTIFY_ID_LATE_PROTECTION = 3202;
+    private static final int NOTIFY_ID_AUTO_FIND = 3203;
     private Toolbar toolbar;
     private CardView cardPermissionCheck;
     private LinearLayout layoutNotificationPermission;
@@ -36,7 +61,7 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvBatteryOptimizationStatus;
     private TextView tvAutoStartStatus;
     private CheckBox checkboxHidePermissionCard;
-    private LinearLayout layoutPlanTasks;
+
     private LinearLayout layoutTargetArea;
     private LinearLayout layoutTargetSeat;
     private LinearLayout layoutStartTime;
@@ -49,21 +74,31 @@ public class SettingsActivity extends AppCompatActivity {
     private SwitchMaterial switchLateProtection;
     private SwitchMaterial switchAutoFindSeat;
     private SwitchMaterial switchDarkMode;
+    private LinearLayout layoutTheme;
+    private TextView tvThemeMode;
+    private LinearLayout layoutTestAutoReserveNow;
+    private LinearLayout layoutOpenLogs;
     private TextView tvStudentId;
     private LinearLayout layoutLogout;
     private TextView tvVersion;
+    private TextView tvUserCredit;
     private LinearLayout layoutGithub;
     private PreferenceManager preferenceManager;
+    private ExecutorService executor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         preferenceManager = new PreferenceManager(this);
+        executor = Executors.newSingleThreadExecutor();
         initViews();
         setupToolbar();
         loadSettings();
         setupClickListeners();
+        loadUserProfile();
     }
+
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         cardPermissionCheck = findViewById(R.id.cardPermissionCheck);
@@ -76,7 +111,7 @@ public class SettingsActivity extends AppCompatActivity {
         tvBatteryOptimizationStatus = findViewById(R.id.tvBatteryOptimizationStatus);
         tvAutoStartStatus = findViewById(R.id.tvAutoStartStatus);
         checkboxHidePermissionCard = findViewById(R.id.checkboxHidePermissionCard);
-        layoutPlanTasks = findViewById(R.id.layoutPlanTasks);
+
         layoutTargetArea = findViewById(R.id.layoutTargetArea);
         layoutTargetSeat = findViewById(R.id.layoutTargetSeat);
         layoutStartTime = findViewById(R.id.layoutStartTime);
@@ -89,11 +124,17 @@ public class SettingsActivity extends AppCompatActivity {
         switchLateProtection = findViewById(R.id.switchLateProtection);
         switchAutoFindSeat = findViewById(R.id.switchAutoFindSeat);
         switchDarkMode = findViewById(R.id.switchDarkMode);
+        layoutTheme = findViewById(R.id.layoutTheme);
+        tvThemeMode = findViewById(R.id.tvThemeMode);
+        layoutTestAutoReserveNow = findViewById(R.id.layoutTestAutoReserveNow);
+        layoutOpenLogs = findViewById(R.id.layoutOpenLogs);
         tvStudentId = findViewById(R.id.tvStudentId);
         layoutLogout = findViewById(R.id.layoutLogout);
         tvVersion = findViewById(R.id.tvVersion);
+        tvUserCredit = findViewById(R.id.tvUserCredit);
         layoutGithub = findViewById(R.id.layoutGithub);
     }
+
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -101,82 +142,205 @@ public class SettingsActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> finish());
     }
+
     private void loadSettings() {
         checkSystemPermissions();
         updatePermissionCardVisibility();
         String areaKey = preferenceManager.getTargetArea();
         tvTargetArea.setText(preferenceManager.getAreaName(areaKey));
         tvTargetSeat.setText(String.valueOf(preferenceManager.getTargetSeat()));
-        tvStartTime.setText(preferenceManager.getStartTime());
-        tvEndTime.setText(preferenceManager.getEndTime());
+
+        String startTime = preferenceManager.getStartTime();
+        String endTime = preferenceManager.getEndTime();
+        tvStartTime.setText(preferenceManager.hasStartTimeConfigured() ? startTime : "--:--");
+        tvEndTime.setText(preferenceManager.hasEndTimeConfigured() ? endTime : "--:--");
         switchAutoReserve.setChecked(preferenceManager.isAutoReserveEnabled());
         switchLateProtection.setChecked(preferenceManager.isLateProtectionEnabled());
         switchAutoFindSeat.setChecked(preferenceManager.isAutoFindSeatEnabled());
-        switchDarkMode.setChecked(preferenceManager.isDarkModeEnabled());
+        boolean dark;
+        if (preferenceManager.hasDarkModeConfigured()) {
+            dark = preferenceManager.isDarkModeEnabled();
+        } else {
+            int mode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+            dark = (mode == Configuration.UI_MODE_NIGHT_YES);
+        }
+        switchDarkMode.setChecked(dark);
+        if (tvThemeMode != null) {
+            tvThemeMode.setText(dark ? "深色" : "浅色");
+        }
         tvStudentId.setText("学号：" + preferenceManager.getStudentId());
         tvVersion.setText(BuildConfig.VERSION_NAME);
     }
+
+    private void loadUserProfile() {
+        executor.execute(() -> {
+            try {
+                AuthManager authManager = AuthManager.getInstance(this);
+                if (!authManager.ensureLoggedIn())
+                    return;
+                String token = authManager.getToken();
+                if (token == null)
+                    return;
+                HttpClientManager httpClient = HttpClientManager.getInstance(null);
+                String url = ApiConstants.getUserInfoUrl();
+                Map<String, String> headers = new HashMap<>();
+                headers.put("token", token);
+                headers.put("lan", "1");
+                headers.put("Accept", ApiConstants.ACCEPT_JSON);
+                Response response = httpClient.get(url, headers);
+                try {
+                    if (response.isSuccessful()) {
+                        String body = HttpClientManager.getResponseBody(response);
+                        if (body != null) {
+                            JSONObject json = new JSONObject(body);
+                            if (json.optInt("code") == 0) {
+                                JSONObject data = json.optJSONObject("data");
+                                if (data != null) {
+                                    String name = data.optString("trueName", "");
+                                    int credit = data.optInt("creditScore", -1);
+                                    int limit = data.optInt("limitScore", -1);
+                                    runOnUiThread(() -> {
+                                        if (!name.isEmpty()) {
+                                            tvStudentId.setText(name + "（" + preferenceManager.getStudentId() + "）");
+                                        }
+                                        if (tvUserCredit != null && credit >= 0) {
+                                            tvUserCredit.setVisibility(View.VISIBLE);
+                                            tvUserCredit
+                                                    .setText("信用分: " + credit + (limit >= 0 ? " / 扣分: " + limit : ""));
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                    response.close();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "加载用户信息失败: " + e.getMessage());
+            }
+        });
+    }
+
     private void setupClickListeners() {
-        layoutNotificationPermission.setOnClickListener(v ->
-            SystemPermissionChecker.openNotificationSettings(this));
-        layoutExactAlarmPermission.setOnClickListener(v ->
-            SystemPermissionChecker.openExactAlarmSettings(this));
-        layoutBatteryOptimization.setOnClickListener(v ->
-            SystemPermissionChecker.openBatteryOptimizationSettings(this));
-        layoutAutoStartPermission.setOnClickListener(v ->
-            SystemPermissionChecker.openAutoStartSettings(this));
+        layoutNotificationPermission.setOnClickListener(v -> SystemPermissionChecker.openNotificationSettings(this));
+        layoutExactAlarmPermission.setOnClickListener(v -> SystemPermissionChecker.openExactAlarmSettings(this));
+        layoutBatteryOptimization.setOnClickListener(v -> {
+            if (isHuaweiFamilyDevice()) {
+                Toast.makeText(this, "华为/荣耀设备将打开应用信息页，请在“电池/后台运行”中手动允许后台运行", Toast.LENGTH_LONG)
+                        .show();
+            }
+            SystemPermissionChecker.openBatteryOptimizationSettings(this);
+        });
+        layoutAutoStartPermission.setOnClickListener(v -> {
+            if (isHuaweiFamilyDevice()) {
+                Toast.makeText(this, "华为/荣耀设备将打开应用信息页，请在“启动管理”中允许自启动与关联启动", Toast.LENGTH_LONG)
+                        .show();
+            }
+            SystemPermissionChecker.openAutoStartSettings(this);
+        });
         checkboxHidePermissionCard.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setHidePermissionCheck(isChecked);
             updatePermissionCardVisibility();
         });
-        if (layoutPlanTasks != null) {
-            layoutPlanTasks.setOnClickListener(v -> openPlanTasks());
-        }
+
         layoutTargetArea.setOnClickListener(v -> showAreaPicker());
         layoutTargetSeat.setOnClickListener(v -> showSeatPicker());
         layoutStartTime.setOnClickListener(v -> showTimePicker(true));
         layoutEndTime.setOnClickListener(v -> showTimePicker(false));
         switchAutoReserve.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoReserveEnabled(isChecked);
+            String targetSummary = buildTargetConfigSummary();
             if (isChecked) {
                 scheduleAutoReserve();
                 Toast.makeText(this, "自动预约已开启，将在每天7点执行", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(
+                        NOTIFY_ID_AUTO_RESERVE,
+                        "自动预约已开启",
+                        "每日 07:00 自动执行预约任务\n" + targetSummary);
             } else {
                 cancelAutoReserve();
                 Toast.makeText(this, "自动预约已关闭", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(
+                        NOTIFY_ID_AUTO_RESERVE,
+                        "自动预约已关闭",
+                        "已取消自动预约任务\n" + targetSummary);
             }
         });
         switchLateProtection.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setLateProtectionEnabled(isChecked);
+            String targetSummary = buildTargetConfigSummary();
             if (isChecked) {
                 scheduleLateProtection();
                 Toast.makeText(this, "迟到保护已开启", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(
+                        NOTIFY_ID_LATE_PROTECTION,
+                        "迟到保护已开启",
+                        "已开始安排迟到保护检查任务\n" + targetSummary);
             } else {
+                cancelLateProtection();
                 Toast.makeText(this, "迟到保护已关闭", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(
+                        NOTIFY_ID_LATE_PROTECTION,
+                        "迟到保护已关闭",
+                        "已取消迟到保护任务\n" + targetSummary);
             }
         });
         switchAutoFindSeat.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoFindSeatEnabled(isChecked);
+            String targetSummary = buildTargetConfigSummary();
             if (isChecked) {
                 Toast.makeText(this, "自动寻座已开启", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(
+                        NOTIFY_ID_AUTO_FIND,
+                        "自动寻座已开启",
+                        "目标座位冲突时将自动尝试备选座位\n" + targetSummary);
             } else {
                 Toast.makeText(this, "自动寻座已关闭", Toast.LENGTH_SHORT).show();
+                showFeatureNotification(
+                        NOTIFY_ID_AUTO_FIND,
+                        "自动寻座已关闭",
+                        "将不再自动尝试备选座位\n" + targetSummary);
             }
         });
         switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            preferenceManager.setDarkModeEnabled(isChecked);
-            AppCompatDelegate.setDefaultNightMode(isChecked
-                    ? AppCompatDelegate.MODE_NIGHT_YES
-                    : AppCompatDelegate.MODE_NIGHT_NO);
-            recreate();
+            // hidden switch for compatibility only
         });
+        if (layoutTheme != null) {
+            layoutTheme.setOnClickListener(v -> showThemeChooser());
+        }
         layoutLogout.setOnClickListener(v -> showLogoutConfirm());
+        if (layoutTestAutoReserveNow != null) {
+            layoutTestAutoReserveNow.setOnClickListener(v -> runAutoReserveNow());
+        }
+        if (layoutOpenLogs != null) {
+            layoutOpenLogs.setOnClickListener(v -> openLogPage());
+        }
         layoutGithub.setOnClickListener(v -> openGithubPage());
     }
-    private void openPlanTasks() {
-        Intent intent = new Intent(this, PlanTasksActivity.class);
-        startActivity(intent);
+
+
+    private void showThemeChooser() {
+        String[] items = new String[] { "浅色", "深色" };
+        int checked = preferenceManager.isDarkModeEnabled() ? 1 : 0;
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("外观")
+                .setSingleChoiceItems(items, checked, (dialog, which) -> {
+                    boolean dark = (which == 1);
+                    preferenceManager.setDarkModeEnabled(dark);
+                    AppCompatDelegate.setDefaultNightMode(dark
+                            ? AppCompatDelegate.MODE_NIGHT_YES
+                            : AppCompatDelegate.MODE_NIGHT_NO);
+                    if (tvThemeMode != null) {
+                        tvThemeMode.setText(dark ? "深色" : "浅色");
+                    }
+                    dialog.dismiss();
+                    recreate();
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
+
     private void scheduleAutoReserve() {
         Intent serviceIntent = new Intent(this, AutoReserveService.class);
         serviceIntent.setAction(AutoReserveService.ACTION_SCHEDULE);
@@ -186,11 +350,13 @@ public class SettingsActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
     }
+
     private void cancelAutoReserve() {
         Intent serviceIntent = new Intent(this, AutoReserveService.class);
         serviceIntent.setAction(AutoReserveService.ACTION_CANCEL);
         startService(serviceIntent);
     }
+
     private void scheduleLateProtection() {
         Intent serviceIntent = new Intent(this, LateProtectionService.class);
         serviceIntent.setAction(LateProtectionService.ACTION_SCHEDULE);
@@ -200,6 +366,13 @@ public class SettingsActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
     }
+
+    private void cancelLateProtection() {
+        Intent serviceIntent = new Intent(this, LateProtectionService.class);
+        serviceIntent.setAction(LateProtectionService.ACTION_CANCEL);
+        startService(serviceIntent);
+    }
+
     private void showAreaPicker() {
         List<String> areaKeys = new ArrayList<>(Constants.SEAT_AREAS_MAP.keySet());
         String[] areaNames = new String[areaKeys.size()];
@@ -209,7 +382,8 @@ public class SettingsActivity extends AppCompatActivity {
         }
         String currentArea = preferenceManager.getTargetArea();
         int currentIndex = areaKeys.indexOf(currentArea);
-        if (currentIndex < 0) currentIndex = 0;
+        if (currentIndex < 0)
+            currentIndex = 0;
         new AlertDialog.Builder(this)
                 .setTitle("选择目标区域")
                 .setSingleChoiceItems(areaNames, currentIndex, (dialog, which) -> {
@@ -226,6 +400,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
+
     private void showSeatPicker() {
         String areaKey = preferenceManager.getTargetArea();
         Constants.AreaInfo areaInfo = Constants.SEAT_AREAS_MAP.get(areaKey);
@@ -243,8 +418,7 @@ public class SettingsActivity extends AppCompatActivity {
         FrameLayout container = new FrameLayout(this);
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-        );
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         params.leftMargin = padding;
         params.rightMargin = padding;
         input.setLayoutParams(params);
@@ -254,7 +428,8 @@ public class SettingsActivity extends AppCompatActivity {
                 .setView(container)
                 .setPositiveButton("确定", (dialog, which) -> {
                     String text = input.getText().toString();
-                    if (text.isEmpty()) return;
+                    if (text.isEmpty())
+                        return;
                     try {
                         int seatNum = Integer.parseInt(text);
                         if (seatNum < 1 || seatNum > maxSeat) {
@@ -270,22 +445,16 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
+
     private void showTimePicker(boolean isStartTime) {
-        String[] timeOptions = getResources().getStringArray(R.array.time_options);
-        String currentTime = isStartTime ? 
-                preferenceManager.getStartTime() : 
-                preferenceManager.getEndTime();
-        int currentIndex = 0;
-        for (int i = 0; i < timeOptions.length; i++) {
-            if (timeOptions[i].equals(currentTime)) {
-                currentIndex = i;
-                break;
-            }
-        }
-        new AlertDialog.Builder(this)
-                .setTitle(isStartTime ? "选择开始时间" : "选择结束时间")
-                .setSingleChoiceItems(timeOptions, currentIndex, (dialog, which) -> {
-                    String selectedTime = timeOptions[which];
+        String fallback = isStartTime ? Constants.DEFAULT_START_TIME : Constants.DEFAULT_END_TIME;
+        String currentTime = isStartTime ? preferenceManager.getStartTime() : preferenceManager.getEndTime();
+        int[] hm = parseTimeOrDefault(currentTime, fallback);
+
+        new TimePickerDialog(
+                this,
+                (view, hourOfDay, minute) -> {
+                    String selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
                     if (isStartTime) {
                         preferenceManager.setStartTime(selectedTime);
                         tvStartTime.setText(selectedTime);
@@ -293,11 +462,33 @@ public class SettingsActivity extends AppCompatActivity {
                         preferenceManager.setEndTime(selectedTime);
                         tvEndTime.setText(selectedTime);
                     }
-                    dialog.dismiss();
-                })
-                .setNegativeButton("取消", null)
-                .show();
+                },
+                hm[0],
+                hm[1],
+                true).show();
     }
+
+    private int[] parseTimeOrDefault(String value, String fallback) {
+        String target = (value == null || value.trim().isEmpty()) ? fallback : value.trim();
+        try {
+            String[] parts = target.split(":");
+            if (parts.length >= 2) {
+                int h = Integer.parseInt(parts[0]);
+                int m = Integer.parseInt(parts[1]);
+                if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+                    return new int[] { h, m };
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            String[] parts = fallback.split(":");
+            return new int[] { Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) };
+        } catch (Exception ignored) {
+            return new int[] { 7, 30 };
+        }
+    }
+
     private void showLogoutConfirm() {
         new AlertDialog.Builder(this)
                 .setTitle("退出登录")
@@ -308,14 +499,70 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
+
     private void performLogout() {
         cancelAutoReserve();
+        cancelLateProtection();
         preferenceManager.clearCredentials();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }
+
+    private String buildTargetConfigSummary() {
+        String areaKey = preferenceManager.getTargetArea();
+        String areaName = preferenceManager.getAreaName(areaKey);
+        if (areaName == null || areaName.trim().isEmpty()) {
+            areaName = "未设置区域";
+        }
+
+        int seatNumber = preferenceManager.getTargetSeat();
+        String seatText = seatNumber > 0 ? seatNumber + "号" : "未设置座位";
+
+        String startTime = preferenceManager.getStartTime();
+        String endTime = preferenceManager.getEndTime();
+        if (startTime == null || startTime.trim().isEmpty()) {
+            startTime = Constants.DEFAULT_START_TIME;
+        }
+        if (endTime == null || endTime.trim().isEmpty()) {
+            endTime = Constants.DEFAULT_END_TIME;
+        }
+
+        return "目标：" + areaName + " " + seatText + "\n时段：" + startTime + " - " + endTime;
+    }
+
+    private void showFeatureNotification(int notifyId, String title, String message) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        FEATURE_NOTIFY_CHANNEL_ID,
+                        "功能状态通知",
+                        NotificationManager.IMPORTANCE_DEFAULT);
+                channel.setDescription("自动预约/迟到保护/自动寻座状态通知");
+                NotificationManager nm = getSystemService(NotificationManager.class);
+                if (nm != null) {
+                    nm.createNotificationChannel(channel);
+                }
+            }
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, FEATURE_NOTIFY_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(message))
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true);
+            NotificationManagerCompat.from(this).notify(notifyId, builder.build());
+        } catch (SecurityException ignored) {
+            // Android 13+ 未授予通知权限时忽略
+        }
+    }
+
+    private boolean isHuaweiFamilyDevice() {
+        String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase();
+        return manufacturer.contains("huawei") || manufacturer.contains("honor");
+    }
+
     private void checkSystemPermissions() {
         boolean hasNotification = SystemPermissionChecker.isNotificationPermissionGranted(this);
         tvNotificationStatus.setText(hasNotification
@@ -329,15 +576,23 @@ public class SettingsActivity extends AppCompatActivity {
                 : getString(R.string.permission_status_not_granted));
         tvExactAlarmStatus.setTextColor(getResources().getColor(
                 hasExactAlarm ? R.color.success : R.color.error, null));
-        boolean batteryOptDisabled = SystemPermissionChecker.isBatteryOptimizationDisabled(this);
-        tvBatteryOptimizationStatus.setText(batteryOptDisabled
-                ? getString(R.string.permission_status_granted)
-                : getString(R.string.permission_status_not_granted));
-        tvBatteryOptimizationStatus.setTextColor(getResources().getColor(
-                batteryOptDisabled ? R.color.success : R.color.error, null));
+        boolean isHuaweiFamily = isHuaweiFamilyDevice();
+        if (isHuaweiFamily) {
+            // HarmonyOS/EMUI 无法稳定读取后台运行与自启动状态，统一改为手动检查提示
+            tvBatteryOptimizationStatus.setText(getString(R.string.permission_status_check_manually));
+            tvBatteryOptimizationStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        } else {
+            boolean batteryOptDisabled = SystemPermissionChecker.isBatteryOptimizationDisabled(this);
+            tvBatteryOptimizationStatus.setText(batteryOptDisabled
+                    ? getString(R.string.permission_status_granted)
+                    : getString(R.string.permission_status_not_granted));
+            tvBatteryOptimizationStatus.setTextColor(getResources().getColor(
+                    batteryOptDisabled ? R.color.success : R.color.error, null));
+        }
         tvAutoStartStatus.setText(getString(R.string.permission_status_check_manually));
         tvAutoStartStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
     }
+
     private void updatePermissionCardVisibility() {
         boolean allGranted = SystemPermissionChecker.areAllPermissionsGranted(this);
         boolean hideByUser = preferenceManager.isHidePermissionCheck();
@@ -348,6 +603,27 @@ public class SettingsActivity extends AppCompatActivity {
         }
         checkboxHidePermissionCard.setChecked(hideByUser);
     }
+
+
+    private void runAutoReserveNow() {
+        Intent serviceIntent = new Intent(this, AutoReserveService.class);
+        serviceIntent.setAction(AutoReserveService.ACTION_EXECUTE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+        Toast.makeText(this, "已触发立即测试，请查看通知和运行日志", Toast.LENGTH_SHORT).show();
+    }
+
+    private void openLogPage() {
+        try {
+            startActivity(new Intent(this, LogActivity.class));
+        } catch (Exception e) {
+            Toast.makeText(this, "打开日志页失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void openGithubPage() {
         String url = getString(R.string.setting_github_url);
         try {
@@ -358,10 +634,19 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show();
         }
     }
+
     @Override
     protected void onResume() {
         super.onResume();
         checkSystemPermissions();
         updatePermissionCardVisibility();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
     }
 }

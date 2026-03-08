@@ -7,9 +7,13 @@ public class FuckNjfuLibApp extends Application {
     public void onCreate() {
         super.onCreate();
         PreferenceManager preferenceManager = new PreferenceManager(this);
-        boolean darkMode = preferenceManager.isDarkModeEnabled();
-        AppCompatDelegate.setDefaultNightMode(darkMode
-                ? AppCompatDelegate.MODE_NIGHT_YES
-                : AppCompatDelegate.MODE_NIGHT_NO);
+        if (preferenceManager.hasDarkModeConfigured()) {
+            boolean darkMode = preferenceManager.isDarkModeEnabled();
+            AppCompatDelegate.setDefaultNightMode(darkMode
+                    ? AppCompatDelegate.MODE_NIGHT_YES
+                    : AppCompatDelegate.MODE_NIGHT_NO);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        }
     }
 }

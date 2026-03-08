@@ -144,6 +144,12 @@ public class PreferenceManager {
         }
         return v == null ? Constants.DEFAULT_END_TIME : v;
     }
+    public boolean hasStartTimeConfigured() {
+        return prefs.contains(Constants.PREF_START_TIME) || prefs.contains(LEGACY_START_TIME);
+    }
+    public boolean hasEndTimeConfigured() {
+        return prefs.contains(Constants.PREF_END_TIME) || prefs.contains(LEGACY_END_TIME);
+    }
     public void setAutoReserveEnabled(boolean enabled) {
         prefs.edit().putBoolean(Constants.PREF_AUTO_RESERVE, enabled).apply();
     }
@@ -170,6 +176,9 @@ public class PreferenceManager {
     }
     public boolean isDarkModeEnabled() {
         return prefs.getBoolean(Constants.PREF_DARK_MODE, false);
+    }
+    public boolean hasDarkModeConfigured() {
+        return prefs.contains(Constants.PREF_DARK_MODE);
     }
     public void setHidePermissionCheck(boolean hide) {
         prefs.edit().putBoolean(Constants.PREF_HIDE_PERMISSION_CHECK, hide).apply();

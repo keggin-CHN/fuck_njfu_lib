@@ -14,6 +14,8 @@ public class BootReceiver extends BroadcastReceiver {
             Log.d(TAG, "设备启动完成，检查是否需要恢复定时任务");
             SharedPreferences prefs = context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE);
             boolean autoReserve = prefs.getBoolean(Constants.PREF_AUTO_RESERVE, false);
+            boolean preventLate = prefs.getBoolean(Constants.PREF_PREVENT_LATE, false);
+
             if (autoReserve) {
                 Log.d(TAG, "恢复自动预约定时任务");
                 Intent serviceIntent = new Intent(context, AutoReserveService.class);
@@ -24,7 +26,6 @@ public class BootReceiver extends BroadcastReceiver {
                     context.startService(serviceIntent);
                 }
             }
-            boolean preventLate = prefs.getBoolean(Constants.PREF_PREVENT_LATE, false);
             if (preventLate) {
                 Log.d(TAG, "恢复迟到保护检查任务");
                 Intent serviceIntent = new Intent(context, LateProtectionService.class);
@@ -33,6 +34,21 @@ public class BootReceiver extends BroadcastReceiver {
                     context.startForegroundService(serviceIntent);
                 } else {
                     context.startService(serviceIntent);
+                }
+            }
+            // 启动保活服务
+            if (autoReserve || preventLate) {
+                Log.d(TAG, "启动保活服务");
+                try {
+                    Intent keepAliveIntent = new Intent(context, KeepAliveService.class);
+                    keepAliveIntent.setAction(KeepAliveService.ACTION_START);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(keepAliveIntent);
+                    } else {
+                        context.startService(keepAliveIntent);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "启动保活服务失败: " + e.getMessage());
                 }
             }
         }

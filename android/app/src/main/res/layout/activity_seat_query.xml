@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/background_primary">
 
-    
+    <!-- 顶部AppBar -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -27,7 +27,7 @@
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        
+        <!-- 查询条件 -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -42,7 +42,7 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                
+                <!-- 区域选择 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -64,7 +64,7 @@
                         android:background="@drawable/bg_spinner" />
                 </LinearLayout>
 
-                
+                <!-- 日期选择 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -87,7 +87,7 @@
                         android:background="@drawable/bg_spinner" />
                 </LinearLayout>
 
-                
+                <!-- 查询按钮 -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnQuery"
                     android:layout_width="match_parent"
@@ -99,7 +99,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        
+        <!-- 统计信息 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -125,7 +125,7 @@
                 android:textColor="@color/text_secondary" />
         </LinearLayout>
 
-        
+        <!-- 图例 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -162,7 +162,7 @@
                 android:textColor="@color/text_secondary" />
         </LinearLayout>
 
-        
+        <!-- 座位网格 -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvSeats"
             android:layout_width="match_parent"
@@ -173,7 +173,7 @@
 
     </LinearLayout>
 
-    
+    <!-- 加载遮罩 -->
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"

@@ -20,6 +20,7 @@
     
     
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:allowBackup="true"
@@ -57,6 +58,11 @@
 
         
         <activity
+            android:name=".activities.VisualSeatActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".activities.SettingsActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
@@ -64,6 +70,21 @@
         
         <activity
             android:name=".activities.PlanTasksActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".activities.LogActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".activities.AccountInfoActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".activities.UserGuideActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
@@ -77,6 +98,12 @@
         
         <service
             android:name=".services.LateProtectionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <service
+            android:name=".services.KeepAliveService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
