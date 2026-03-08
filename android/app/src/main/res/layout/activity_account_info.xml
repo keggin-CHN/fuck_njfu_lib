@@ -225,7 +225,7 @@
                             android:layout_height="wrap_content"
                             android:text="正常"
                             android:textSize="12sp"
-                            android:textColor="#388E3C"
+                            android:textColor="@color/success"
                             android:textStyle="bold"
                             android:background="@drawable/bg_stat_item"
                             android:paddingStart="10dp"

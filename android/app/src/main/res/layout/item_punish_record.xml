@@ -16,7 +16,7 @@
         <View
             android:layout_width="4dp"
             android:layout_height="36dp"
-            android:background="#FFB74D"
+            android:background="@color/warning"
             android:layout_marginEnd="12dp" />
 
         <LinearLayout
@@ -51,7 +51,7 @@
             android:text="-N分"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#E53935"
+            android:textColor="@color/error"
             android:layout_marginStart="8dp" />
     </LinearLayout>
 

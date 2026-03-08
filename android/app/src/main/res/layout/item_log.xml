@@ -20,7 +20,7 @@
             android:id="@+id/viewLevelIndicator"
             android:layout_width="4dp"
             android:layout_height="match_parent"
-            android:background="#4CAF50" />
+            android:background="@color/success" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -41,7 +41,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:textSize="11sp"
-                    android:textColor="#999999"
+                    android:textColor="@color/text_hint"
                     android:fontFamily="monospace" />
 
                 <TextView
@@ -52,7 +52,7 @@
                     android:paddingVertical="2dp"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/text_white"
                     android:background="@drawable/bg_log_level_pill" />
             </LinearLayout>
 
@@ -63,7 +63,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:textSize="11sp"
-                android:textColor="#2196F3"
+                android:textColor="@color/info"
                 android:fontFamily="monospace" />
 
             <!-- 日志消息 -->
