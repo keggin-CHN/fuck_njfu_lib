@@ -87,6 +87,7 @@ public class SeatReservation {
         public int resvStatus;          // 原始状态码
         public boolean canEndEarly;     // 是否可以提前结束
         public int tempLeaveEndTime;    // 暂离倒计时分钟数
+        public long latestCheckInTime;  // 最晚签到时间戳（毫秒）
 
         @Override
         public String toString() {
@@ -574,6 +575,7 @@ public class SeatReservation {
                         info.resvStatus = item.optInt("resvStatus", 0);
                         info.canEndEarly = item.optBoolean("endEarly", false);
                         info.tempLeaveEndTime = item.optInt("tempLeaveEndTime", 0);
+                        info.latestCheckInTime = item.optLong("latestCheckInTime", 0);
                         info.statusName = item.optString("statusName", null);
                         info.state = convertStatusToState(info.statusName, info.resvStatus);
                         info.onDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
@@ -613,9 +615,10 @@ public class SeatReservation {
     private String convertStatusToState(String statusName, int resvStatus) {
         // 先用 resvStatus 数值判断（更可靠）
         if (resvStatus > 0) {
-            // 1027 = 预约中, 1093 = 使用中, 3141 = 使用中(签到后)
+            // 1027 = 预约中, 1093 = 使用中(已签到), 3141 = 暂离(暂时离开)
             if (resvStatus == 1027) return "RESERVE";
-            if (resvStatus == 1093 || resvStatus == 3141) return "CHECK_IN";
+            if (resvStatus == 1093) return "CHECK_IN";
+            if (resvStatus == 3141) return "AWAY";
         }
         // 再用 statusName 文字判断
         if (statusName != null) {

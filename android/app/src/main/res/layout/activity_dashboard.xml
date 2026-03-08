@@ -157,96 +157,123 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
-                            android:background="@drawable/bg_stat_item"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:padding="12dp">
+                            android:background="@drawable/bg_reservation_card_inner"
+                            android:orientation="vertical"
+                            android:padding="14dp">
 
+                            <!-- 顶部：日期标签 + 状态 pill -->
                             <LinearLayout
-                                android:layout_width="0dp"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
 
                                 <TextView
                                     android:id="@+id/tvTodayReservationLabel"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
+                                    android:layout_weight="1"
                                     android:text="今天 · --"
                                     android:textColor="@color/text_primary"
-                                    android:textSize="14sp"
+                                    android:textSize="15sp"
                                     android:textStyle="bold" />
-
-                                <TextView
-                                    android:id="@+id/tvTodayReservationSeat"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:text="座位：--"
-                                    android:textColor="@color/text_secondary"
-                                    android:textSize="13sp" />
-
-                                <TextView
-                                    android:id="@+id/tvTodayReservationTime"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="3dp"
-                                    android:text="--:-- - --:--"
-                                    android:textColor="@color/text_secondary"
-                                    android:textSize="13sp" />
 
                                 <TextView
                                     android:id="@+id/tvTodayReservationStatus"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="6dp"
+                                    android:background="@drawable/bg_status_pill"
                                     android:text="状态未知"
-                                    android:textColor="@color/text_hint"
+                                    android:textColor="@color/primary"
                                     android:textSize="12sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
 
-                            <LinearLayout
+                            <!-- 座位信息 -->
+                            <TextView
+                                android:id="@+id/tvTodayReservationSeat"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
-                                android:gravity="center"
-                                android:orientation="vertical">
+                                android:layout_marginTop="8dp"
+                                android:text="座位：--"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:drawablePadding="6dp" />
+
+                            <!-- 时间信息 -->
+                            <TextView
+                                android:id="@+id/tvTodayReservationTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="--:-- - --:--"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp" />
+
+                            <!-- 分隔线 -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:layout_marginTop="12dp"
+                                android:layout_marginBottom="10dp"
+                                android:background="@color/divider" />
+
+                            <!-- 操作按钮区 - 水平排列 -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center">
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btnTodaySignIn"
                                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
+                                    android:layout_width="0dp"
+                                    android:layout_height="40dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginEnd="6dp"
                                     android:text="@string/btn_sign_in"
-                                    app:cornerRadius="8dp" />
+                                    android:textSize="13sp"
+                                    app:cornerRadius="10dp"
+                                    app:strokeColor="@color/primary" />
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btnTodayAwayBack"
                                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
+                                    android:layout_width="0dp"
+                                    android:layout_height="40dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginEnd="6dp"
                                     android:text="@string/btn_temp_leave"
-                                    app:cornerRadius="8dp" />
+                                    android:textSize="13sp"
+                                    app:cornerRadius="10dp"
+                                    app:strokeColor="@color/primary" />
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btnTodayEndEarly"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:backgroundTint="@color/error"
+                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                    android:layout_width="0dp"
+                                    android:layout_height="40dp"
+                                    android:layout_weight="1"
+                                    android:layout_marginEnd="6dp"
                                     android:text="@string/btn_end_early"
-                                    app:cornerRadius="8dp" />
+                                    android:textSize="13sp"
+                                    app:cornerRadius="10dp"
+                                    app:strokeColor="@color/error"
+                                    android:textColor="@color/error" />
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btnTodayCancelReservation"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="8dp"
-                                    android:backgroundTint="@color/error"
+                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                    android:layout_width="0dp"
+                                    android:layout_height="40dp"
+                                    android:layout_weight="1"
                                     android:text="@string/btn_cancel_reservation"
-                                    app:cornerRadius="8dp" />
+                                    android:textSize="13sp"
+                                    app:cornerRadius="10dp"
+                                    app:strokeColor="@color/error"
+                                    android:textColor="@color/error" />
                             </LinearLayout>
                         </LinearLayout>
 
@@ -255,69 +282,85 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:background="@drawable/bg_stat_item"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:padding="12dp">
+                            android:background="@drawable/bg_reservation_card_inner"
+                            android:orientation="vertical"
+                            android:padding="14dp">
 
+                            <!-- 顶部：日期标签 + 状态 pill -->
                             <LinearLayout
-                                android:layout_width="0dp"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
 
                                 <TextView
                                     android:id="@+id/tvTomorrowReservationLabel"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
+                                    android:layout_weight="1"
                                     android:text="明天 · --"
                                     android:textColor="@color/text_primary"
-                                    android:textSize="14sp"
+                                    android:textSize="15sp"
                                     android:textStyle="bold" />
-
-                                <TextView
-                                    android:id="@+id/tvTomorrowReservationSeat"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:text="座位：--"
-                                    android:textColor="@color/text_secondary"
-                                    android:textSize="13sp" />
-
-                                <TextView
-                                    android:id="@+id/tvTomorrowReservationTime"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="3dp"
-                                    android:text="--:-- - --:--"
-                                    android:textColor="@color/text_secondary"
-                                    android:textSize="13sp" />
 
                                 <TextView
                                     android:id="@+id/tvTomorrowReservationStatus"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="6dp"
+                                    android:background="@drawable/bg_status_pill"
                                     android:text="状态未知"
-                                    android:textColor="@color/text_hint"
+                                    android:textColor="@color/primary"
                                     android:textSize="12sp"
                                     android:textStyle="bold" />
                             </LinearLayout>
 
-                            <LinearLayout
+                            <!-- 座位信息 -->
+                            <TextView
+                                android:id="@+id/tvTomorrowReservationSeat"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
-                                android:gravity="center"
-                                android:orientation="vertical">
+                                android:layout_marginTop="8dp"
+                                android:text="座位：--"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:drawablePadding="6dp" />
+
+                            <!-- 时间信息 -->
+                            <TextView
+                                android:id="@+id/tvTomorrowReservationTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="--:-- - --:--"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp" />
+
+                            <!-- 分隔线 -->
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:layout_marginTop="12dp"
+                                android:layout_marginBottom="10dp"
+                                android:background="@color/divider" />
+
+                            <!-- 操作按钮区 -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center">
 
                                 <com.google.android.material.button.MaterialButton
                                     android:id="@+id/btnTomorrowCancelReservation"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:backgroundTint="@color/error"
+                                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="40dp"
                                     android:text="@string/btn_cancel_reservation"
-                                    app:cornerRadius="8dp" />
+                                    android:textSize="13sp"
+                                    app:cornerRadius="10dp"
+                                    app:strokeColor="@color/error"
+                                    android:textColor="@color/error" />
                             </LinearLayout>
                         </LinearLayout>
 

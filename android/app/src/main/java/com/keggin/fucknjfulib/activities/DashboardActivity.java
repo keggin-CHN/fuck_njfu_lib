@@ -368,6 +368,7 @@ public class DashboardActivity extends AppCompatActivity {
         info.resvStatus = obj.optInt("resvStatus", 0);
         info.canEndEarly = obj.optBoolean("canEndEarly", false);
         info.tempLeaveEndTime = obj.optInt("tempLeaveEndTime", 0);
+        info.latestCheckInTime = obj.optLong("latestCheckInTime", 0);
         return info;
     }
 
@@ -390,6 +391,7 @@ public class DashboardActivity extends AppCompatActivity {
         obj.put("resvStatus", reservation.resvStatus);
         obj.put("canEndEarly", reservation.canEndEarly);
         obj.put("tempLeaveEndTime", reservation.tempLeaveEndTime);
+        obj.put("latestCheckInTime", reservation.latestCheckInTime);
         return obj.toString();
     }
 
@@ -485,6 +487,32 @@ public class DashboardActivity extends AppCompatActivity {
         timeView.setText(start + " - " + end);
         statusView.setText(getStatusText(reservation.state));
         statusView.setTextColor(getStatusColor(reservation.state));
+
+        // 暂离状态下，追加最晚返回时间
+        if ("AWAY".equals(reservation.state) && reservation.tempLeaveEndTime > 0) {
+            Calendar deadline = Calendar.getInstance();
+            deadline.add(Calendar.MINUTE, reservation.tempLeaveEndTime);
+            String deadlineStr = String.format("%02d:%02d",
+                    deadline.get(Calendar.HOUR_OF_DAY), deadline.get(Calendar.MINUTE));
+            statusView.setText("暂离 · 最晚 " + deadlineStr + " 返回（剩余 " + reservation.tempLeaveEndTime + " 分钟）");
+        }
+        // 未签到状态下，显示最晚签到时间
+        if ("RESERVE".equals(reservation.state) && reservation.latestCheckInTime > 0) {
+            long now = System.currentTimeMillis();
+            if (now >= reservation.beginTime) {
+                // 已过开始时间，显示最晚签到截止
+                java.util.Date deadlineDate = new java.util.Date(reservation.latestCheckInTime);
+                String deadlineStr = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                        .format(deadlineDate);
+                long remainMin = (reservation.latestCheckInTime - now) / 60000;
+                if (remainMin > 0) {
+                    statusView.setText("待签到 · 最晚 " + deadlineStr + "（剩余 " + remainMin + " 分钟）");
+                } else {
+                    statusView.setText("待签到 · 签到已超时");
+                }
+                statusView.setTextColor(getColor(R.color.warning));
+            }
+        }
     }
 
     private SeatReservation.ReservationInfo pickFirstReservationForDate(
