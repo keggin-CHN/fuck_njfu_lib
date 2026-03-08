@@ -6,7 +6,7 @@ import java.util.Map;
 public class Constants {
     public static final String DEFAULT_AREA = "二层A区";
     public static final int DEFAULT_SEAT = 1;
-    public static final String DEFAULT_START_TIME = "09:30";
+    public static final String DEFAULT_START_TIME = "07:30";
     public static final String DEFAULT_END_TIME = "22:00";
 
     public static class SeatArea {

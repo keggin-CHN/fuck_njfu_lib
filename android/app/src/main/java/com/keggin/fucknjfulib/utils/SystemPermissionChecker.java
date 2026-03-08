@@ -42,6 +42,13 @@ public class SystemPermissionChecker {
         return true;
     }
     public static boolean areAllPermissionsGranted(Context context) {
+        String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase();
+        boolean isHuaweiFamily = manufacturer.contains("huawei") || manufacturer.contains("honor");
+        if (isHuaweiFamily) {
+            // HarmonyOS/EMUI 下“后台运行/自启动”常无法通过标准 API 精准判断，改为手动检查策略
+            return isNotificationPermissionGranted(context)
+                    && isExactAlarmPermissionGranted(context);
+        }
         return isNotificationPermissionGranted(context)
                 && isExactAlarmPermissionGranted(context)
                 && isBatteryOptimizationDisabled(context);
