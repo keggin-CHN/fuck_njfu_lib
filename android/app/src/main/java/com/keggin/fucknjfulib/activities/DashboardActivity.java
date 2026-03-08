@@ -64,7 +64,6 @@ public class DashboardActivity extends AppCompatActivity {
     private TextView tvTomorrowReservationTime;
     private TextView tvTomorrowReservationStatus;
     private MaterialButton btnTodaySignIn;
-    private MaterialButton btnTodayAwayBack;
     private MaterialButton btnTodayEndEarly;
     private MaterialButton btnTodayCancelReservation;
     private MaterialButton btnTomorrowCancelReservation;
@@ -128,7 +127,6 @@ public class DashboardActivity extends AppCompatActivity {
         tvTomorrowReservationTime = findViewById(R.id.tvTomorrowReservationTime);
         tvTomorrowReservationStatus = findViewById(R.id.tvTomorrowReservationStatus);
         btnTodaySignIn = findViewById(R.id.btnTodaySignIn);
-        btnTodayAwayBack = findViewById(R.id.btnTodayAwayBack);
         btnTodayEndEarly = findViewById(R.id.btnTodayEndEarly);
         btnTodayCancelReservation = findViewById(R.id.btnTodayCancelReservation);
         btnTomorrowCancelReservation = findViewById(R.id.btnTomorrowCancelReservation);
@@ -165,9 +163,6 @@ public class DashboardActivity extends AppCompatActivity {
         }
         if (btnTodaySignIn != null) {
             btnTodaySignIn.setOnClickListener(v -> signIn(todayReservationForActions));
-        }
-        if (btnTodayAwayBack != null) {
-            btnTodayAwayBack.setOnClickListener(v -> awayOrBack(todayReservationForActions));
         }
         if (btnTodayEndEarly != null) {
             btnTodayEndEarly.setOnClickListener(v -> endEarly(todayReservationForActions));
@@ -554,10 +549,6 @@ public class DashboardActivity extends AppCompatActivity {
             btnTodaySignIn.setVisibility(View.GONE);
             setButtonEnabled(btnTodaySignIn, false);
         }
-        if (btnTodayAwayBack != null) {
-            btnTodayAwayBack.setVisibility(View.GONE);
-            setButtonEnabled(btnTodayAwayBack, false);
-        }
         if (btnTodayEndEarly != null) {
             btnTodayEndEarly.setVisibility(View.GONE);
             setButtonEnabled(btnTodayEndEarly, false);
@@ -582,21 +573,11 @@ public class DashboardActivity extends AppCompatActivity {
                     setButtonEnabled(btnTodayCancelReservation, true);
                 }
             } else if ("AWAY".equals(st)) {
-                if (btnTodayAwayBack != null) {
-                    btnTodayAwayBack.setVisibility(View.VISIBLE);
-                    btnTodayAwayBack.setText(R.string.btn_back);
-                    setButtonEnabled(btnTodayAwayBack, true);
-                }
                 if (btnTodayEndEarly != null) {
                     btnTodayEndEarly.setVisibility(View.VISIBLE);
                     setButtonEnabled(btnTodayEndEarly, true);
                 }
             } else if ("CHECK_IN".equals(st)) {
-                if (btnTodayAwayBack != null) {
-                    btnTodayAwayBack.setVisibility(View.VISIBLE);
-                    btnTodayAwayBack.setText(R.string.btn_temp_leave);
-                    setButtonEnabled(btnTodayAwayBack, true);
-                }
                 if (btnTodayEndEarly != null) {
                     btnTodayEndEarly.setVisibility(View.VISIBLE);
                     setButtonEnabled(btnTodayEndEarly, true);

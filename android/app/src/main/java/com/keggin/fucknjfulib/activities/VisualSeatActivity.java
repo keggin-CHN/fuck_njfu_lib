@@ -82,6 +82,8 @@ public class VisualSeatActivity extends AppCompatActivity {
         setupToolbar();
         setupSpinners();
         setupClickListeners();
+        // 打开即立即查询
+        performQuery();
     }
 
     private void initViews() {

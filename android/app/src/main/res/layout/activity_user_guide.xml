@@ -197,7 +197,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="• 自动预约：每天定时发起明日预约。\n• 自动寻座：目标座位冲突时，自动寻找同区域可用座位。\n• 迟到保护：预约开始前触发检查，未签到时自动处理。\n• 可视化选座：按楼层/区域查看实时座位状态并直接预约。"
+                        android:text="本应用提供以下自动化功能，所有功能须在\"设置\"中手动开启后方可生效。\n\n· 自动预约：每日定时预约次日座位。\n· 自动寻座：目标座位冲突时自动寻找同区域可用替代座位。\n· 迟到保护：预约开始前检查签到状态，自动处理未签到情况。\n· 可视化选座：按区域查看座位实时状态并发起即时预约。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -235,7 +235,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="生效逻辑：\n1) 在设置中开启“自动预约”；\n2) 每天 07:00 触发自动任务；\n3) 自动认证后发起明日预约；\n4) 无论成功/失败，都会重置下一次触发时间。\n\n建议：首次使用先手动预约验证账号有效，再开启自动化。"
+                        android:text="开启方式：在设置中启用\"自动预约\"并配置目标座位与时段。\n\n执行规则：\n· 每日 07:00 自动触发，预约次日座位。\n· 执行完成后（无论成功或失败），自动重置下次触发时间。\n· 若同时启用自动寻座，目标座位被占时将尝试同区域替代。\n\n建议首次使用时先手动预约以验证账号有效性。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -273,7 +273,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="生效逻辑：\n当目标座位返回“已被预约/占用”时，会拉取同区域可用座位列表并按顺序尝试。\n\n注意：仅在“座位占用类错误”时触发自动寻座，认证失败或参数错误不会触发。"
+                        android:text="当目标座位已被预约或占用时，自动在同区域内拉取可用座位列表并按顺序尝试预约。\n\n注意：仅在座位被占用类错误时触发；认证失败或参数错误不在触发范围内。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -311,7 +311,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="生效逻辑：\n1) 开启后会为“今日预约”安排检查任务（默认提前20分钟）；\n2) 到点若未签到，会先取消原预约，再尝试顺延重约；\n3) 若剩余时长不足2小时，则只取消不重约。\n\n你关闭开关时，已安排的检查任务会被立即取消。"
+                        android:text="开启后将在今日预约开始前（默认提前 20 分钟）自动触发签到检查。\n\n处理规则：\n· 检查时若未签到：取消原预约，并尝试顺延时段重新预约。\n· 若剩余可预约时长不足 2 小时：仅取消，不重新预约。\n\n关闭此功能时，已安排的检查任务将立即撤销。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -349,7 +349,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="支持内容：\n• 所有楼层区域座位映射；\n• 背景图与座位点统一缩放；\n• 双指缩放、拖动、点选与双击复位。\n\n说明：背景图已改为本地资源加载，避免网络鉴权失败导致空白。"
+                        android:text="按区域查看座位实时占用状态，并可直接发起预约。\n\n操作说明：\n· 进入页面后自动加载当前区域座位布局。\n· 点击可用座位可指定时段预约；点击已占用座位可查看占用详情及空闲时段。\n· 支持双指缩放与拖动；双击可复位视图。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -387,7 +387,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="日志页会记录自动预约、迟到保护等关键动作。\n建议重点观察：\n• 是否出现“认证失败”；\n• 是否出现“预约设置不完整”；\n• 迟到保护是否打印“设置迟到检查”。\n\n出现异常时可截图日志时间段进行定位。"
+                        android:text="在设置中可进入日志页面，查看自动预约、迟到保护等关键操作的历史记录。\n\n如遇异常，建议重点排查：\n· 认证失败 — 账号或密码可能已失效，需重新登录。\n· 预约设置不完整 — 请检查目标区域、座位号及时段配置。\n· 迟到保护未安排 — 请确认今日存在有效预约且功能已开启。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
