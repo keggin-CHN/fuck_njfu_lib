@@ -37,6 +37,8 @@
     
     
     <color name="divider">#E0E0E0</color>
+    <color name="card_inner_background">#F8F9FA</color>
+    <color name="card_inner_stroke">#E8EAF0</color>
     
     
     <color name="button_primary">#1976D2</color>

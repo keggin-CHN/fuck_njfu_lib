@@ -13,7 +13,7 @@ android {
         minSdk 24
         targetSdk 34
         versionCode 22
-        versionName '1.2.5'
+        versionName '1.2.6'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         vectorDrawables.useSupportLibrary = true
         buildConfigField "String", "DEFAULT_SERVER_URL", "\"https://libseat.njfu.edu.cn\""

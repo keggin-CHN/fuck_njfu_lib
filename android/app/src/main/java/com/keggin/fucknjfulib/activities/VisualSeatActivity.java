@@ -135,9 +135,7 @@ public class VisualSeatActivity extends AppCompatActivity {
                 this, android.R.layout.simple_spinner_item, dateOptions);
         dateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerDate.setAdapter(dateAdapter);
-        if (dateOptions.size() > 1) {
-            spinnerDate.setSelection(1, false); // 默认明天
-        }
+        spinnerDate.setSelection(0, false); // 默认今天
     }
 
     private void setupClickListeners() {
@@ -263,7 +261,8 @@ public class VisualSeatActivity extends AppCompatActivity {
 
             for (SeatQuery.ReservationSlot r : sortedReservations) {
                 // 跳过已结束的预约（endTime 在当前游标之前）
-                if (r.endTime <= tCurrent) continue;
+                if (r.endTime <= tCurrent)
+                    continue;
                 if (r.startTime > tCurrent && r.startTime - tCurrent >= 2 * 3600000L) { // >= 2 hours
                     freeGaps.add(new String[] { sdf.format(new java.util.Date(tCurrent)),
                             sdf.format(new java.util.Date(r.startTime)) });
@@ -431,7 +430,8 @@ public class VisualSeatActivity extends AppCompatActivity {
                         showLoading(false);
                         if (findResult.success) {
                             String seatDesc = (findResult.reservedSeat != null)
-                                    ? findResult.reservedSeat.devName : "未知座位";
+                                    ? findResult.reservedSeat.devName
+                                    : "未知座位";
                             String successMsg = "自动寻座成功，已预约：" + seatDesc
                                     + "\n日期：" + fDate + "  时段：" + fStart + " - " + fEnd;
                             Toast.makeText(this, successMsg, Toast.LENGTH_LONG).show();

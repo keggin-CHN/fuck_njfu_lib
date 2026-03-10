@@ -197,7 +197,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="本应用提供以下自动化功能，所有功能须在\"设置\"中手动开启后方可生效。\n\n· 自动预约：每日定时预约次日座位。\n· 自动寻座：目标座位冲突时自动寻找同区域可用替代座位。\n· 迟到保护：预约开始前检查签到状态，自动处理未签到情况。\n· 可视化选座：按区域查看座位实时状态并发起即时预约。"
+                        android:text="本应用提供以下自动化功能，所有功能须在&quot;设置&quot;中手动开启后方可生效。\n\n· 自动预约：每日定时预约次日座位。\n· 自动寻座：目标座位冲突时自动寻找同区域可用替代座位。\n· 迟到保护：预约开始前检查签到状态，自动处理未签到情况。\n· 可视化选座：按区域查看座位实时状态并发起即时预约。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -235,7 +235,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="开启方式：在设置中启用\"自动预约\"并配置目标座位与时段。\n\n执行规则：\n· 每日 07:00 自动触发，预约次日座位。\n· 执行完成后（无论成功或失败），自动重置下次触发时间。\n· 若同时启用自动寻座，目标座位被占时将尝试同区域替代。\n\n建议首次使用时先手动预约以验证账号有效性。"
+                        android:text="开启方式：在设置中启用&quot;自动预约&quot;并配置目标座位与时段。\n\n执行规则：\n· 每日 07:00 自动触发，预约次日座位。\n· 执行完成后（无论成功或失败），自动重置下次触发时间。\n· 若同时启用自动寻座，目标座位被占时将尝试同区域替代。\n\n建议首次使用时先手动预约以验证账号有效性。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>

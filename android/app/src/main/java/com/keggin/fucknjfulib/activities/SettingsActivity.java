@@ -76,7 +76,7 @@ public class SettingsActivity extends AppCompatActivity {
     private SwitchMaterial switchDarkMode;
     private LinearLayout layoutTheme;
     private TextView tvThemeMode;
-    private LinearLayout layoutTestAutoReserveNow;
+
     private LinearLayout layoutOpenLogs;
     private TextView tvStudentId;
     private LinearLayout layoutLogout;
@@ -126,7 +126,7 @@ public class SettingsActivity extends AppCompatActivity {
         switchDarkMode = findViewById(R.id.switchDarkMode);
         layoutTheme = findViewById(R.id.layoutTheme);
         tvThemeMode = findViewById(R.id.tvThemeMode);
-        layoutTestAutoReserveNow = findViewById(R.id.layoutTestAutoReserveNow);
+
         layoutOpenLogs = findViewById(R.id.layoutOpenLogs);
         tvStudentId = findViewById(R.id.tvStudentId);
         layoutLogout = findViewById(R.id.layoutLogout);
@@ -310,15 +310,12 @@ public class SettingsActivity extends AppCompatActivity {
             layoutTheme.setOnClickListener(v -> showThemeChooser());
         }
         layoutLogout.setOnClickListener(v -> showLogoutConfirm());
-        if (layoutTestAutoReserveNow != null) {
-            layoutTestAutoReserveNow.setOnClickListener(v -> runAutoReserveNow());
-        }
+
         if (layoutOpenLogs != null) {
             layoutOpenLogs.setOnClickListener(v -> openLogPage());
         }
         layoutGithub.setOnClickListener(v -> openGithubPage());
     }
-
 
     private void showThemeChooser() {
         String[] items = new String[] { "浅色", "深色" };
@@ -602,18 +599,6 @@ public class SettingsActivity extends AppCompatActivity {
             cardPermissionCheck.setVisibility(View.VISIBLE);
         }
         checkboxHidePermissionCard.setChecked(hideByUser);
-    }
-
-
-    private void runAutoReserveNow() {
-        Intent serviceIntent = new Intent(this, AutoReserveService.class);
-        serviceIntent.setAction(AutoReserveService.ACTION_EXECUTE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
-        Toast.makeText(this, "已触发立即测试，请查看通知和运行日志", Toast.LENGTH_SHORT).show();
     }
 
     private void openLogPage() {
