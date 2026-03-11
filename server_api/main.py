@@ -3,6 +3,7 @@
 - 无数据库，用户数据以 JSON 文件存储
 - Python 后台线程做定时调度
 - 极低内存占用
+- API Key 鉴权
 """
 import sys
 import os
@@ -19,7 +20,7 @@ _backend_dir = os.path.abspath(os.path.join(_server_api_dir, "..", "backend"))
 if _backend_dir not in sys.path:
     sys.path.append(_backend_dir)
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 
@@ -42,10 +43,29 @@ logger = logging.getLogger("server_api")
 
 
 # ---------------------------------------------------------------------------
+# API Key 鉴权
+# ---------------------------------------------------------------------------
+def verify_api_key(x_api_key: str = Header(..., alias="X-API-Key")):
+    """验证请求中的 API Key。"""
+    expected_key = Config.get_api_key()
+    if not expected_key:
+        logger.warning("未配置 API Key，请运行 deploy.sh 或设置 API_KEY 环境变量")
+        raise HTTPException(status_code=500, detail="服务器未配置 API Key")
+    if x_api_key != expected_key:
+        raise HTTPException(status_code=403, detail="API Key 无效")
+    return x_api_key
+
+
+# ---------------------------------------------------------------------------
 # FastAPI 生命周期
 # ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    api_key = Config.get_api_key()
+    if api_key:
+        logger.info(f"API Key 已加载 (前4位: {api_key[:4]}...)")
+    else:
+        logger.warning("未配置 API Key！请设置 API_KEY 环境变量或创建 .api_key 文件")
     logger.info("启动后台调度器...")
     start_scheduler()
     yield
@@ -55,7 +75,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="NJFU 图书馆预约 API",
-    description="超轻量定时预约服务器 — 无数据库，纯 API",
+    description="超轻量定时预约服务器 - 需要 API Key 鉴权",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -71,11 +91,11 @@ class Credentials(BaseModel):
 
 
 class ReserveRequest(Credentials):
-    area: str = Field(..., description="区域名称，如 '二层A区'")
+    area: str = Field(..., description="区域名称")
     seat_number: int = Field(..., description="座位号")
-    start_time: Optional[str] = Field(None, description="开始时间，如 '08:00'")
-    end_time: Optional[str] = Field(None, description="结束时间，如 '22:00'")
-    date: Optional[str] = Field(None, description="日期，如 '2026-03-12'，默认明天")
+    start_time: Optional[str] = Field(None, description="开始时间")
+    end_time: Optional[str] = Field(None, description="结束时间")
+    date: Optional[str] = Field(None, description="日期，默认明天")
 
 
 class CancelRequest(Credentials):
@@ -83,16 +103,8 @@ class CancelRequest(Credentials):
 
 
 class QueryRequest(Credentials):
-    begin_date: Optional[str] = Field(None, description="开始日期，默认今天")
-    end_date: Optional[str] = Field(None, description="结束日期，默认同开始日期")
-
-
-class WeeklyDayPlan(BaseModel):
-    enabled: bool = False
-    area: Optional[str] = None
-    seat: Optional[int] = None
-    start: Optional[str] = None
-    end: Optional[str] = None
+    begin_date: Optional[str] = Field(None, description="开始日期")
+    end_date: Optional[str] = Field(None, description="结束日期")
 
 
 class TaskRegisterRequest(Credentials):
@@ -102,13 +114,12 @@ class TaskRegisterRequest(Credentials):
     end_time: Optional[str] = Field("22:00", description="默认结束时间")
     auto_reserve: bool = Field(True, description="是否启用自动预约")
     prevent_late: bool = Field(False, description="是否启用迟到保护")
-    reserve_time: Optional[str] = Field(None, description="预约执行时间，如 '07:03'")
-    auth_time: Optional[str] = Field(None, description="认证时间，如 '06:55'")
+    reserve_time: Optional[str] = Field(None, description="预约执行时间")
+    auth_time: Optional[str] = Field(None, description="认证时间")
     weekly_plan: Optional[dict] = Field(None, description="每周计划 JSON")
 
 
 class TaskUpdateRequest(BaseModel):
-    """更新任务（部分字段）。"""
     area: Optional[str] = None
     seat_number: Optional[int] = None
     start_time: Optional[str] = None
@@ -121,11 +132,11 @@ class TaskUpdateRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# API 端点
+# 公开端点（不需要 API Key）
 # ---------------------------------------------------------------------------
 @app.get("/api/health")
 async def health():
-    """健康检查。"""
+    """健康检查（无需 API Key）。"""
     tasks = list_all_tasks()
     return {
         "status": "ok",
@@ -135,7 +146,21 @@ async def health():
     }
 
 
-@app.post("/api/reserve/now")
+@app.get("/api/verify")
+async def verify_connection(x_api_key: str = Header(..., alias="X-API-Key")):
+    """验证 API Key 是否正确（Android 端验证服务器按钮调用此接口）。"""
+    expected_key = Config.get_api_key()
+    if not expected_key:
+        raise HTTPException(status_code=500, detail="服务器未配置 API Key")
+    if x_api_key != expected_key:
+        return {"success": False, "message": "API Key 无效"}
+    return {"success": True, "message": "连接成功"}
+
+
+# ---------------------------------------------------------------------------
+# 受保护端点（需要 API Key）
+# ---------------------------------------------------------------------------
+@app.post("/api/reserve/now", dependencies=[Depends(verify_api_key)])
 async def reserve_now(req: ReserveRequest):
     """立即预约座位。"""
     user = LightUser(req.username, req.edu_password, req.lib_password)
@@ -150,7 +175,7 @@ async def reserve_now(req: ReserveRequest):
     return {"success": success, "message": message}
 
 
-@app.post("/api/cancel")
+@app.post("/api/cancel", dependencies=[Depends(verify_api_key)])
 async def cancel(req: CancelRequest):
     """取消预约。"""
     user = LightUser(req.username, req.edu_password, req.lib_password)
@@ -158,7 +183,7 @@ async def cancel(req: CancelRequest):
     return {"success": success, "message": message}
 
 
-@app.post("/api/reservations")
+@app.post("/api/reservations", dependencies=[Depends(verify_api_key)])
 async def query_reservations(req: QueryRequest):
     """查询预约列表。"""
     user = LightUser(req.username, req.edu_password, req.lib_password)
@@ -168,7 +193,7 @@ async def query_reservations(req: QueryRequest):
     return {"success": True, "data": result}
 
 
-@app.post("/api/auth/test")
+@app.post("/api/auth/test", dependencies=[Depends(verify_api_key)])
 async def test_auth(req: Credentials):
     """测试认证是否成功。"""
     user = LightUser(req.username, req.edu_password, req.lib_password)
@@ -180,9 +205,9 @@ async def test_auth(req: Credentials):
 
 
 # ---------------------------------------------------------------------------
-# 定时任务管理
+# 定时任务管理（需要 API Key）
 # ---------------------------------------------------------------------------
-@app.post("/api/task/register")
+@app.post("/api/task/register", dependencies=[Depends(verify_api_key)])
 async def register_task(req: TaskRegisterRequest):
     """注册定时任务（保存为 JSON 文件）。"""
     task_data = {
@@ -203,21 +228,19 @@ async def register_task(req: TaskRegisterRequest):
     return {"success": True, "task_id": task_id, "message": "定时任务已注册"}
 
 
-@app.put("/api/task/{task_id}")
+@app.put("/api/task/{task_id}", dependencies=[Depends(verify_api_key)])
 async def update_task(task_id: str, req: TaskUpdateRequest):
     """更新定时任务。"""
     task = load_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
-
-    # 仅更新非 None 的字段
     update_fields = req.model_dump(exclude_none=True)
     task.update(update_fields)
     save_task(task)
     return {"success": True, "message": "任务已更新"}
 
 
-@app.delete("/api/task/{task_id}")
+@app.delete("/api/task/{task_id}", dependencies=[Depends(verify_api_key)])
 async def remove_task(task_id: str):
     """删除定时任务。"""
     if delete_task(task_id):
@@ -226,19 +249,17 @@ async def remove_task(task_id: str):
         raise HTTPException(status_code=404, detail="任务不存在")
 
 
-@app.get("/api/task/{task_id}")
+@app.get("/api/task/{task_id}", dependencies=[Depends(verify_api_key)])
 async def get_task_status(task_id: str):
     """查询任务状态和最近执行结果。"""
     task = load_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
-
-    # 返回时隐藏密码
     safe_task = {k: v for k, v in task.items() if "password" not in k}
     return {"success": True, "data": safe_task}
 
 
-@app.get("/api/task/lookup/{username}")
+@app.get("/api/task/lookup/{username}", dependencies=[Depends(verify_api_key)])
 async def lookup_task(username: str):
     """根据用户名查找任务 ID。"""
     task_id = generate_task_id(username)
@@ -249,7 +270,7 @@ async def lookup_task(username: str):
     return {"success": True, "task_id": task_id, "data": safe_task}
 
 
-@app.get("/api/areas")
+@app.get("/api/areas", dependencies=[Depends(verify_api_key)])
 async def list_areas():
     """获取所有可用的座位区域。"""
     areas = []

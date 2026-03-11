@@ -32,18 +32,18 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            
+            <!-- 服务器连接 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/settings_system_permission"
+                android:text="服务器连接"
                 android:textSize="14sp"
                 android:textColor="@color/primary"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
 
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPermissionCheck"
+                android:id="@+id/cardServerConnection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
@@ -57,204 +57,86 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/permission_check_title"
-                        android:textSize="16sp"
-                        android:textColor="@color/text_primary"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/permission_check_desc"
+                        android:text="配置预约服务器地址和密钥"
                         android:textSize="13sp"
                         android:textColor="@color/text_secondary"
-                        android:layout_marginBottom="16dp" />
-
-                    
-                    <LinearLayout
-                        android:id="@+id/layoutNotificationPermission"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingVertical="8dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/permission_notification"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_primary" />
-
-                        <TextView
-                            android:id="@+id/tvNotificationStatus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/permission_status_not_granted"
-                            android:textSize="12sp"
-                            android:textColor="@color/error" />
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@drawable/ic_arrow_right"
-                            app:tint="@color/text_hint" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/divider"
-                        android:layout_marginVertical="4dp" />
-
-                    
-                    <LinearLayout
-                        android:id="@+id/layoutExactAlarmPermission"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingVertical="8dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/permission_exact_alarm"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_primary" />
-
-                        <TextView
-                            android:id="@+id/tvExactAlarmStatus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/permission_status_not_granted"
-                            android:textSize="12sp"
-                            android:textColor="@color/error" />
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@drawable/ic_arrow_right"
-                            app:tint="@color/text_hint" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/divider"
-                        android:layout_marginVertical="4dp" />
-
-                    
-                    <LinearLayout
-                        android:id="@+id/layoutBatteryOptimization"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingVertical="8dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/permission_battery_optimization"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_primary" />
-
-                        <TextView
-                            android:id="@+id/tvBatteryOptimizationStatus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/permission_status_not_granted"
-                            android:textSize="12sp"
-                            android:textColor="@color/error" />
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@drawable/ic_arrow_right"
-                            app:tint="@color/text_hint" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/divider"
-                        android:layout_marginVertical="4dp" />
-
-                    
-                    <LinearLayout
-                        android:id="@+id/layoutAutoStartPermission"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingVertical="8dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/permission_autostart"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_primary" />
-
-                        <TextView
-                            android:id="@+id/tvAutoStartStatus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/permission_status_check_manually"
-                            android:textSize="12sp"
-                            android:textColor="@color/text_secondary" />
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@drawable/ic_arrow_right"
-                            app:tint="@color/text_hint" />
-                    </LinearLayout>
-
-                    
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/divider"
-                        android:layout_marginTop="4dp"
                         android:layout_marginBottom="12dp" />
 
-                    <CheckBox
-                        android:id="@+id/checkboxHidePermissionCard"
-                        android:layout_width="wrap_content"
+                    <!-- 服务器地址 -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/permission_hide_this_card"
-                        android:textSize="13sp"
-                        android:textColor="@color/text_secondary" />
+                        android:hint="服务器地址"
+                        app:boxCornerRadiusTopStart="8dp"
+                        app:boxCornerRadiusTopEnd="8dp"
+                        app:boxCornerRadiusBottomStart="8dp"
+                        app:boxCornerRadiusBottomEnd="8dp"
+                        android:layout_marginBottom="12dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etServerUrl"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="例: http://1.2.3.4:8000"
+                            android:inputType="textUri"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- API Key -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="API Key"
+                        app:boxCornerRadiusTopStart="8dp"
+                        app:boxCornerRadiusTopEnd="8dp"
+                        app:boxCornerRadiusBottomStart="8dp"
+                        app:boxCornerRadiusBottomEnd="8dp"
+                        app:endIconMode="password_toggle"
+                        android:layout_marginBottom="12dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etApiKey"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="部署时生成的密钥"
+                            android:inputType="textPassword"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- 连接状态 + 验证按钮 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvServerStatus"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="未连接"
+                            android:textSize="13sp"
+                            android:textColor="@color/text_secondary" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnVerifyServer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:text="验证服务器"
+                            android:textSize="13sp"
+                            app:cornerRadius="8dp"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                    </LinearLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
 
 
             <TextView

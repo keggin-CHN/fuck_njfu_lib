@@ -1,26 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    
+    <!-- 网络权限（必需） -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    
-    
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    
-    
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    
-    
+
+    <!-- 通知权限 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    
-    
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- 以下权限已不再需要：定时预约已迁移到服务器端 -->
+    <!-- <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> -->
+    <!-- <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" /> -->
+    <!-- <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /> -->
+    <!-- <uses-permission android:name="android.permission.WAKE_LOCK" /> -->
+    <!-- <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" /> -->
+    <!-- <uses-permission android:name="android.permission.USE_EXACT_ALARM" /> -->
+    <!-- <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" /> -->
 
     <application
         android:allowBackup="true"
@@ -32,7 +28,6 @@
         android:theme="@style/Theme.FuckNjfuLib"
         android:networkSecurityConfig="@xml/network_security_config">
 
-        
         <activity
             android:name=".activities.DashboardActivity"
             android:exported="true"
@@ -44,19 +39,16 @@
             </intent-filter>
         </activity>
 
-        
         <activity
             android:name=".activities.LoginActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        
         <activity
             android:name=".activities.SeatQueryActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        
         <activity
             android:name=".activities.VisualSeatActivity"
             android:exported="false"
@@ -67,7 +59,6 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        
         <activity
             android:name=".activities.PlanTasksActivity"
             android:exported="false"
@@ -88,14 +79,14 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        
+        <!-- 以下服务和接收器已不再使用：定时预约已迁移到服务器端 -->
+        <!--
         <service
             android:name=".services.AutoReserveService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        
         <service
             android:name=".services.LateProtectionService"
             android:enabled="true"
@@ -108,7 +99,6 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        
         <receiver
             android:name=".services.AutoReserveReceiver"
             android:enabled="true"
@@ -118,7 +108,6 @@
             </intent-filter>
         </receiver>
 
-        
         <receiver
             android:name=".services.LateProtectionReceiver"
             android:enabled="true"
@@ -128,7 +117,6 @@
             </intent-filter>
         </receiver>
 
-        
         <receiver
             android:name=".services.BootReceiver"
             android:enabled="true"
@@ -137,6 +125,7 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+        -->
 
     </application>
 

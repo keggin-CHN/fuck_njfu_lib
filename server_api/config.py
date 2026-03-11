@@ -55,3 +55,16 @@ class Config:
 
     # --- 任务文件目录 ---
     TASKS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks")
+
+    # --- API Key 鉴权 ---
+    @staticmethod
+    def get_api_key():
+        """从环境变量或 .api_key 文件读取 API Key。"""
+        key = os.environ.get("API_KEY")
+        if key:
+            return key
+        key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".api_key")
+        if os.path.exists(key_file):
+            with open(key_file, "r") as f:
+                return f.read().strip()
+        return None

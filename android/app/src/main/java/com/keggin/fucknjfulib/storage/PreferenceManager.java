@@ -287,4 +287,14 @@ public class PreferenceManager {
     public String getServerTaskId() {
         return prefs.getString(KEY_SERVER_TASK_ID, "");
     }
+
+    private static final String KEY_API_KEY = "server_api_key";
+
+    public void setApiKey(String key) {
+        prefs.edit().putString(KEY_API_KEY, key).apply();
+    }
+
+    public String getApiKey() {
+        return prefs.getString(KEY_API_KEY, "");
+    }
 }

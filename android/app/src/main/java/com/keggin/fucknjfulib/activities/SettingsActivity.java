@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.content.res.Configuration;
 import android.util.Log;
 import android.view.View;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -19,9 +18,10 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
-import androidx.cardview.widget.CardView;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import com.keggin.fucknjfulib.BuildConfig;
@@ -29,12 +29,8 @@ import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
 import com.keggin.fucknjfulib.network.ApiConstants;
 import com.keggin.fucknjfulib.network.HttpClientManager;
-// 已迁移到服务器端，不再使用本地服务
-// import com.keggin.fucknjfulib.services.AutoReserveService;
-// import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
-import com.keggin.fucknjfulib.utils.SystemPermissionChecker;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,17 +48,14 @@ public class SettingsActivity extends AppCompatActivity {
     private static final int NOTIFY_ID_LATE_PROTECTION = 3202;
     private static final int NOTIFY_ID_AUTO_FIND = 3203;
     private Toolbar toolbar;
-    private CardView cardPermissionCheck;
-    private LinearLayout layoutNotificationPermission;
-    private LinearLayout layoutExactAlarmPermission;
-    private LinearLayout layoutBatteryOptimization;
-    private LinearLayout layoutAutoStartPermission;
-    private TextView tvNotificationStatus;
-    private TextView tvExactAlarmStatus;
-    private TextView tvBatteryOptimizationStatus;
-    private TextView tvAutoStartStatus;
-    private CheckBox checkboxHidePermissionCard;
 
+    // 服务器连接
+    private TextInputEditText etServerUrl;
+    private TextInputEditText etApiKey;
+    private TextView tvServerStatus;
+    private MaterialButton btnVerifyServer;
+
+    // 预约设置
     private LinearLayout layoutTargetArea;
     private LinearLayout layoutTargetSeat;
     private LinearLayout layoutStartTime;
@@ -78,6 +71,7 @@ public class SettingsActivity extends AppCompatActivity {
     private LinearLayout layoutTheme;
     private TextView tvThemeMode;
 
+    // 账号 & 关于
     private LinearLayout layoutOpenLogs;
     private TextView tvStudentId;
     private LinearLayout layoutLogout;
@@ -102,17 +96,14 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-        cardPermissionCheck = findViewById(R.id.cardPermissionCheck);
-        layoutNotificationPermission = findViewById(R.id.layoutNotificationPermission);
-        layoutExactAlarmPermission = findViewById(R.id.layoutExactAlarmPermission);
-        layoutBatteryOptimization = findViewById(R.id.layoutBatteryOptimization);
-        layoutAutoStartPermission = findViewById(R.id.layoutAutoStartPermission);
-        tvNotificationStatus = findViewById(R.id.tvNotificationStatus);
-        tvExactAlarmStatus = findViewById(R.id.tvExactAlarmStatus);
-        tvBatteryOptimizationStatus = findViewById(R.id.tvBatteryOptimizationStatus);
-        tvAutoStartStatus = findViewById(R.id.tvAutoStartStatus);
-        checkboxHidePermissionCard = findViewById(R.id.checkboxHidePermissionCard);
 
+        // 服务器连接
+        etServerUrl = findViewById(R.id.etServerUrl);
+        etApiKey = findViewById(R.id.etApiKey);
+        tvServerStatus = findViewById(R.id.tvServerStatus);
+        btnVerifyServer = findViewById(R.id.btnVerifyServer);
+
+        // 预约设置
         layoutTargetArea = findViewById(R.id.layoutTargetArea);
         layoutTargetSeat = findViewById(R.id.layoutTargetSeat);
         layoutStartTime = findViewById(R.id.layoutStartTime);
@@ -128,6 +119,7 @@ public class SettingsActivity extends AppCompatActivity {
         layoutTheme = findViewById(R.id.layoutTheme);
         tvThemeMode = findViewById(R.id.tvThemeMode);
 
+        // 账号 & 关于
         layoutOpenLogs = findViewById(R.id.layoutOpenLogs);
         tvStudentId = findViewById(R.id.tvStudentId);
         layoutLogout = findViewById(R.id.layoutLogout);
@@ -145,12 +137,20 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void loadSettings() {
-        checkSystemPermissions();
-        updatePermissionCardVisibility();
+        // 服务器连接
+        String serverUrl = preferenceManager.getServerApiUrl();
+        String apiKey = preferenceManager.getApiKey();
+        if (serverUrl != null && !serverUrl.isEmpty()) {
+            etServerUrl.setText(serverUrl);
+        }
+        if (apiKey != null && !apiKey.isEmpty()) {
+            etApiKey.setText(apiKey);
+        }
+
+        // 预约设置
         String areaKey = preferenceManager.getTargetArea();
         tvTargetArea.setText(preferenceManager.getAreaName(areaKey));
         tvTargetSeat.setText(String.valueOf(preferenceManager.getTargetSeat()));
-
         String startTime = preferenceManager.getStartTime();
         String endTime = preferenceManager.getEndTime();
         tvStartTime.setText(preferenceManager.hasStartTimeConfigured() ? startTime : "--:--");
@@ -158,6 +158,8 @@ public class SettingsActivity extends AppCompatActivity {
         switchAutoReserve.setChecked(preferenceManager.isAutoReserveEnabled());
         switchLateProtection.setChecked(preferenceManager.isLateProtectionEnabled());
         switchAutoFindSeat.setChecked(preferenceManager.isAutoFindSeatEnabled());
+
+        // 外观
         boolean dark;
         if (preferenceManager.hasDarkModeConfigured()) {
             dark = preferenceManager.isDarkModeEnabled();
@@ -169,6 +171,8 @@ public class SettingsActivity extends AppCompatActivity {
         if (tvThemeMode != null) {
             tvThemeMode.setText(dark ? "深色" : "浅色");
         }
+
+        // 账号
         tvStudentId.setText("学号：" + preferenceManager.getStudentId());
         tvVersion.setText(BuildConfig.VERSION_NAME);
     }
@@ -224,27 +228,24 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        layoutNotificationPermission.setOnClickListener(v -> SystemPermissionChecker.openNotificationSettings(this));
-        layoutExactAlarmPermission.setOnClickListener(v -> SystemPermissionChecker.openExactAlarmSettings(this));
-        layoutBatteryOptimization.setOnClickListener(v -> {
-            if (isHuaweiFamilyDevice()) {
-                Toast.makeText(this, "华为/荣耀设备将打开应用信息页，请在“电池/后台运行”中手动允许后台运行", Toast.LENGTH_LONG)
-                        .show();
+        // --- 服务器连接 ---
+        btnVerifyServer.setOnClickListener(v -> verifyServerConnection());
+
+        // 输入失焦后自动保存
+        etServerUrl.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                String url = etServerUrl.getText() != null ? etServerUrl.getText().toString().trim() : "";
+                preferenceManager.setServerApiUrl(url);
             }
-            SystemPermissionChecker.openBatteryOptimizationSettings(this);
         });
-        layoutAutoStartPermission.setOnClickListener(v -> {
-            if (isHuaweiFamilyDevice()) {
-                Toast.makeText(this, "华为/荣耀设备将打开应用信息页，请在“启动管理”中允许自启动与关联启动", Toast.LENGTH_LONG)
-                        .show();
+        etApiKey.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
+                String key = etApiKey.getText() != null ? etApiKey.getText().toString().trim() : "";
+                preferenceManager.setApiKey(key);
             }
-            SystemPermissionChecker.openAutoStartSettings(this);
-        });
-        checkboxHidePermissionCard.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            preferenceManager.setHidePermissionCheck(isChecked);
-            updatePermissionCardVisibility();
         });
 
+        // --- 预约设置 ---
         layoutTargetArea.setOnClickListener(v -> showAreaPicker());
         layoutTargetSeat.setOnClickListener(v -> showSeatPicker());
         layoutStartTime.setOnClickListener(v -> showTimePicker(true));
@@ -316,35 +317,82 @@ public class SettingsActivity extends AppCompatActivity {
         layoutGithub.setOnClickListener(v -> openGithubPage());
     }
 
-    private void showThemeChooser() {
-        String[] items = new String[] { "浅色", "深色" };
-        int checked = preferenceManager.isDarkModeEnabled() ? 1 : 0;
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("外观")
-                .setSingleChoiceItems(items, checked, (dialog, which) -> {
-                    boolean dark = (which == 1);
-                    preferenceManager.setDarkModeEnabled(dark);
-                    AppCompatDelegate.setDefaultNightMode(dark
-                            ? AppCompatDelegate.MODE_NIGHT_YES
-                            : AppCompatDelegate.MODE_NIGHT_NO);
-                    if (tvThemeMode != null) {
-                        tvThemeMode.setText(dark ? "深色" : "浅色");
+    // =========================================================================
+    // 服务器连接验证
+    // =========================================================================
+    private void verifyServerConnection() {
+        // 先保存当前输入
+        String url = etServerUrl.getText() != null ? etServerUrl.getText().toString().trim() : "";
+        String key = etApiKey.getText() != null ? etApiKey.getText().toString().trim() : "";
+        preferenceManager.setServerApiUrl(url);
+        preferenceManager.setApiKey(key);
+
+        if (url.isEmpty()) {
+            tvServerStatus.setText("请输入服务器地址");
+            tvServerStatus.setTextColor(getResources().getColor(R.color.error, null));
+            return;
+        }
+        if (key.isEmpty()) {
+            tvServerStatus.setText("请输入 API Key");
+            tvServerStatus.setTextColor(getResources().getColor(R.color.error, null));
+            return;
+        }
+
+        tvServerStatus.setText("验证中...");
+        tvServerStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
+        btnVerifyServer.setEnabled(false);
+
+        executor.execute(() -> {
+            try {
+                HttpClientManager httpClient = HttpClientManager.getInstance(null);
+                String verifyUrl = url + "/api/verify";
+                Map<String, String> headers = new HashMap<>();
+                headers.put("X-API-Key", key);
+                Response response = httpClient.get(verifyUrl, headers);
+                try {
+                    String body = HttpClientManager.getResponseBody(response);
+                    if (response.isSuccessful() && body != null) {
+                        JSONObject result = new JSONObject(body);
+                        boolean success = result.optBoolean("success", false);
+                        String message = result.optString("message", "");
+                        runOnUiThread(() -> {
+                            if (success) {
+                                tvServerStatus.setText("✓ " + message);
+                                tvServerStatus.setTextColor(getResources().getColor(R.color.success, null));
+                            } else {
+                                tvServerStatus.setText("✗ " + message);
+                                tvServerStatus.setTextColor(getResources().getColor(R.color.error, null));
+                            }
+                            btnVerifyServer.setEnabled(true);
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            tvServerStatus.setText("✗ 服务器返回错误: " + response.code());
+                            tvServerStatus.setTextColor(getResources().getColor(R.color.error, null));
+                            btnVerifyServer.setEnabled(true);
+                        });
                     }
-                    dialog.dismiss();
-                    recreate();
-                })
-                .setNegativeButton("取消", null)
-                .show();
+                } finally {
+                    response.close();
+                }
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    tvServerStatus.setText("✗ 无法连接: " + e.getMessage());
+                    tvServerStatus.setTextColor(getResources().getColor(R.color.error, null));
+                    btnVerifyServer.setEnabled(true);
+                });
+            }
+        });
     }
 
-    /**
-     * 将当前预约配置同步到服务器。
-     * 开关变更、区域/座位/时间变更后都会调用此方法。
-     */
+    // =========================================================================
+    // 服务器任务同步
+    // =========================================================================
     private void syncTaskToServer() {
         executor.execute(() -> {
             try {
                 String serverUrl = preferenceManager.getServerApiUrl();
+                String apiKey = preferenceManager.getApiKey();
                 if (serverUrl == null || serverUrl.isEmpty()) {
                     Log.w(TAG, "未配置服务器地址，跳过同步");
                     return;
@@ -364,6 +412,9 @@ public class SettingsActivity extends AppCompatActivity {
                 String url = serverUrl + "/api/task/register";
                 Map<String, String> headers = new HashMap<>();
                 headers.put("Content-Type", "application/json");
+                if (apiKey != null && !apiKey.isEmpty()) {
+                    headers.put("X-API-Key", apiKey);
+                }
                 Response response = httpClient.postJson(url, body.toString(), headers);
                 try {
                     if (response.isSuccessful()) {
@@ -386,13 +437,11 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * 从服务器删除定时任务。
-     */
     private void deleteServerTask() {
         executor.execute(() -> {
             try {
                 String serverUrl = preferenceManager.getServerApiUrl();
+                String apiKey = preferenceManager.getApiKey();
                 String taskId = preferenceManager.getServerTaskId();
                 if (serverUrl == null || serverUrl.isEmpty() || taskId == null || taskId.isEmpty()) {
                     return;
@@ -400,6 +449,9 @@ public class SettingsActivity extends AppCompatActivity {
                 HttpClientManager httpClient = HttpClientManager.getInstance(null);
                 String url = serverUrl + "/api/task/" + taskId;
                 Map<String, String> headers = new HashMap<>();
+                if (apiKey != null && !apiKey.isEmpty()) {
+                    headers.put("X-API-Key", apiKey);
+                }
                 Response response = httpClient.delete(url, headers);
                 try {
                     if (response.isSuccessful()) {
@@ -415,6 +467,33 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+    // =========================================================================
+    // 主题选择
+    // =========================================================================
+    private void showThemeChooser() {
+        String[] items = new String[] { "浅色", "深色" };
+        int checked = preferenceManager.isDarkModeEnabled() ? 1 : 0;
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("外观")
+                .setSingleChoiceItems(items, checked, (dialog, which) -> {
+                    boolean dark = (which == 1);
+                    preferenceManager.setDarkModeEnabled(dark);
+                    AppCompatDelegate.setDefaultNightMode(dark
+                            ? AppCompatDelegate.MODE_NIGHT_YES
+                            : AppCompatDelegate.MODE_NIGHT_NO);
+                    if (tvThemeMode != null) {
+                        tvThemeMode.setText(dark ? "深色" : "浅色");
+                    }
+                    dialog.dismiss();
+                    recreate();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    // =========================================================================
+    // 预约设置弹窗
+    // =========================================================================
     private void showAreaPicker() {
         List<String> areaKeys = new ArrayList<>(Constants.SEAT_AREAS_MAP.keySet());
         String[] areaNames = new String[areaKeys.size()];
@@ -531,6 +610,9 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+    // =========================================================================
+    // 登出
+    // =========================================================================
     private void showLogoutConfirm() {
         new AlertDialog.Builder(this)
                 .setTitle("退出登录")
@@ -551,16 +633,17 @@ public class SettingsActivity extends AppCompatActivity {
         finish();
     }
 
+    // =========================================================================
+    // 工具方法
+    // =========================================================================
     private String buildTargetConfigSummary() {
         String areaKey = preferenceManager.getTargetArea();
         String areaName = preferenceManager.getAreaName(areaKey);
         if (areaName == null || areaName.trim().isEmpty()) {
             areaName = "未设置区域";
         }
-
         int seatNumber = preferenceManager.getTargetSeat();
         String seatText = seatNumber > 0 ? seatNumber + "号" : "未设置座位";
-
         String startTime = preferenceManager.getStartTime();
         String endTime = preferenceManager.getEndTime();
         if (startTime == null || startTime.trim().isEmpty()) {
@@ -569,7 +652,6 @@ public class SettingsActivity extends AppCompatActivity {
         if (endTime == null || endTime.trim().isEmpty()) {
             endTime = Constants.DEFAULT_END_TIME;
         }
-
         return "目标：" + areaName + " " + seatText + "\n时段：" + startTime + " - " + endTime;
     }
 
@@ -595,54 +677,7 @@ public class SettingsActivity extends AppCompatActivity {
                     .setAutoCancel(true);
             NotificationManagerCompat.from(this).notify(notifyId, builder.build());
         } catch (SecurityException ignored) {
-            // Android 13+ 未授予通知权限时忽略
         }
-    }
-
-    private boolean isHuaweiFamilyDevice() {
-        String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase();
-        return manufacturer.contains("huawei") || manufacturer.contains("honor");
-    }
-
-    private void checkSystemPermissions() {
-        boolean hasNotification = SystemPermissionChecker.isNotificationPermissionGranted(this);
-        tvNotificationStatus.setText(hasNotification
-                ? getString(R.string.permission_status_granted)
-                : getString(R.string.permission_status_not_granted));
-        tvNotificationStatus.setTextColor(getResources().getColor(
-                hasNotification ? R.color.success : R.color.error, null));
-        boolean hasExactAlarm = SystemPermissionChecker.isExactAlarmPermissionGranted(this);
-        tvExactAlarmStatus.setText(hasExactAlarm
-                ? getString(R.string.permission_status_granted)
-                : getString(R.string.permission_status_not_granted));
-        tvExactAlarmStatus.setTextColor(getResources().getColor(
-                hasExactAlarm ? R.color.success : R.color.error, null));
-        boolean isHuaweiFamily = isHuaweiFamilyDevice();
-        if (isHuaweiFamily) {
-            // HarmonyOS/EMUI 无法稳定读取后台运行与自启动状态，统一改为手动检查提示
-            tvBatteryOptimizationStatus.setText(getString(R.string.permission_status_check_manually));
-            tvBatteryOptimizationStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
-        } else {
-            boolean batteryOptDisabled = SystemPermissionChecker.isBatteryOptimizationDisabled(this);
-            tvBatteryOptimizationStatus.setText(batteryOptDisabled
-                    ? getString(R.string.permission_status_granted)
-                    : getString(R.string.permission_status_not_granted));
-            tvBatteryOptimizationStatus.setTextColor(getResources().getColor(
-                    batteryOptDisabled ? R.color.success : R.color.error, null));
-        }
-        tvAutoStartStatus.setText(getString(R.string.permission_status_check_manually));
-        tvAutoStartStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
-    }
-
-    private void updatePermissionCardVisibility() {
-        boolean allGranted = SystemPermissionChecker.areAllPermissionsGranted(this);
-        boolean hideByUser = preferenceManager.isHidePermissionCheck();
-        if (hideByUser || (allGranted && checkboxHidePermissionCard.isChecked())) {
-            cardPermissionCheck.setVisibility(View.GONE);
-        } else {
-            cardPermissionCheck.setVisibility(View.VISIBLE);
-        }
-        checkboxHidePermissionCard.setChecked(hideByUser);
     }
 
     private void openLogPage() {
@@ -662,13 +697,6 @@ public class SettingsActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        checkSystemPermissions();
-        updatePermissionCardVisibility();
     }
 
     @Override
