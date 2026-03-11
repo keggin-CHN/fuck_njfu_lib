@@ -29,8 +29,9 @@ import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
 import com.keggin.fucknjfulib.network.ApiConstants;
 import com.keggin.fucknjfulib.network.HttpClientManager;
-import com.keggin.fucknjfulib.services.AutoReserveService;
-import com.keggin.fucknjfulib.services.LateProtectionService;
+// 已迁移到服务器端，不再使用本地服务
+// import com.keggin.fucknjfulib.services.AutoReserveService;
+// import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.SystemPermissionChecker;
@@ -251,39 +252,37 @@ public class SettingsActivity extends AppCompatActivity {
         switchAutoReserve.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoReserveEnabled(isChecked);
             String targetSummary = buildTargetConfigSummary();
+            syncTaskToServer();
             if (isChecked) {
-                scheduleAutoReserve();
-                Toast.makeText(this, "自动预约已开启，将在每天7点执行", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "自动预约已开启，将由服务器定时执行", Toast.LENGTH_SHORT).show();
                 showFeatureNotification(
                         NOTIFY_ID_AUTO_RESERVE,
                         "自动预约已开启",
-                        "每日 07:00 自动执行预约任务\n" + targetSummary);
+                        "由服务器每日自动执行预约任务\n" + targetSummary);
             } else {
-                cancelAutoReserve();
                 Toast.makeText(this, "自动预约已关闭", Toast.LENGTH_SHORT).show();
                 showFeatureNotification(
                         NOTIFY_ID_AUTO_RESERVE,
                         "自动预约已关闭",
-                        "已取消自动预约任务\n" + targetSummary);
+                        "已取消服务器自动预约任务\n" + targetSummary);
             }
         });
         switchLateProtection.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setLateProtectionEnabled(isChecked);
             String targetSummary = buildTargetConfigSummary();
+            syncTaskToServer();
             if (isChecked) {
-                scheduleLateProtection();
-                Toast.makeText(this, "迟到保护已开启", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "迟到保护已开启，由服务器执行", Toast.LENGTH_SHORT).show();
                 showFeatureNotification(
                         NOTIFY_ID_LATE_PROTECTION,
                         "迟到保护已开启",
-                        "已开始安排迟到保护检查任务\n" + targetSummary);
+                        "由服务器执行迟到保护检查\n" + targetSummary);
             } else {
-                cancelLateProtection();
                 Toast.makeText(this, "迟到保护已关闭", Toast.LENGTH_SHORT).show();
                 showFeatureNotification(
                         NOTIFY_ID_LATE_PROTECTION,
                         "迟到保护已关闭",
-                        "已取消迟到保护任务\n" + targetSummary);
+                        "已取消服务器迟到保护任务\n" + targetSummary);
             }
         });
         switchAutoFindSeat.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -338,36 +337,82 @@ public class SettingsActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void scheduleAutoReserve() {
-        Intent serviceIntent = new Intent(this, AutoReserveService.class);
-        serviceIntent.setAction(AutoReserveService.ACTION_SCHEDULE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
+    /**
+     * 将当前预约配置同步到服务器。
+     * 开关变更、区域/座位/时间变更后都会调用此方法。
+     */
+    private void syncTaskToServer() {
+        executor.execute(() -> {
+            try {
+                String serverUrl = preferenceManager.getServerApiUrl();
+                if (serverUrl == null || serverUrl.isEmpty()) {
+                    Log.w(TAG, "未配置服务器地址，跳过同步");
+                    return;
+                }
+                JSONObject body = new JSONObject();
+                body.put("username", preferenceManager.getStudentId());
+                body.put("edu_password", preferenceManager.getCasPassword());
+                body.put("lib_password", preferenceManager.getLibPassword());
+                body.put("area", preferenceManager.getAreaName(preferenceManager.getTargetArea()));
+                body.put("seat_number", preferenceManager.getTargetSeat());
+                body.put("start_time", preferenceManager.getStartTime());
+                body.put("end_time", preferenceManager.getEndTime());
+                body.put("auto_reserve", preferenceManager.isAutoReserveEnabled());
+                body.put("prevent_late", preferenceManager.isLateProtectionEnabled());
+
+                HttpClientManager httpClient = HttpClientManager.getInstance(null);
+                String url = serverUrl + "/api/task/register";
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Content-Type", "application/json");
+                Response response = httpClient.postJson(url, body.toString(), headers);
+                try {
+                    if (response.isSuccessful()) {
+                        String respBody = HttpClientManager.getResponseBody(response);
+                        JSONObject result = new JSONObject(respBody);
+                        String taskId = result.optString("task_id", "");
+                        if (!taskId.isEmpty()) {
+                            preferenceManager.setServerTaskId(taskId);
+                        }
+                        Log.i(TAG, "任务同步到服务器成功: " + taskId);
+                    } else {
+                        Log.e(TAG, "同步任务失败: HTTP " + response.code());
+                    }
+                } finally {
+                    response.close();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "同步任务到服务器失败: " + e.getMessage());
+            }
+        });
     }
 
-    private void cancelAutoReserve() {
-        Intent serviceIntent = new Intent(this, AutoReserveService.class);
-        serviceIntent.setAction(AutoReserveService.ACTION_CANCEL);
-        startService(serviceIntent);
-    }
-
-    private void scheduleLateProtection() {
-        Intent serviceIntent = new Intent(this, LateProtectionService.class);
-        serviceIntent.setAction(LateProtectionService.ACTION_SCHEDULE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
-    }
-
-    private void cancelLateProtection() {
-        Intent serviceIntent = new Intent(this, LateProtectionService.class);
-        serviceIntent.setAction(LateProtectionService.ACTION_CANCEL);
-        startService(serviceIntent);
+    /**
+     * 从服务器删除定时任务。
+     */
+    private void deleteServerTask() {
+        executor.execute(() -> {
+            try {
+                String serverUrl = preferenceManager.getServerApiUrl();
+                String taskId = preferenceManager.getServerTaskId();
+                if (serverUrl == null || serverUrl.isEmpty() || taskId == null || taskId.isEmpty()) {
+                    return;
+                }
+                HttpClientManager httpClient = HttpClientManager.getInstance(null);
+                String url = serverUrl + "/api/task/" + taskId;
+                Map<String, String> headers = new HashMap<>();
+                Response response = httpClient.delete(url, headers);
+                try {
+                    if (response.isSuccessful()) {
+                        preferenceManager.setServerTaskId("");
+                        Log.i(TAG, "服务器任务已删除");
+                    }
+                } finally {
+                    response.close();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "删除服务器任务失败: " + e.getMessage());
+            }
+        });
     }
 
     private void showAreaPicker() {
@@ -498,8 +543,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void performLogout() {
-        cancelAutoReserve();
-        cancelLateProtection();
+        deleteServerTask();
         preferenceManager.clearCredentials();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
