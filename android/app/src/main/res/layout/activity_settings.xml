@@ -70,6 +70,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="服务器地址"
+                        app:placeholderText="例: http://1.2.3.4:8000"
                         app:boxCornerRadiusTopStart="8dp"
                         app:boxCornerRadiusTopEnd="8dp"
                         app:boxCornerRadiusBottomStart="8dp"
@@ -81,7 +82,6 @@
                             android:id="@+id/etServerUrl"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="例: http://1.2.3.4:8000"
                             android:inputType="textUri"
                             android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -91,6 +91,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="API Key"
+                        app:placeholderText="部署时生成的密钥"
                         app:boxCornerRadiusTopStart="8dp"
                         app:boxCornerRadiusTopEnd="8dp"
                         app:boxCornerRadiusBottomStart="8dp"
@@ -103,7 +104,6 @@
                             android:id="@+id/etApiKey"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="部署时生成的密钥"
                             android:inputType="textPassword"
                             android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
