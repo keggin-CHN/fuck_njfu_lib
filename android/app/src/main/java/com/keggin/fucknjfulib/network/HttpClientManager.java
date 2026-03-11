@@ -146,6 +146,24 @@ public class HttpClientManager {
         return response;
     }
 
+    public Response delete(String url, Map<String, String> headers) throws IOException {
+        Request.Builder builder = new Request.Builder()
+                .url(url)
+                .delete()
+                .header("User-Agent", ApiConstants.USER_AGENT)
+                .header("Accept", ApiConstants.ACCEPT_JSON);
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                builder.header(entry.getKey(), entry.getValue());
+            }
+        }
+        Request request = builder.build();
+        Log.d(TAG, "DELETE: " + url);
+        Response response = client.newCall(request).execute();
+        logHttpToDb("DELETE", request, response);
+        return response;
+    }
+
     public static String getResponseBody(Response response) throws IOException {
         if (response == null || response.body() == null) {
             return null;
