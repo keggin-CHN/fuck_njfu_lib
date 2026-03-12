@@ -277,7 +277,7 @@ public class PreferenceManager {
     }
 
     public String getServerApiUrl() {
-        return prefs.getString(KEY_SERVER_API_URL, "");
+        return prefs.getString(KEY_SERVER_API_URL, "http://om.rainplay.cn:21859");
     }
 
     public void setServerTaskId(String taskId) {
@@ -295,6 +295,6 @@ public class PreferenceManager {
     }
 
     public String getApiKey() {
-        return prefs.getString(KEY_API_KEY, "");
+        return prefs.getString(KEY_API_KEY, "GcbjN_9e1Nqli-uUdvOFKu5_eBP48CvhTIGDu6g57co");
     }
 }

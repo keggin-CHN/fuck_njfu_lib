@@ -51,7 +51,7 @@ class Config:
 
     # --- 服务器端口 ---
     HOST = os.environ.get("HOST", "0.0.0.0")
-    PORT = int(os.environ.get("PORT", "8000"))
+    PORT = int(os.environ.get("PORT", "21859"))
 
     # --- 任务文件目录 ---
     TASKS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks")

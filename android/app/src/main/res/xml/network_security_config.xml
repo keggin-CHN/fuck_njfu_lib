@@ -16,4 +16,9 @@
             <certificates src="system" />
         </trust-anchors>
     </domain-config>
+
+    <!-- 允许服务器 API 使用 HTTP 明文 -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">om.rainplay.cn</domain>
+    </domain-config>
 </network-security-config>

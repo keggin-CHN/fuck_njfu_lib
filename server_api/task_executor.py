@@ -99,6 +99,12 @@ def reserve_seat(
         end_time = get_end_time(date_str)
     end_time = normalize_time_format(end_time)
 
+    # 强制限制最晚结束时间（比如周五是 20:00:00）
+    max_end_time = get_end_time(date_str)
+    if end_time > max_end_time:
+        logger.info(f"指定的结束时间 {end_time} 超过了当天的闭馆时间 {max_end_time}，已自动调整为 {max_end_time}")
+        end_time = max_end_time
+
     # 检查时长
     try:
         begin_obj = datetime.datetime.strptime(start_time, "%H:%M:%S")

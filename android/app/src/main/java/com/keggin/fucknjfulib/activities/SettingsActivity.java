@@ -236,12 +236,14 @@ public class SettingsActivity extends AppCompatActivity {
             if (!hasFocus) {
                 String url = etServerUrl.getText() != null ? etServerUrl.getText().toString().trim() : "";
                 preferenceManager.setServerApiUrl(url);
+                syncTaskToServer();
             }
         });
         etApiKey.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
                 String key = etApiKey.getText() != null ? etApiKey.getText().toString().trim() : "";
                 preferenceManager.setApiKey(key);
+                syncTaskToServer();
             }
         });
 
@@ -516,6 +518,7 @@ public class SettingsActivity extends AppCompatActivity {
                         preferenceManager.setTargetSeat(1);
                         tvTargetSeat.setText("1");
                     }
+                    syncTaskToServer();
                     dialog.dismiss();
                 })
                 .setNegativeButton("取消", null)
@@ -559,6 +562,7 @@ public class SettingsActivity extends AppCompatActivity {
                         }
                         preferenceManager.setTargetSeat(seatNum);
                         tvTargetSeat.setText(String.valueOf(seatNum));
+                        syncTaskToServer();
                     } catch (NumberFormatException e) {
                         Toast.makeText(this, "请输入有效的数字", Toast.LENGTH_SHORT).show();
                     }
@@ -583,6 +587,7 @@ public class SettingsActivity extends AppCompatActivity {
                         preferenceManager.setEndTime(selectedTime);
                         tvEndTime.setText(selectedTime);
                     }
+                    syncTaskToServer();
                 },
                 hm[0],
                 hm[1],
