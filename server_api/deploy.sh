@@ -102,10 +102,10 @@ echo ""
 echo "[6/6] 配置 API Key..."
 KEY_FILE="$APP_DIR/.api_key"
 if [ ! -f "$KEY_FILE" ]; then
-    API_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
+    API_KEY="GcbjN_9e1Nqli-uUdvOFKu5_eBP48CvhTIGDu6g57co"
     echo "$API_KEY" > "$KEY_FILE"
     chmod 600 "$KEY_FILE"
-    echo "  已生成 API Key: $API_KEY"
+    echo "  已使用测试 API Key: $API_KEY"
     echo "  请将此 Key 填入 Android 客户端设置中"
 else
     API_KEY=$(cat "$KEY_FILE")
