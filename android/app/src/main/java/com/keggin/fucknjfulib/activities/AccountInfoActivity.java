@@ -21,8 +21,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -184,24 +186,59 @@ public class AccountInfoActivity extends AppCompatActivity {
         });
     }
 
+    private String getSemesterString(long timestamp) {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.setTimeInMillis(timestamp);
+        int year = cal.get(java.util.Calendar.YEAR);
+        int month = cal.get(java.util.Calendar.MONTH) + 1;
+        if (month >= 8) {
+            return year + "-" + (year + 1) + "-1";
+        } else if (month <= 1) {
+            return (year - 1) + "-" + year + "-1";
+        } else {
+            return (year - 1) + "-" + year + "-2";
+        }
+    }
+
     private void buildCreditRows(JSONArray creditList) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
         layoutPunishList.removeAllViews();
+        
+        List<JSONObject> list = new ArrayList<>();
         for (int i = 0; i < creditList.length(); i++) {
-            try {
-                JSONObject item = creditList.getJSONObject(i);
-                View row = LayoutInflater.from(this).inflate(R.layout.item_punish_record, layoutPunishList, false);
-                TextView tvTitle = row.findViewById(R.id.tvPunishTitle);
-                TextView tvTime = row.findViewById(R.id.tvPunishTime);
-                TextView tvPoints = row.findViewById(R.id.tvPunishPoints);
+            JSONObject item = creditList.optJSONObject(i);
+            if (item != null) list.add(item);
+        }
+        java.util.Collections.sort(list, (a, b) -> Long.compare(b.optLong("gmtCreate", 0), a.optLong("gmtCreate", 0)));
 
-                // Real API fields: creditKindName, devName, thisUseScore, gmtCreate, status
+        String currentSemester = "";
+        for (int i = 0; i < list.size(); i++) {
+            try {
+                JSONObject item = list.get(i);
                 String kind = item.optString("creditKindName", "违规行为");
                 String dev = item.optString("devName", "");
                 int score = item.optInt("thisUseScore", 0);
                 long ts = item.optLong("gmtCreate", 0);
-                // status 1=有效, 2=已撤销
                 int status = item.optInt("status", 1);
+
+                String semester = ts > 0 ? getSemesterString(ts) : "未知学期";
+                if (!semester.equals(currentSemester)) {
+                    currentSemester = semester;
+                    TextView header = new TextView(this);
+                    header.setText(semester);
+                    header.setTextSize(14f);
+                    header.setTextColor(0xFF666666);
+                    int dp16 = (int) (16 * getResources().getDisplayMetrics().density);
+                    int dp8 = (int) (8 * getResources().getDisplayMetrics().density);
+                    header.setPadding(0, dp16, 0, dp8);
+                    header.setTypeface(null, android.graphics.Typeface.BOLD);
+                    layoutPunishList.addView(header);
+                }
+
+                View row = LayoutInflater.from(this).inflate(R.layout.item_punish_record, layoutPunishList, false);
+                TextView tvTitle = row.findViewById(R.id.tvPunishTitle);
+                TextView tvTime = row.findViewById(R.id.tvPunishTime);
+                TextView tvPoints = row.findViewById(R.id.tvPunishPoints);
 
                 String titleText = (i + 1) + ". " + kind;
                 if (!dev.isEmpty())

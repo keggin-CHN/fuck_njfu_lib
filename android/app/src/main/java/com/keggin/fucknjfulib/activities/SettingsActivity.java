@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -72,12 +73,13 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvThemeMode;
 
     // 账号 & 关于
-    private LinearLayout layoutOpenLogs;
     private TextView tvStudentId;
     private LinearLayout layoutLogout;
     private TextView tvVersion;
     private TextView tvUserCredit;
-    private LinearLayout layoutGithub;
+    private ImageView ivGithub;
+    private ImageView ivEmail;
+    private ImageView ivQQ;
     private PreferenceManager preferenceManager;
     private ExecutorService executor;
 
@@ -120,12 +122,13 @@ public class SettingsActivity extends AppCompatActivity {
         tvThemeMode = findViewById(R.id.tvThemeMode);
 
         // 账号 & 关于
-        layoutOpenLogs = findViewById(R.id.layoutOpenLogs);
         tvStudentId = findViewById(R.id.tvStudentId);
         layoutLogout = findViewById(R.id.layoutLogout);
         tvVersion = findViewById(R.id.tvVersion);
         tvUserCredit = findViewById(R.id.tvUserCredit);
-        layoutGithub = findViewById(R.id.layoutGithub);
+        ivGithub = findViewById(R.id.ivGithub);
+        ivEmail = findViewById(R.id.ivEmail);
+        ivQQ = findViewById(R.id.ivQQ);
     }
 
     private void setupToolbar() {
@@ -313,10 +316,9 @@ public class SettingsActivity extends AppCompatActivity {
         }
         layoutLogout.setOnClickListener(v -> showLogoutConfirm());
 
-        if (layoutOpenLogs != null) {
-            layoutOpenLogs.setOnClickListener(v -> openLogPage());
-        }
-        layoutGithub.setOnClickListener(v -> openGithubPage());
+        if (ivGithub != null) ivGithub.setOnClickListener(v -> openGithubPage());
+        if (ivEmail != null) ivEmail.setOnClickListener(v -> sendEmail());
+        if (ivQQ != null) ivQQ.setOnClickListener(v -> addQQFriend());
     }
 
     // =========================================================================
@@ -685,11 +687,29 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    private void openLogPage() {
+    private void sendEmail() {
         try {
-            startActivity(new Intent(this, LogActivity.class));
+            Intent intent = new Intent(Intent.ACTION_SENDTO);
+            intent.setData(android.net.Uri.parse("mailto:zhou239289001@gmail.com"));
+            startActivity(intent);
         } catch (Exception e) {
-            Toast.makeText(this, "打开日志页失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "未找到邮件应用", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void addQQFriend() {
+        try {
+            String url = "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=239289001&card_type=friend&source=qrcode";
+            Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url));
+            startActivity(intent);
+        } catch (Exception e) {
+            try {
+                String webUrl = "http://wpa.qq.com/msgrd?v=3&uin=239289001&site=qq&menu=yes";
+                Intent webIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(webUrl));
+                startActivity(webIntent);
+            } catch (Exception ex) {
+                Toast.makeText(this, "无法打开QQ", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 

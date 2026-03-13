@@ -154,8 +154,8 @@ public class SeatQueryActivity extends AppCompatActivity {
                 if (!authManager.ensureLoggedIn()) {
                     runOnUiThread(() -> {
                         showLoading(false);
-                        Toast.makeText(this, "登录已过期，请重新登录", Toast.LENGTH_SHORT).show();
-                        // 可以在这里跳转到登录页，或者让用户手动去登录
+                        String error = authManager.getErrorMessage();
+                        Toast.makeText(this, error != null ? error : "网络异常，获取信息失败", Toast.LENGTH_SHORT).show();
                     });
                     return;
                 }

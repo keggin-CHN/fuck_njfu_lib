@@ -9,6 +9,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <queries>
+        <package android:name="com.tencent.mobileqq" />
+    </queries>
+
     <!-- 以下权限已不再需要：定时预约已迁移到服务器端 -->
     <!-- <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> -->
     <!-- <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" /> -->

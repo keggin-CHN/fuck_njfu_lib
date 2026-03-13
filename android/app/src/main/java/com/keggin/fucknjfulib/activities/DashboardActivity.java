@@ -261,8 +261,11 @@ public class DashboardActivity extends AppCompatActivity {
                         if (showOverlay) {
                             showLoading(false);
                         }
-                        Toast.makeText(this, "登录已过期，请重新登录", Toast.LENGTH_SHORT).show();
-                        navigateToLogin();
+                        String error = authManager.getErrorMessage();
+                        Toast.makeText(this, error != null ? error : "请下拉刷新重试登录", Toast.LENGTH_SHORT).show();
+                        if (!authManager.hasCredentials()) {
+                            navigateToLogin();
+                        }
                     });
                     return;
                 }
@@ -1181,8 +1184,9 @@ public class DashboardActivity extends AppCompatActivity {
                 if (!authManager.ensureLoggedIn()) {
                     runOnUiThread(() -> {
                         showLoading(false);
-                        Toast.makeText(this, "登录已过期，请重新登录", Toast.LENGTH_SHORT).show();
-                        navigateToLogin();
+                        String error = authManager.getErrorMessage();
+                        Toast.makeText(this, error != null ? "操作失败: " + error : "网络异常，请稍后重试", Toast.LENGTH_SHORT).show();
+                        if (!authManager.hasCredentials()) navigateToLogin();
                     });
                     return;
                 }
