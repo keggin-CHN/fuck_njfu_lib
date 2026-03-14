@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import android.content.Context;
 import okhttp3.Response;
+import com.keggin.fucknjfulib.utils.ProgressListener;
 
 public class CASAuthenticator {
     private static final String TAG = "CASAuthenticator";
@@ -30,21 +31,26 @@ public class CASAuthenticator {
     private String clientTicket;
     private String errorMessage;
     private final Context context;
+    private final ProgressListener progressListener;
 
-    public CASAuthenticator(Context context, String username, String eduPassword) {
+    public CASAuthenticator(Context context, String username, String eduPassword, ProgressListener progressListener) {
         this.context = context.getApplicationContext();
         this.username = username;
         this.eduPassword = eduPassword;
         this.httpClient = HttpClientManager.getInstance(this.context);
+        this.progressListener = progressListener;
     }
 
     public boolean authenticate() {
         try {
+            reportProgress(10, "获取 WebVPN 凭证...");
             if (!getInitialClientTicket()) {
                 errorMessage = "无法获取初始认证凭证";
                 return false;
             }
+            reportProgress(30, "正在连接路由...");
             getRouteCookie();
+            reportProgress(50, "解析统一登录参数...");
             if (!fetchLoginPageParams()) {
                 return false;
             }
@@ -53,6 +59,7 @@ public class CASAuthenticator {
                 errorMessage = "需要输入验证码";
                 return false;
             }
+            reportProgress(70, "提交统一身份认证...");
             return submitLogin();
         } catch (Exception e) {
             Log.e(TAG, "认证过程出错: " + e.getMessage(), e);
@@ -64,15 +71,19 @@ public class CASAuthenticator {
     public boolean authenticateWithCaptcha(String captcha) {
         try {
             if (salt == null) {
+                reportProgress(10, "获取 WebVPN 凭证...");
                 if (!getInitialClientTicket()) {
                     errorMessage = "无法获取初始认证凭证";
                     return false;
                 }
+                reportProgress(30, "正在连接路由...");
                 getRouteCookie();
+                reportProgress(50, "解析统一登录参数...");
                 if (!fetchLoginPageParams()) {
                     return false;
                 }
             }
+            reportProgress(70, "提交验证码与身份认证...");
             return submitLoginWithCaptcha(captcha);
         } catch (Exception e) {
             Log.e(TAG, "验证码认证过程出错: " + e.getMessage(), e);
@@ -338,5 +349,11 @@ public class CASAuthenticator {
 
     public String getClientTicket() {
         return clientTicket;
+    }
+
+    private void reportProgress(int percent, String message) {
+        if (progressListener != null) {
+            progressListener.onProgress(percent, message);
+        }
     }
 }

@@ -13,15 +13,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import okhttp3.Response;
+import com.keggin.fucknjfulib.utils.ProgressListener;
 
 public class SeatReservation {
     private static final String TAG = "SeatReservation";
     private final AuthManager authManager;
     private final HttpClientManager httpClient;
+    private ProgressListener progressListener;
 
     public SeatReservation(AuthManager authManager) {
         this.authManager = authManager;
         this.httpClient = HttpClientManager.getInstance(null);
+    }
+    
+    public void setProgressListener(ProgressListener listener) {
+        this.progressListener = listener;
     }
 
     public static class ReservationResult {
@@ -659,5 +665,11 @@ public class SeatReservation {
     public ReserveResult reserveTomorrowSeat(String areaName, int seatNumber,
             String startTime, String endTime) {
         return reserveSeat(areaName, seatNumber, DateUtils.getTomorrowDate(), startTime, endTime);
+    }
+
+    private void reportProgress(int percent, String message) {
+        if (progressListener != null) {
+            progressListener.onProgress(percent, message);
+        }
     }
 }

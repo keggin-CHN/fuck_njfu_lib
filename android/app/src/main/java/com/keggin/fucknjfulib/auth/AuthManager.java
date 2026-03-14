@@ -11,6 +11,7 @@ import com.keggin.fucknjfulib.network.HttpClientManager;
 import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.LocalLogManager;
+import com.keggin.fucknjfulib.utils.ProgressListener;
 
 public class AuthManager {
     private static final String TAG = "AuthManager";
@@ -104,7 +105,7 @@ public class AuthManager {
         libAuthenticator = null;
     }
 
-    public boolean authenticate() {
+    public boolean authenticate(ProgressListener listener) {
         String username = securePrefs.getString(Constants.PREF_USERNAME, null);
         String eduPassword = securePrefs.getString(Constants.PREF_EDU_PASSWORD, null);
         String libPassword = securePrefs.getString(Constants.PREF_LIB_PASSWORD, null);
@@ -112,13 +113,13 @@ public class AuthManager {
             errorMessage = "请先登录";
             return false;
         }
-        return authenticate(username, eduPassword, libPassword);
+        return authenticate(username, eduPassword, libPassword, listener);
     }
 
-    public synchronized boolean authenticate(String username, String eduPassword, String libPassword) {
+    public synchronized boolean authenticate(String username, String eduPassword, String libPassword, ProgressListener listener) {
         Log.d(TAG, "开始认证流程...");
         HttpClientManager.getInstance(context).clearCookies();
-        casAuthenticator = new CASAuthenticator(context, username, eduPassword);
+        casAuthenticator = new CASAuthenticator(context, username, eduPassword, listener);
         if (!casAuthenticator.authenticate()) {
             if (casAuthenticator.isNeedCaptcha()) {
                 errorMessage = "需要验证码";
@@ -135,7 +136,7 @@ public class AuthManager {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        libAuthenticator = new LibraryAuthenticator(context, username, libPassword);
+        libAuthenticator = new LibraryAuthenticator(context, username, libPassword, listener);
         if (!libAuthenticator.authenticate()) {
             errorMessage = libAuthenticator.getErrorMessage();
             return false;
@@ -168,7 +169,7 @@ public class AuthManager {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        libAuthenticator = new LibraryAuthenticator(context, username, libPassword);
+        libAuthenticator = new LibraryAuthenticator(context, username, libPassword, null);
         if (!libAuthenticator.authenticate()) {
             errorMessage = libAuthenticator.getErrorMessage();
             return false;
@@ -187,7 +188,7 @@ public class AuthManager {
             String username = securePrefs.getString(Constants.PREF_USERNAME, null);
             String eduPassword = securePrefs.getString(Constants.PREF_EDU_PASSWORD, null);
             if (username != null && eduPassword != null) {
-                casAuthenticator = new CASAuthenticator(context, username, eduPassword);
+                casAuthenticator = new CASAuthenticator(context, username, eduPassword, null);
             }
         }
         if (casAuthenticator != null) {
@@ -208,7 +209,7 @@ public class AuthManager {
         casAuthenticator = null;
         libAuthenticator = null;
         HttpClientManager.getInstance(context).clearCookies();
-        return authenticate();
+        return authenticate(null);
     }
 
     public AuthResult loginCAS(String username, String password) {
@@ -218,7 +219,7 @@ public class AuthManager {
                 .putString(Constants.PREF_USERNAME, username)
                 .putString(Constants.PREF_EDU_PASSWORD, password)
                 .apply();
-        casAuthenticator = new CASAuthenticator(context, username, password);
+        casAuthenticator = new CASAuthenticator(context, username, password, null);
         if (!casAuthenticator.authenticate()) {
             if (casAuthenticator.isNeedCaptcha()) {
                 return new AuthResult(false, "需要验证码，请稍后重试");
@@ -240,7 +241,7 @@ public class AuthManager {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        libAuthenticator = new LibraryAuthenticator(context, username, password);
+        libAuthenticator = new LibraryAuthenticator(context, username, password, null);
         if (!libAuthenticator.authenticate()) {
             localLog.e(TAG, "图书馆认证失败: " + libAuthenticator.getErrorMessage());
             return new AuthResult(false, libAuthenticator.getErrorMessage());
@@ -270,7 +271,7 @@ public class AuthManager {
                     String username = securePrefs.getString(Constants.PREF_USERNAME, null);
                     String libPassword = securePrefs.getString(Constants.PREF_LIB_PASSWORD, null);
                     if (username != null && libPassword != null) {
-                        libAuthenticator = new LibraryAuthenticator(context, username, libPassword);
+                        libAuthenticator = new LibraryAuthenticator(context, username, libPassword, null);
                         libAuthenticator.setTokenFromCache(savedToken, savedAccNo);
                     }
                 }
@@ -278,7 +279,7 @@ public class AuthManager {
                 return true;
             }
         }
-        return authenticate();
+        return authenticate(null);
     }
 
     public void scheduleLateProtection() {

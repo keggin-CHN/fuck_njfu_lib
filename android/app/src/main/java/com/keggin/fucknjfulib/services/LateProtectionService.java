@@ -85,7 +85,7 @@ public class LateProtectionService extends Service {
                     return;
                 }
                 if (!authManager.isAuthenticated()) {
-                    if (!authManager.authenticate()) {
+                    if (!authManager.authenticate(null)) {
                         LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "认证失败，无法检查预约");
                         showResultNotification(false, "迟到保护任务安排失败：认证失败");
                         return;
@@ -204,7 +204,7 @@ public class LateProtectionService extends Service {
                     return;
                 }
                 if (!authManager.isAuthenticated()) {
-                    if (!authManager.authenticate()) {
+                    if (!authManager.authenticate(null)) {
                         LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "认证失败");
                         showResultNotification(false, "迟到保护检查失败：认证失败");
                         return;

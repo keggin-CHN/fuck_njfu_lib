@@ -25,6 +25,7 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
 import com.keggin.fucknjfulib.reservation.AutoFinder;
@@ -34,6 +35,7 @@ import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.DateUtils;
+import com.keggin.fucknjfulib.utils.ProgressListener;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.ArrayList;
@@ -51,7 +53,10 @@ public class DashboardActivity extends AppCompatActivity {
     private MaterialCardView cardCurrentReservation;
     private LinearLayout layoutNoReservation;
     private TextView tvNoReservationText;
-    private LinearLayout layoutReservationInfo;
+    private View layoutReservationInfo;
+    private View layoutLoadingProgress;
+    private LinearProgressIndicator progressIndicator;
+    private TextView tvLoadingStatus;
     private TextView tvReservationSeat;
     private LinearLayout layoutTodayReservation;
     private TextView tvTodayReservationLabel;
@@ -152,6 +157,9 @@ public class DashboardActivity extends AppCompatActivity {
         layoutNoReservation = findViewById(R.id.layoutNoReservation);
         tvNoReservationText = findViewById(R.id.tvNoReservationText);
         layoutReservationInfo = findViewById(R.id.layoutReservationInfo);
+        layoutLoadingProgress = findViewById(R.id.layoutLoadingProgress);
+        progressIndicator = findViewById(R.id.progressIndicator);
+        tvLoadingStatus = findViewById(R.id.tvLoadingStatus);
         tvReservationSeat = findViewById(R.id.tvReservationSeat);
         layoutTodayReservation = findViewById(R.id.layoutTodayReservation);
         tvTodayReservationLabel = findViewById(R.id.tvTodayReservationLabel);
@@ -295,11 +303,22 @@ public class DashboardActivity extends AppCompatActivity {
     private void loadCurrentReservation(boolean showRefreshIndicator) {
         if (showRefreshIndicator) {
             if (btnRefreshReservation != null) btnRefreshReservation.setVisibility(View.GONE);
-            if (pbRefresh != null) pbRefresh.setVisibility(View.VISIBLE);
-            if (layoutNoReservation.getVisibility() == View.VISIBLE && tvNoReservationText != null) {
-                tvNoReservationText.setText(R.string.loading); // "登录中/加载中"
+            if (pbRefresh != null) pbRefresh.setVisibility(View.GONE);
+            layoutNoReservation.setVisibility(View.GONE);
+            layoutReservationInfo.setVisibility(View.GONE);
+            if (layoutLoadingProgress != null) {
+                layoutLoadingProgress.setVisibility(View.VISIBLE);
+                progressIndicator.setProgress(0);
+                tvLoadingStatus.setText("准备就绪...");
             }
         }
+        
+        ProgressListener progressListener = showRefreshIndicator ? (percent, message) -> runOnUiThread(() -> {
+            if (layoutLoadingProgress != null && layoutLoadingProgress.getVisibility() == View.VISIBLE) {
+                progressIndicator.setProgressCompat(percent, true);
+                tvLoadingStatus.setText(message);
+            }
+        }) : null;
         executor.execute(() -> {
             try {
                 AuthManager authManager = AuthManager.getInstance(this);
@@ -317,7 +336,9 @@ public class DashboardActivity extends AppCompatActivity {
                     });
                     return;
                 }
+                
                 SeatReservation seatReservation = new SeatReservation(authManager);
+                seatReservation.setProgressListener(progressListener);
                 List<SeatReservation.ReservationInfo> reservations = seatReservation.getTodayAndTomorrowReservations();
                 SeatReservation.ReservationInfo todayReservation = pickFirstReservationForDate(
                         reservations, DateUtils.getTodayDate());
@@ -328,7 +349,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                         if (showRefreshIndicator) {
-                            if (pbRefresh != null) pbRefresh.setVisibility(View.GONE);
+                            if (layoutLoadingProgress != null) layoutLoadingProgress.setVisibility(View.GONE);
                             if (btnRefreshReservation != null) btnRefreshReservation.setVisibility(View.VISIBLE);
                         }
                     currentReservation = primaryReservation;
@@ -338,8 +359,10 @@ public class DashboardActivity extends AppCompatActivity {
             } catch (Exception e) {
                 runOnUiThread(() -> {
                         if (showRefreshIndicator) {
-                            if (pbRefresh != null) pbRefresh.setVisibility(View.GONE);
+                            if (layoutLoadingProgress != null) layoutLoadingProgress.setVisibility(View.GONE);
                             if (btnRefreshReservation != null) btnRefreshReservation.setVisibility(View.VISIBLE);
+                            layoutNoReservation.setVisibility(View.VISIBLE);
+                            if (tvNoReservationText != null) tvNoReservationText.setText("查询失败");
                         }
                     Toast.makeText(this, "查询预约失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });

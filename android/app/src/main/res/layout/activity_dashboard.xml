@@ -141,6 +141,34 @@
                             android:textColor="@color/text_hint" />
                     </LinearLayout>
 
+                    <!-- New Loading Progress Layout -->
+                    <LinearLayout
+                        android:id="@+id/layoutLoadingProgress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp"
+                        android:visibility="gone">
+
+                        <com.google.android.material.progressindicator.LinearProgressIndicator
+                            android:id="@+id/progressIndicator"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            app:indicatorColor="@color/primary"
+                            app:trackColor="@color/card_inner_background"
+                            app:trackCornerRadius="4dp" />
+
+                        <TextView
+                            android:id="@+id/tvLoadingStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="准备就绪..."
+                            android:textSize="14sp"
+                            android:textColor="@color/text_secondary" />
+                    </LinearLayout>
+
                     
                     <LinearLayout
                         android:id="@+id/layoutReservationInfo"

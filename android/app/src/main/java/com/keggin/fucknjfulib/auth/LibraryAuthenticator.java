@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import android.content.Context;
 import okhttp3.Response;
+import com.keggin.fucknjfulib.utils.ProgressListener;
 
 public class LibraryAuthenticator {
     private static final String TAG = "LibraryAuthenticator";
@@ -21,12 +22,14 @@ public class LibraryAuthenticator {
     private long lastAuthTime;
     private String errorMessage;
     private final Context context;
+    private final ProgressListener progressListener;
 
-    public LibraryAuthenticator(Context context, String username, String libPassword) {
+    public LibraryAuthenticator(Context context, String username, String libPassword, ProgressListener progressListener) {
         this.context = context.getApplicationContext();
         this.username = username;
         this.libPassword = libPassword;
         this.httpClient = HttpClientManager.getInstance(this.context);
+        this.progressListener = progressListener;
     }
 
     public boolean authenticate() {
@@ -37,6 +40,7 @@ public class LibraryAuthenticator {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             Log.d(TAG, "图书馆认证尝试 " + attempt + "/" + maxAttempts);
             try {
+                reportProgress(80, "获取图书馆加密钥...");
                 String[] keyAndNonce = getPublicKeyAndNonce();
                 if (keyAndNonce == null) {
                     Log.w(TAG, "获取公钥失败，等待重试...");
@@ -50,6 +54,7 @@ public class LibraryAuthenticator {
                     errorMessage = "密码加密失败";
                     continue;
                 }
+                reportProgress(90, "提交图书馆登录...");
                 if (submitLogin(encryptedPassword)) {
                     return true;
                 }
@@ -190,5 +195,11 @@ public class LibraryAuthenticator {
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    private void reportProgress(int percent, String message) {
+        if (progressListener != null) {
+            progressListener.onProgress(percent, message);
+        }
     }
 }
