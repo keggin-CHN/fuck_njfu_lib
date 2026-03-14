@@ -54,6 +54,13 @@ public class SeatMapView extends View {
     public interface OnSeatClickListener {
         void onSeatClick(SeatQuery.SeatInfo seat);
     }
+    private OnZoomChangeListener onZoomChangeListener;
+    public interface OnZoomChangeListener {
+        void onZoomChanged(float scale);
+    }
+    public void setOnZoomChangeListener(OnZoomChangeListener l) {
+        onZoomChangeListener = l;
+    }
     private static class TablePair {
         SeatQuery.SeatInfo seat1, seat2;
 
@@ -126,6 +133,9 @@ public class SeatMapView extends View {
             public boolean onScale(ScaleGestureDetector d) {
                 scaleFactor *= d.getScaleFactor();
                 scaleFactor = Math.max(0.5f, Math.min(8.0f, scaleFactor));
+                if (onZoomChangeListener != null) {
+                    onZoomChangeListener.onZoomChanged(scaleFactor);
+                }
                 invalidate();
                 return true;
             }
@@ -170,6 +180,9 @@ public class SeatMapView extends View {
                     translateY = focusY - ((focusY - translateY) / oldScale) * nextScale;
                 }
                 scaleFactor = nextScale;
+                if (onZoomChangeListener != null) {
+                    onZoomChangeListener.onZoomChanged(scaleFactor);
+                }
                 invalidate();
                 return true;
             }
@@ -187,6 +200,9 @@ public class SeatMapView extends View {
         seats = seatList != null ? seatList : new ArrayList<>();
         selectedSeat = null;
         scaleFactor = 1.0f;
+        if (onZoomChangeListener != null) {
+            onZoomChangeListener.onZoomChanged(scaleFactor);
+        }
         translateX = 0f;
         translateY = 0f;
         invalidate();

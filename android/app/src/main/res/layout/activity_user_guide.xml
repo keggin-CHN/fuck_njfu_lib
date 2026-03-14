@@ -151,13 +151,13 @@
                         android:focusable="true" />
 
                     <TextView
-                        android:id="@+id/tocLogs"
+                        android:id="@+id/tocServerDeploy"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:background="@drawable/bg_stat_item"
                         android:padding="12dp"
-                        android:text="6. 日志与排查"
+                        android:text="6. 服务器部署"
                         android:textColor="@color/primary"
                         android:textStyle="bold"
                         android:clickable="true"
@@ -356,7 +356,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <View
-                android:id="@+id/anchorLogs"
+                android:id="@+id/anchorServerDeploy"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="14dp" />
@@ -377,7 +377,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="6. 日志与排查"
+                        android:text="6. 服务器部署"
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
@@ -387,7 +387,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="在设置中可进入日志页面，查看自动预约、迟到保护等关键操作的历史记录。\n\n如遇异常，建议重点排查：\n· 认证失败 — 账号或密码可能已失效，需重新登录。\n· 预约设置不完整 — 请检查目标区域、座位号及时段配置。\n· 迟到保护未安排 — 请确认今日存在有效预约且功能已开启。"
+                        android:text="用于本地自动化预约功能的独立后端 API 服务器。\n\n【部署方式】\n从github下载源码，将 server_api 文件夹上传至目标服务器，并在该目录下执行以下命令：\nchmod +x deploy.sh &amp;&amp; ./deploy.sh\n执行期间，脚本将交互式要求配置所需分配的 API 端口及 API 密钥（支持自定义或使用默认值）。\n配置完成后，系统将自动生成 start.sh 启动脚本并运行服务。\n\n【填写方式】\n部署完成后，请在客户端设置选项中填写以下连接信息：\n· API 地址: http://&lt;服务器IP&gt;:&lt;设置的端口&gt;\n· API 密钥: 填入自定义或默认生成的认证密钥"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>

@@ -169,13 +169,35 @@
                 android:visibility="visible" />
         </LinearLayout>
 
-        <!-- Seat Map -->
-        <com.keggin.fucknjfulib.views.SeatMapView
-            android:id="@+id/seatMapView"
+        <!-- Seat Map Area -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="@color/background_secondary" />
+            android:layout_weight="1">
+
+            <com.keggin.fucknjfulib.views.SeatMapView
+                android:id="@+id/seatMapView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/background_secondary" />
+
+            <TextView
+                android:id="@+id/tvZoomScale"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="16dp"
+                android:background="@drawable/bg_stat_item"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:text="100%"
+                android:textColor="@color/primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:elevation="4dp" />
+        </FrameLayout>
 
         <!-- Loading Overlay -->
         <FrameLayout

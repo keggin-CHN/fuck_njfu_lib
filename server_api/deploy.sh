@@ -99,18 +99,45 @@ echo "  依赖安装完成"
 
 # --- 6. 生成 API Key (首次部署) ---
 echo ""
-echo "[6/6] 配置 API Key..."
-KEY_FILE="$APP_DIR/.api_key"
-if [ ! -f "$KEY_FILE" ]; then
-    API_KEY="GcbjN_9e1Nqli-uUdvOFKu5_eBP48CvhTIGDu6g57co"
-    echo "$API_KEY" > "$KEY_FILE"
-    chmod 600 "$KEY_FILE"
-    echo "  已使用测试 API Key: $API_KEY"
-    echo "  请将此 Key 填入 Android 客户端设置中"
-else
-    API_KEY=$(cat "$KEY_FILE")
-    echo "  API Key 已存在: $API_KEY"
+echo "[6/6] 配置服务器参数..."
+
+# 读取旧的 .env（如果存在）作为默认值
+OLD_PORT="21859"
+OLD_KEY="GcbjN_9e1Nqli-uUdvOFKu5_eBP48CvhTIGDu6g57co"
+ENV_FILE="$APP_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    source "$ENV_FILE"
+    OLD_PORT="${PORT:-$OLD_PORT}"
+    OLD_KEY="${API_KEY:-$OLD_KEY}"
 fi
+
+# 交互式询问端口
+read -p "  请输入 API 端口号 (默认 $OLD_PORT): " INPUT_PORT
+USER_PORT="${INPUT_PORT:-$OLD_PORT}"
+
+# 交互式询问 API Key
+read -p "  请输入 API Key (留空则默认 $OLD_KEY): " INPUT_KEY
+USER_KEY="${INPUT_KEY:-$OLD_KEY}"
+
+# 将用户配置写入 .env 供应用和启动脚本使用
+cat > "$ENV_FILE" << EOF
+PORT=$USER_PORT
+API_KEY=$USER_KEY
+EOF
+chmod 600 "$ENV_FILE"
+
+echo "  已将配置 (端口: $USER_PORT, API Key: $USER_KEY) 保存至 .env"
+
+# 生成 start.sh 快捷启动脚本
+START_SCRIPT="$APP_DIR/start.sh"
+cat > "$START_SCRIPT" << EOF
+#!/bin/bash
+set -a
+source "$ENV_FILE"
+set +a
+exec "$VENV_DIR/bin/python" "$APP_DIR/main.py"
+EOF
+chmod +x "$START_SCRIPT"
 
 # --- 7. 创建 systemd 服务 (可选) ---
 echo ""
@@ -126,13 +153,17 @@ echo ""
 echo "或后台运行:"
 echo "  nohup $VENV_DIR/bin/python $APP_DIR/main.py > $APP_DIR/server.log 2>&1 &"
 echo ""
-echo "API 地址: http://$(hostname -I | awk '{print $1}'):21859"
-echo "API Key:  $API_KEY"
-echo "API 文档: http://$(hostname -I | awk '{print $1}'):21859/docs"
+echo "API 地址: http://$(hostname -I | awk '{print $1}'):$USER_PORT"
+echo "API Key:  $USER_KEY"
+echo "API 文档: http://$(hostname -I | awk '{print $1}'):$USER_PORT/docs"
 echo ""
 
 # --- 启动服务（前台运行，由 MCSManager 管理进程生命周期）---
 echo "========================================"
 echo "  正在启动 API 服务器..."
 echo "========================================"
+# 加载环境变量并直接用 python 运行主程序
+set -a
+source "$ENV_FILE"
+set +a
 exec "$VENV_DIR/bin/python" "$APP_DIR/main.py"

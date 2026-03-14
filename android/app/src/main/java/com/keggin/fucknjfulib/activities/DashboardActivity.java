@@ -82,6 +82,8 @@ public class DashboardActivity extends AppCompatActivity {
     private ImageView ivAutoFindStatus;
     private TextView tvAutoFindStatus;
     private FrameLayout loadingOverlay;
+    private ProgressBar pbRefresh;
+    private ImageButton btnRefreshReservation;
     private ExecutorService executor;
     private PreferenceManager preferenceManager;
     private SeatReservation.ReservationInfo currentReservation;
@@ -98,6 +100,9 @@ public class DashboardActivity extends AppCompatActivity {
         setupClickListeners();
     }
 
+    private android.os.Handler autoRefreshHandler;
+    private Runnable autoRefreshRunnable;
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -106,6 +111,37 @@ public class DashboardActivity extends AppCompatActivity {
         updateAutoStatus();
         ensureLateProtectionScheduleIfEnabled();
         checkPunishInfo();
+        startAutoRefresh();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopAutoRefresh();
+    }
+
+    private void startAutoRefresh() {
+        if (autoRefreshHandler == null) {
+            autoRefreshHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+        }
+        if (autoRefreshRunnable == null) {
+            autoRefreshRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    // Silent background update
+                    loadCurrentReservation(false);
+                    autoRefreshHandler.postDelayed(this, 60000); // 1 minute
+                }
+            };
+        }
+        autoRefreshHandler.removeCallbacks(autoRefreshRunnable);
+        autoRefreshHandler.postDelayed(autoRefreshRunnable, 60000);
+    }
+
+    private void stopAutoRefresh() {
+        if (autoRefreshHandler != null && autoRefreshRunnable != null) {
+            autoRefreshHandler.removeCallbacks(autoRefreshRunnable);
+        }
     }
 
     private void initViews() {
@@ -145,7 +181,10 @@ public class DashboardActivity extends AppCompatActivity {
         tvLateProtectionStatus = findViewById(R.id.tvLateProtectionStatus);
         ivAutoFindStatus = findViewById(R.id.ivAutoFindStatus);
         tvAutoFindStatus = findViewById(R.id.tvAutoFindStatus);
+        tvAutoFindStatus = findViewById(R.id.tvAutoFindStatus);
         loadingOverlay = findViewById(R.id.loadingOverlay);
+        pbRefresh = findViewById(R.id.pbRefresh);
+        btnRefreshReservation = findViewById(R.id.btnRefreshReservation);
     }
 
     private void setupClickListeners() {
@@ -182,6 +221,10 @@ public class DashboardActivity extends AppCompatActivity {
             cardAccountInfo.setOnClickListener(v -> navigateToAccountInfo());
         if (cardPlanTasks != null)
             cardPlanTasks.setOnClickListener(v -> navigateToPlanTasks());
+
+        if (btnRefreshReservation != null) {
+            btnRefreshReservation.setOnClickListener(v -> loadCurrentReservation(true));
+        }
     }
 
     private void navigateToAccountInfo() {
@@ -249,17 +292,22 @@ public class DashboardActivity extends AppCompatActivity {
         loadCurrentReservation(true);
     }
 
-    private void loadCurrentReservation(boolean showOverlay) {
-        if (showOverlay) {
-            showLoading(true);
+    private void loadCurrentReservation(boolean showRefreshIndicator) {
+        if (showRefreshIndicator) {
+            if (btnRefreshReservation != null) btnRefreshReservation.setVisibility(View.GONE);
+            if (pbRefresh != null) pbRefresh.setVisibility(View.VISIBLE);
+            if (layoutNoReservation.getVisibility() == View.VISIBLE && tvNoReservationText != null) {
+                tvNoReservationText.setText(R.string.loading); // "登录中/加载中"
+            }
         }
         executor.execute(() -> {
             try {
                 AuthManager authManager = AuthManager.getInstance(this);
                 if (!authManager.ensureLoggedIn()) {
                     runOnUiThread(() -> {
-                        if (showOverlay) {
-                            showLoading(false);
+                        if (showRefreshIndicator) {
+                            if (pbRefresh != null) pbRefresh.setVisibility(View.GONE);
+                            if (btnRefreshReservation != null) btnRefreshReservation.setVisibility(View.VISIBLE);
                         }
                         String error = authManager.getErrorMessage();
                         Toast.makeText(this, error != null ? error : "请下拉刷新重试登录", Toast.LENGTH_SHORT).show();
@@ -279,18 +327,20 @@ public class DashboardActivity extends AppCompatActivity {
                         todayReservation, tomorrowReservation);
 
                 runOnUiThread(() -> {
-                    if (showOverlay) {
-                        showLoading(false);
-                    }
+                        if (showRefreshIndicator) {
+                            if (pbRefresh != null) pbRefresh.setVisibility(View.GONE);
+                            if (btnRefreshReservation != null) btnRefreshReservation.setVisibility(View.VISIBLE);
+                        }
                     currentReservation = primaryReservation;
                     updateReservationUI(todayReservation, tomorrowReservation);
                     cacheCurrentReservationIfNeeded(primaryReservation);
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> {
-                    if (showOverlay) {
-                        showLoading(false);
-                    }
+                        if (showRefreshIndicator) {
+                            if (pbRefresh != null) pbRefresh.setVisibility(View.GONE);
+                            if (btnRefreshReservation != null) btnRefreshReservation.setVisibility(View.VISIBLE);
+                        }
                     Toast.makeText(this, "查询预约失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
             }
@@ -1169,7 +1219,17 @@ public class DashboardActivity extends AppCompatActivity {
             }
 
             dialog.dismiss();
-            performModifyReservation(targetReservation, areaInfo, seatNumber, startInput, normalizedEnd.substring(0, 5), date);
+
+            String finalStartInput = startInput;
+            String todayStr = DateUtils.getTodayDate();
+            if (date.equals(todayStr)) {
+                String nowTime = DateUtils.getEndTimeWithoutSeconds(todayStr); // Gets current time HH:mm
+                if (finalStartInput.compareTo(nowTime) < 0) {
+                    finalStartInput = nowTime;
+                }
+            }
+
+            performModifyReservation(targetReservation, areaInfo, seatNumber, finalStartInput, normalizedEnd.substring(0, 5), date);
         });
 
         dialog.show();
@@ -1203,12 +1263,21 @@ public class DashboardActivity extends AppCompatActivity {
                 }
 
                 SeatReservation seatReservation = new SeatReservation(authManager);
-                SeatReservation.OperationResult cancelResult = seatReservation.cancelReservation(
-                        authManager.getToken(), authManager.getAccNo(), resvId);
+                SeatReservation.OperationResult cancelResult;
+                boolean isUsing = "CHECK_IN".equals(targetReservation.state) || "AWAY".equals(targetReservation.state);
+
+                if (isUsing) {
+                    cancelResult = seatReservation.endAhead(targetReservation.uuid);
+                } else {
+                    cancelResult = seatReservation.cancelReservation(
+                            authManager.getToken(), authManager.getAccNo(), resvId);
+                }
+
                 if (!cancelResult.success) {
                     runOnUiThread(() -> {
                         showLoading(false);
-                        Toast.makeText(this, "修改失败：取消原预约失败\n" + cancelResult.message, Toast.LENGTH_LONG).show();
+                        String actionName = isUsing ? "提前结束" : "取消原预约";
+                        Toast.makeText(this, "修改失败：" + actionName + "失败\n" + cancelResult.message, Toast.LENGTH_LONG).show();
                     });
                     return;
                 }
@@ -1229,9 +1298,10 @@ public class DashboardActivity extends AppCompatActivity {
                         loadCurrentReservation();
                         ensureLateProtectionScheduleIfEnabled();
                     } else {
+                        String actionName = isUsing ? "原预约已提前结束" : "原预约已取消";
                         Toast.makeText(
                                 this,
-                                "原预约已取消，但重新预约失败：\n" + reserveResult.message,
+                                actionName + "，但重新预约失败：\n" + reserveResult.message,
                                 Toast.LENGTH_LONG).show();
                         loadCurrentReservation();
                     }

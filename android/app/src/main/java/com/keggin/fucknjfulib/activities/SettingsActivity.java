@@ -30,6 +30,7 @@ import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
 import com.keggin.fucknjfulib.network.ApiConstants;
 import com.keggin.fucknjfulib.network.HttpClientManager;
+import com.keggin.fucknjfulib.network.ServerTaskSynchronizer;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import org.json.JSONObject;
@@ -239,14 +240,14 @@ public class SettingsActivity extends AppCompatActivity {
             if (!hasFocus) {
                 String url = etServerUrl.getText() != null ? etServerUrl.getText().toString().trim() : "";
                 preferenceManager.setServerApiUrl(url);
-                syncTaskToServer();
+                ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
             }
         });
         etApiKey.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
                 String key = etApiKey.getText() != null ? etApiKey.getText().toString().trim() : "";
                 preferenceManager.setApiKey(key);
-                syncTaskToServer();
+                ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
             }
         });
 
@@ -258,7 +259,7 @@ public class SettingsActivity extends AppCompatActivity {
         switchAutoReserve.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setAutoReserveEnabled(isChecked);
             String targetSummary = buildTargetConfigSummary();
-            syncTaskToServer();
+            ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
             if (isChecked) {
                 Toast.makeText(this, "自动预约已开启，将由服务器定时执行", Toast.LENGTH_SHORT).show();
                 showFeatureNotification(
@@ -276,7 +277,7 @@ public class SettingsActivity extends AppCompatActivity {
         switchLateProtection.setOnCheckedChangeListener((buttonView, isChecked) -> {
             preferenceManager.setLateProtectionEnabled(isChecked);
             String targetSummary = buildTargetConfigSummary();
-            syncTaskToServer();
+            ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
             if (isChecked) {
                 Toast.makeText(this, "迟到保护已开启，由服务器执行", Toast.LENGTH_SHORT).show();
                 showFeatureNotification(
@@ -390,86 +391,8 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     // =========================================================================
-    // 服务器任务同步
+    // 服务器任务同步已移至 ServerTaskSynchronizer
     // =========================================================================
-    private void syncTaskToServer() {
-        executor.execute(() -> {
-            try {
-                String serverUrl = preferenceManager.getServerApiUrl();
-                String apiKey = preferenceManager.getApiKey();
-                if (serverUrl == null || serverUrl.isEmpty()) {
-                    Log.w(TAG, "未配置服务器地址，跳过同步");
-                    return;
-                }
-                JSONObject body = new JSONObject();
-                body.put("username", preferenceManager.getStudentId());
-                body.put("edu_password", preferenceManager.getCasPassword());
-                body.put("lib_password", preferenceManager.getLibPassword());
-                body.put("area", preferenceManager.getAreaName(preferenceManager.getTargetArea()));
-                body.put("seat_number", preferenceManager.getTargetSeat());
-                body.put("start_time", preferenceManager.getStartTime());
-                body.put("end_time", preferenceManager.getEndTime());
-                body.put("auto_reserve", preferenceManager.isAutoReserveEnabled());
-                body.put("prevent_late", preferenceManager.isLateProtectionEnabled());
-
-                HttpClientManager httpClient = HttpClientManager.getInstance(null);
-                String url = serverUrl + "/api/task/register";
-                Map<String, String> headers = new HashMap<>();
-                headers.put("Content-Type", "application/json");
-                if (apiKey != null && !apiKey.isEmpty()) {
-                    headers.put("X-API-Key", apiKey);
-                }
-                Response response = httpClient.postJson(url, body.toString(), headers);
-                try {
-                    if (response.isSuccessful()) {
-                        String respBody = HttpClientManager.getResponseBody(response);
-                        JSONObject result = new JSONObject(respBody);
-                        String taskId = result.optString("task_id", "");
-                        if (!taskId.isEmpty()) {
-                            preferenceManager.setServerTaskId(taskId);
-                        }
-                        Log.i(TAG, "任务同步到服务器成功: " + taskId);
-                    } else {
-                        Log.e(TAG, "同步任务失败: HTTP " + response.code());
-                    }
-                } finally {
-                    response.close();
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "同步任务到服务器失败: " + e.getMessage());
-            }
-        });
-    }
-
-    private void deleteServerTask() {
-        executor.execute(() -> {
-            try {
-                String serverUrl = preferenceManager.getServerApiUrl();
-                String apiKey = preferenceManager.getApiKey();
-                String taskId = preferenceManager.getServerTaskId();
-                if (serverUrl == null || serverUrl.isEmpty() || taskId == null || taskId.isEmpty()) {
-                    return;
-                }
-                HttpClientManager httpClient = HttpClientManager.getInstance(null);
-                String url = serverUrl + "/api/task/" + taskId;
-                Map<String, String> headers = new HashMap<>();
-                if (apiKey != null && !apiKey.isEmpty()) {
-                    headers.put("X-API-Key", apiKey);
-                }
-                Response response = httpClient.delete(url, headers);
-                try {
-                    if (response.isSuccessful()) {
-                        preferenceManager.setServerTaskId("");
-                        Log.i(TAG, "服务器任务已删除");
-                    }
-                } finally {
-                    response.close();
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "删除服务器任务失败: " + e.getMessage());
-            }
-        });
-    }
 
     // =========================================================================
     // 主题选择
@@ -520,7 +443,7 @@ public class SettingsActivity extends AppCompatActivity {
                         preferenceManager.setTargetSeat(1);
                         tvTargetSeat.setText("1");
                     }
-                    syncTaskToServer();
+                    ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
                     dialog.dismiss();
                 })
                 .setNegativeButton("取消", null)
@@ -564,7 +487,7 @@ public class SettingsActivity extends AppCompatActivity {
                         }
                         preferenceManager.setTargetSeat(seatNum);
                         tvTargetSeat.setText(String.valueOf(seatNum));
-                        syncTaskToServer();
+                        ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
                     } catch (NumberFormatException e) {
                         Toast.makeText(this, "请输入有效的数字", Toast.LENGTH_SHORT).show();
                     }
@@ -589,7 +512,7 @@ public class SettingsActivity extends AppCompatActivity {
                         preferenceManager.setEndTime(selectedTime);
                         tvEndTime.setText(selectedTime);
                     }
-                    syncTaskToServer();
+                    ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
                 },
                 hm[0],
                 hm[1],
@@ -632,7 +555,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void performLogout() {
-        deleteServerTask();
+        ServerTaskSynchronizer.deleteServerTask(preferenceManager);
         preferenceManager.clearCredentials();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

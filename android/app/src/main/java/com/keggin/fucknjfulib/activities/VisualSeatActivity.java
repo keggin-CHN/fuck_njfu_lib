@@ -58,6 +58,7 @@ public class VisualSeatActivity extends AppCompatActivity {
     private SeatMapView seatMapView;
     private TextView tvEmptyHint;
     private FrameLayout loadingOverlay;
+    private TextView tvZoomScale;
 
     private ExecutorService executor;
     private PreferenceManager preferenceManager;
@@ -94,6 +95,7 @@ public class VisualSeatActivity extends AppCompatActivity {
         seatMapView = findViewById(R.id.seatMapView);
         tvEmptyHint = findViewById(R.id.tvEmptyHint);
         loadingOverlay = findViewById(R.id.loadingOverlay);
+        tvZoomScale = findViewById(R.id.tvZoomScale);
 
         tvEmptyHint.setVisibility(View.VISIBLE);
     }
@@ -146,6 +148,12 @@ public class VisualSeatActivity extends AppCompatActivity {
                 showReservationDialog(seat);
             } else {
                 showOccupiedSeatDialog(seat);
+            }
+        });
+
+        seatMapView.setOnZoomChangeListener(scale -> {
+            if (tvZoomScale != null) {
+                tvZoomScale.setText(Math.round(scale * 100) + "%");
             }
         });
     }
@@ -257,6 +265,23 @@ public class VisualSeatActivity extends AppCompatActivity {
                     .parse(selectedDateStr + " " + DateUtils.getEndTimeWithoutSeconds(selectedDateStr));
 
             long tCurrent = dayStart.getTime();
+            if (selectedDateStr.equals(DateUtils.getTodayDate())) {
+                long nowMillis = System.currentTimeMillis();
+                if (nowMillis > tCurrent) {
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.setTimeInMillis(nowMillis);
+                    int min = cal.get(java.util.Calendar.MINUTE);
+                    if (min > 0 && min <= 30) {
+                        cal.set(java.util.Calendar.MINUTE, 30);
+                    } else if (min > 30) {
+                        cal.add(java.util.Calendar.HOUR_OF_DAY, 1);
+                        cal.set(java.util.Calendar.MINUTE, 0);
+                    }
+                    cal.set(java.util.Calendar.SECOND, 0);
+                    cal.set(java.util.Calendar.MILLISECOND, 0);
+                    tCurrent = cal.getTimeInMillis();
+                }
+            }
             long tClose = dayEnd.getTime();
 
             for (SeatQuery.ReservationSlot r : sortedReservations) {
@@ -324,6 +349,25 @@ public class VisualSeatActivity extends AppCompatActivity {
         String fallbackStart = (defStart != null && !defStart.trim().isEmpty())
                 ? defStart
                 : Constants.DEFAULT_START_TIME;
+
+        if (selectedDateStr.equals(DateUtils.getTodayDate())) {
+            long nowMillis = System.currentTimeMillis();
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTimeInMillis(nowMillis);
+            int min = cal.get(java.util.Calendar.MINUTE);
+            if (min > 0 && min <= 30) {
+                cal.set(java.util.Calendar.MINUTE, 30);
+            } else if (min > 30) {
+                cal.add(java.util.Calendar.HOUR_OF_DAY, 1);
+                cal.set(java.util.Calendar.MINUTE, 0);
+            }
+            String curTimeStr = String.format(java.util.Locale.getDefault(), "%02d:%02d", 
+                 cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE));
+            if (curTimeStr.compareTo(fallbackStart) > 0) {
+                fallbackStart = curTimeStr;
+            }
+        }
+
         String fallbackEnd = DateUtils.getEndTimeWithoutSeconds(selectedDateStr);
         String finalEnd = (defEnd != null && !defEnd.trim().isEmpty()) ? defEnd : fallbackEnd;
         showReservationDialog(seat, fallbackStart, finalEnd);

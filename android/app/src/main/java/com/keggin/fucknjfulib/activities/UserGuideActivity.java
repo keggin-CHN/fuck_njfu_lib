@@ -32,7 +32,7 @@ public class UserGuideActivity extends AppCompatActivity {
         setupTocJump(R.id.tocAutoFind, R.id.anchorAutoFind);
         setupTocJump(R.id.tocLateProtection, R.id.anchorLateProtection);
         setupTocJump(R.id.tocVisualSeat, R.id.anchorVisualSeat);
-        setupTocJump(R.id.tocLogs, R.id.anchorLogs);
+        setupTocJump(R.id.tocServerDeploy, R.id.anchorServerDeploy);
     }
 
     private void setupTocJump(int tocId, int anchorId) {

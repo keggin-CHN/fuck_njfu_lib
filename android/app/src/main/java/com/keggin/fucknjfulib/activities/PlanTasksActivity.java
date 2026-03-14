@@ -18,6 +18,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
+import com.keggin.fucknjfulib.network.ServerTaskSynchronizer;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -115,9 +116,10 @@ public class PlanTasksActivity extends AppCompatActivity {
     private void persistWeeklyPlan() {
         if (weeklyRoot == null || weeklyRoot.length() == 0) {
             preferenceManager.clearWeeklyPlanTasksJson();
-            return;
+        } else {
+            preferenceManager.setWeeklyPlanTasksJson(weeklyRoot.toString());
         }
-        preferenceManager.setWeeklyPlanTasksJson(weeklyRoot.toString());
+        ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
     }
     private void clearPlan(String dayKey) {
         if (weeklyRoot != null) {
