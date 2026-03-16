@@ -176,4 +176,31 @@ public class DateUtils {
         }
         return options;
     }
+
+    public static String clampEndTime(String endTime, String closeTime) {
+        Integer endMinutes = parseTimeToMinutes(endTime);
+        Integer closeMinutes = parseTimeToMinutes(closeTime);
+        if (endMinutes == null || closeMinutes == null) {
+            return endTime;
+        }
+        if (endMinutes > closeMinutes) {
+            return closeTime;
+        }
+        return endTime;
+    }
+
+    public static Integer parseTimeToMinutes(String hhmm) {
+        if (hhmm == null)
+            return null;
+        String[] parts = hhmm.trim().split(":");
+        if (parts.length < 2)
+            return null;
+        try {
+            int h = Integer.parseInt(parts[0]);
+            int m = Integer.parseInt(parts[1]);
+            return h * 60 + m;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

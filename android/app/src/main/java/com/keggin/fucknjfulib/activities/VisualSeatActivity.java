@@ -428,6 +428,7 @@ public class VisualSeatActivity extends AppCompatActivity {
                     : Constants.DEFAULT_START_TIME;
             String fallbackEnd = DateUtils.getEndTimeWithoutSeconds(selectedDateStr);
             String endStr = etEnd.getText() != null ? etEnd.getText().toString() : fallbackEnd;
+            endStr = DateUtils.clampEndTime(endStr, fallbackEnd);
             dialog.dismiss();
             executeReservation(seat, startStr, endStr);
         });

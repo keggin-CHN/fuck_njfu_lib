@@ -143,6 +143,9 @@ public class SeatReservation {
         int seatId = areaInfo.seatIds[seatNumber - 1];
         startTime = DateUtils.normalizeTimeFormat(startTime);
         endTime = DateUtils.normalizeTimeFormat(endTime);
+        if (!DateUtils.isValidDuration(startTime, endTime, 2)) {
+            return new ReservationResult(false, "预约时长必须至少2小时");
+        }
         String beginTime = dateStr + " " + startTime;
         String fullEndTime = dateStr + " " + endTime;
         ReserveResult result = doReserve(seatId, beginTime, fullEndTime);

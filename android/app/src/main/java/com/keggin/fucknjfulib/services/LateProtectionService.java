@@ -75,6 +75,9 @@ public class LateProtectionService extends Service {
         return START_NOT_STICKY;
     }
     private void scheduleChecksForUpcomingReservations(int startId) {
+        if (wakeLock != null) {
+            wakeLock.acquire(3 * 60 * 1000L);
+        }
         executor.execute(() -> {
             try {
                 cancelScheduledChecks();
@@ -129,6 +132,9 @@ public class LateProtectionService extends Service {
                 LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "设置迟到检查任务出错: " + e.getMessage(), e);
                 showResultNotification(false, "设置迟到保护任务失败: " + e.getMessage());
             } finally {
+                if (wakeLock != null && wakeLock.isHeld()) {
+                    try { wakeLock.release(); } catch (Exception ignored) {}
+                }
                 stopForeground(true);
                 stopSelf(startId);
             }
@@ -154,7 +160,7 @@ public class LateProtectionService extends Service {
             return false;
         }
 
-        long checkTime = info.beginTime - Constants.LATE_CHECK_MINUTES_BEFORE * 60 * 1000;
+        long checkTime = info.beginTime - Constants.LATE_CHECK_MINUTES_BEFORE * 60L * 1000L;
         long now = System.currentTimeMillis();
         if (checkTime <= now) {
             LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "预约 " + info.uuid + " 的检查时间已过");
@@ -191,7 +197,7 @@ public class LateProtectionService extends Service {
         return true;
     }
     private void executeLateCheck(String uuid, long beginTime, int startId) {
-        if (wakeLock != null && !wakeLock.isHeld()) {
+        if (wakeLock != null) {
             wakeLock.acquire(3 * 60 * 1000L);
         }
         executor.execute(() -> {
@@ -339,7 +345,7 @@ public class LateProtectionService extends Service {
                     removeScheduledUuid(uuid);
                 }
                 if (wakeLock != null && wakeLock.isHeld()) {
-                    wakeLock.release();
+                    try { wakeLock.release(); } catch (Exception ignored) {}
                 }
                 stopForeground(true);
                 stopSelf(startId);

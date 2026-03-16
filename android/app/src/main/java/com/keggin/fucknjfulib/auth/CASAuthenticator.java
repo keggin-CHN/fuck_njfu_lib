@@ -330,8 +330,12 @@ public class CASAuthenticator {
                 httpClient.get(ApiConstants.getEduLoginPageUrl()).close();
             }
             Response response = httpClient.get(getCaptchaUrl());
-            if (response.isSuccessful() && response.body() != null) {
-                return response.body().bytes();
+            try {
+                if (response.isSuccessful() && response.body() != null) {
+                    return response.body().bytes();
+                }
+            } finally {
+                response.close();
             }
         } catch (Exception e) {
             Log.e(TAG, "获取验证码图片失败: " + e.getMessage());

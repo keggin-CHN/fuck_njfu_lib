@@ -811,7 +811,7 @@ public class DashboardActivity extends AppCompatActivity {
             String closeTimeForDate = DateUtils.getEndTimeWithoutSeconds(selectedDate[0]);
             String currentEnd = etEndTime.getText() != null ? etEndTime.getText().toString().trim() : "";
             String endCandidate = currentEnd.isEmpty() ? closeTimeForDate : currentEnd;
-            etEndTime.setText(clampEndTime(endCandidate, closeTimeForDate));
+            etEndTime.setText(DateUtils.clampEndTime(endCandidate, closeTimeForDate));
         };
 
         btnDateToday.setOnClickListener(v -> {
@@ -838,7 +838,7 @@ public class DashboardActivity extends AppCompatActivity {
                 : DateUtils.getEndTimeWithoutSeconds(selectedDate[0]);
 
         etStartTime.setText(fallbackStartTime);
-        etEndTime.setText(clampEndTime(fallbackEndTime, DateUtils.getEndTimeWithoutSeconds(selectedDate[0])));
+        etEndTime.setText(DateUtils.clampEndTime(fallbackEndTime, DateUtils.getEndTimeWithoutSeconds(selectedDate[0])));
 
         // TimePicker for start time
         etStartTime.setOnClickListener(v -> {
@@ -911,7 +911,7 @@ public class DashboardActivity extends AppCompatActivity {
             String endTime = etEndTime.getText() != null && etEndTime.getText().toString().trim().length() > 0
                     ? etEndTime.getText().toString().trim()
                     : closeTime;
-            endTime = clampEndTime(endTime, closeTime);
+            endTime = DateUtils.clampEndTime(endTime, closeTime);
 
             dialog.dismiss();
             executeReserveNow(areaInfo, seatNum, startTime, endTime, date);
@@ -933,7 +933,7 @@ public class DashboardActivity extends AppCompatActivity {
                     return;
                 }
                 String closeTime = DateUtils.getEndTimeWithoutSeconds(date);
-                String clampedEndTime = clampEndTime(endTime, closeTime);
+                String clampedEndTime = DateUtils.clampEndTime(endTime, closeTime);
                 boolean autoFindSeat = preferenceManager.isAutoFindSeatEnabled();
 
                 if (autoFindSeat) {
@@ -1176,7 +1176,7 @@ public class DashboardActivity extends AppCompatActivity {
         String defaultEnd = (targetReservation.endTime != null && !targetReservation.endTime.trim().isEmpty())
                 ? targetReservation.endTime
                 : closeTime;
-        defaultEnd = clampEndTime(defaultEnd, closeTime);
+        defaultEnd = DateUtils.clampEndTime(defaultEnd, closeTime);
 
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_simple_reserve, null);
         TextView tvSeatInfo = dialogView.findViewById(R.id.tvSeatInfo);
@@ -1235,7 +1235,7 @@ public class DashboardActivity extends AppCompatActivity {
             }
 
             String normalizedStart = DateUtils.normalizeTimeFormat(startInput);
-            String normalizedEnd = DateUtils.normalizeTimeFormat(clampEndTime(endInput, closeTime));
+            String normalizedEnd = DateUtils.normalizeTimeFormat(DateUtils.clampEndTime(endInput, closeTime));
             if (!DateUtils.isValidDuration(normalizedStart, normalizedEnd, 2)) {
                 Toast.makeText(this, "预约时长必须至少2小时", Toast.LENGTH_SHORT).show();
                 return;
@@ -1246,7 +1246,7 @@ public class DashboardActivity extends AppCompatActivity {
             String finalStartInput = startInput;
             String todayStr = DateUtils.getTodayDate();
             if (date.equals(todayStr)) {
-                String nowTime = DateUtils.getEndTimeWithoutSeconds(todayStr); // Gets current time HH:mm
+                String nowTime = DateUtils.formatTimestampToTime(System.currentTimeMillis()); // Gets current time HH:mm
                 if (finalStartInput.compareTo(nowTime) < 0) {
                     finalStartInput = nowTime;
                 }
@@ -1512,32 +1512,7 @@ public class DashboardActivity extends AppCompatActivity {
         }
     }
 
-    private String clampEndTime(String endTime, String closeTime) {
-        Integer endMinutes = parseTimeToMinutes(endTime);
-        Integer closeMinutes = parseTimeToMinutes(closeTime);
-        if (endMinutes == null || closeMinutes == null) {
-            return endTime;
-        }
-        if (endMinutes > closeMinutes) {
-            return closeTime;
-        }
-        return endTime;
-    }
 
-    private Integer parseTimeToMinutes(String hhmm) {
-        if (hhmm == null)
-            return null;
-        String[] parts = hhmm.trim().split(":");
-        if (parts.length != 2)
-            return null;
-        try {
-            int h = Integer.parseInt(parts[0]);
-            int m = Integer.parseInt(parts[1]);
-            return h * 60 + m;
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     @Override
     protected void onDestroy() {
