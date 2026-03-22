@@ -84,7 +84,7 @@ public class VisualSeatActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("可视化预约");
+            getSupportActionBar().setTitle("界面预约");
         }
         toolbar.setNavigationOnClickListener(v -> finish());
     }

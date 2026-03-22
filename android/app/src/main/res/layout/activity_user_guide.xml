@@ -128,7 +128,7 @@
                         android:layout_marginTop="8dp"
                         android:background="@drawable/bg_stat_item"
                         android:padding="12dp"
-                        android:text="5. 可视化选座"
+                        android:text="5. 界面选座"
                         android:textColor="@color/primary"
                         android:textStyle="bold"
                         android:clickable="true"
@@ -175,7 +175,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="本应用提供以下自动化功能，所有功能须在&quot;设置&quot;中手动开启后方可生效。\n\n· 自动预约：每日定时预约次日座位。\n· 自动寻座：目标座位冲突时自动寻找同区域可用替代座位。\n· 迟到保护：预约开始前检查签到状态，自动处理未签到情况。\n· 可视化选座：按区域查看座位实时状态并发起即时预约。"
+                        android:text="本应用提供以下自动化功能，所有功能须在&quot;设置&quot;中手动开启后方可生效。\n\n· 自动预约：每日定时预约次日座位。\n· 自动寻座：目标座位冲突时自动寻找同区域可用替代座位。\n· 迟到保护：预约开始前检查签到状态，自动处理未签到情况。\n· 界面选座：按区域查看座位实时状态并发起即时预约。"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -298,7 +298,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="5. 可视化选座"
+                        android:text="5. 界面选座"
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
