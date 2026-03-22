@@ -7,8 +7,6 @@
     android:orientation="vertical"
     android:padding="20dp"
     android:background="@color/card_background">
-
-    <!-- Title row -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -17,8 +15,6 @@
         android:textStyle="bold"
         android:textColor="@color/text_primary"
         android:layout_marginBottom="4dp" />
-
-    <!-- Seat info -->
     <TextView
         android:id="@+id/tvSeatInfo"
         android:layout_width="wrap_content"
@@ -28,22 +24,17 @@
         android:textColor="@color/primary"
         android:textStyle="bold"
         android:layout_marginBottom="20dp" />
-
-    <!-- Time Row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginBottom="4dp">
-
-        <!-- Start Time -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
             android:layout_marginEnd="8dp">
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -52,7 +43,6 @@
                 android:textStyle="bold"
                 android:textColor="@color/text_secondary"
                 android:layout_marginBottom="6dp" />
-
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -62,7 +52,6 @@
                 app:boxCornerRadiusBottomStart="8dp"
                 app:boxCornerRadiusBottomEnd="8dp"
                 app:endIconMode="none">
-
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etStartTime"
                     android:layout_width="match_parent"
@@ -74,15 +63,12 @@
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
-
-        <!-- End Time -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical"
             android:layout_marginStart="8dp">
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -91,7 +77,6 @@
                 android:textStyle="bold"
                 android:textColor="@color/text_secondary"
                 android:layout_marginBottom="6dp" />
-
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -101,7 +86,6 @@
                 app:boxCornerRadiusBottomStart="8dp"
                 app:boxCornerRadiusBottomEnd="8dp"
                 app:endIconMode="none">
-
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etEndTime"
                     android:layout_width="match_parent"
@@ -114,7 +98,6 @@
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
     </LinearLayout>
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -122,13 +105,10 @@
         android:textSize="11sp"
         android:textColor="@color/text_hint"
         android:layout_marginBottom="20dp" />
-
-    <!-- Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
-
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCancelReserve"
             android:layout_width="0dp"
@@ -139,7 +119,6 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             app:cornerRadius="10dp"
             android:layout_marginEnd="8dp" />
-
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirmReserve"
             android:layout_width="0dp"

@@ -4,13 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_primary">
-
-    
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
-
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -20,19 +17,15 @@
             app:titleTextColor="@color/text_white"
             app:navigationIcon="@drawable/ic_back" />
     </com.google.android.material.appbar.AppBarLayout>
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
-
-            <!-- 服务器连接 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -41,7 +34,6 @@
                 android:textColor="@color/primary"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardServerConnection"
                 android:layout_width="match_parent"
@@ -50,13 +42,11 @@
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background"
                 android:layout_marginBottom="16dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -64,8 +54,6 @@
                         android:textSize="13sp"
                         android:textColor="@color/text_secondary"
                         android:layout_marginBottom="12dp" />
-
-                    <!-- 服务器地址 -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -77,7 +65,6 @@
                         app:boxCornerRadiusBottomEnd="8dp"
                         android:layout_marginBottom="12dp"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etServerUrl"
                             android:layout_width="match_parent"
@@ -85,8 +72,6 @@
                             android:inputType="textUri"
                             android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- API Key -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -99,7 +84,6 @@
                         app:endIconMode="password_toggle"
                         android:layout_marginBottom="12dp"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etApiKey"
                             android:layout_width="match_parent"
@@ -107,14 +91,11 @@
                             android:inputType="textPassword"
                             android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- 连接状态 + 验证按钮 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical">
-
                         <TextView
                             android:id="@+id/tvServerStatus"
                             android:layout_width="0dp"
@@ -123,7 +104,6 @@
                             android:text="未连接"
                             android:textSize="13sp"
                             android:textColor="@color/text_secondary" />
-
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnVerifyServer"
                             android:layout_width="wrap_content"
@@ -133,12 +113,8 @@
                             app:cornerRadius="8dp"
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -147,21 +123,17 @@
                 android:textColor="@color/primary"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
-                    
                     <LinearLayout
                         android:id="@+id/layoutTargetArea"
                         android:layout_width="match_parent"
@@ -172,20 +144,17 @@
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/setting_target_area"
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:id="@+id/tvTargetArea"
                                 android:layout_width="wrap_content"
@@ -195,20 +164,16 @@
                                 android:textSize="14sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
                             app:tint="@color/text_hint" />
                     </LinearLayout>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider" />
-
-                    
                     <LinearLayout
                         android:id="@+id/layoutTargetSeat"
                         android:layout_width="match_parent"
@@ -219,20 +184,17 @@
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/setting_target_seat"
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:id="@+id/tvTargetSeat"
                                 android:layout_width="wrap_content"
@@ -242,20 +204,16 @@
                                 android:textSize="14sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
                             app:tint="@color/text_hint" />
                     </LinearLayout>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider" />
-
-                    
                     <LinearLayout
                         android:id="@+id/layoutStartTime"
                         android:layout_width="match_parent"
@@ -266,20 +224,17 @@
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/setting_start_time"
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:id="@+id/tvStartTime"
                                 android:layout_width="wrap_content"
@@ -289,20 +244,16 @@
                                 android:textSize="14sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
                             app:tint="@color/text_hint" />
                     </LinearLayout>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider" />
-
-                    
                     <LinearLayout
                         android:id="@+id/layoutEndTime"
                         android:layout_width="match_parent"
@@ -313,20 +264,17 @@
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/setting_end_time"
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:id="@+id/tvEndTime"
                                 android:layout_width="wrap_content"
@@ -336,18 +284,14 @@
                                 android:textSize="14sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
                             app:tint="@color/text_hint" />
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -357,41 +301,34 @@
                 android:textSize="14sp"
                 android:textColor="@color/primary"
                 android:textStyle="bold" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
-                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingVertical="12dp">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/setting_auto_reserve"
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -400,39 +337,32 @@
                                 android:textSize="12sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
-
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switchAutoReserve"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
                     </LinearLayout>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider" />
-
-                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingVertical="12dp">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/setting_late_protection"
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -441,39 +371,32 @@
                                 android:textSize="12sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
-
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switchLateProtection"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
                     </LinearLayout>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider" />
-
-                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingVertical="12dp">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/setting_auto_find_seat"
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -482,19 +405,13 @@
                                 android:textSize="12sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
-
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switchAutoFindSeat"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
                     </LinearLayout>
-
-
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -504,21 +421,17 @@
                 android:textSize="14sp"
                 android:textColor="@color/primary"
                 android:textStyle="bold" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
-                    
                     <LinearLayout
                         android:id="@+id/layoutTheme"
                         android:layout_width="match_parent"
@@ -529,13 +442,11 @@
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -543,7 +454,6 @@
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
                         </LinearLayout>
-
                         <TextView
                             android:id="@+id/tvThemeMode"
                             android:layout_width="wrap_content"
@@ -551,25 +461,20 @@
                             android:text="浅色"
                             android:textSize="14sp"
                             android:textColor="@color/text_secondary" />
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_marginStart="8dp"
                             android:src="@drawable/ic_arrow_right"
                             app:tint="@color/text_hint" />
-
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switchDarkMode"
                             android:layout_width="0dp"
                             android:layout_height="0dp"
                             android:visibility="gone" />
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -579,28 +484,23 @@
                 android:textSize="14sp"
                 android:textColor="@color/primary"
                 android:textStyle="bold" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
-                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingVertical="12dp">
-
                         <ImageView
                             android:layout_width="40dp"
                             android:layout_height="40dp"
@@ -608,14 +508,12 @@
                             android:padding="8dp"
                             android:background="@drawable/bg_circle_primary"
                             app:tint="@color/text_white" />
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginStart="12dp"
                             android:orientation="vertical">
-
                             <TextView
                                 android:id="@+id/tvStudentId"
                                 android:layout_width="wrap_content"
@@ -623,7 +521,6 @@
                                 android:text="学号：210001001"
                                 android:textSize="16sp"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -631,7 +528,6 @@
                                 android:text="已登录"
                                 android:textSize="12sp"
                                 android:textColor="@color/success" />
-
                             <TextView
                                 android:id="@+id/tvUserCredit"
                                 android:layout_width="wrap_content"
@@ -642,13 +538,10 @@
                                 android:visibility="gone" />
                         </LinearLayout>
                     </LinearLayout>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider" />
-
-                    
                     <LinearLayout
                         android:id="@+id/layoutLogout"
                         android:layout_width="match_parent"
@@ -659,7 +552,6 @@
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
-
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -667,18 +559,14 @@
                             android:text="@string/setting_logout"
                             android:textSize="16sp"
                             android:textColor="@color/error" />
-
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:src="@drawable/ic_arrow_right"
                             app:tint="@color/text_hint" />
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -688,28 +576,23 @@
                 android:textSize="14sp"
                 android:textColor="@color/primary"
                 android:textStyle="bold" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
-                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingVertical="12dp">
-
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -717,7 +600,6 @@
                             android:text="@string/setting_version"
                             android:textSize="16sp"
                             android:textColor="@color/text_primary" />
-
                         <TextView
                             android:id="@+id/tvVersion"
                             android:layout_width="wrap_content"
@@ -726,20 +608,16 @@
                             android:textSize="14sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider" />
-
-                    
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingVertical="12dp">
-
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -747,7 +625,6 @@
                             android:text="@string/setting_author"
                             android:textSize="16sp"
                             android:textColor="@color/text_primary" />
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -755,19 +632,16 @@
                             android:textSize="14sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider" />
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center"
                         android:paddingVertical="24dp">
-
                         <ImageView
                             android:id="@+id/ivGithub"
                             android:layout_width="32dp"
@@ -777,7 +651,6 @@
                             android:clickable="true"
                             android:focusable="true"
                             app:tint="@color/text_secondary" />
-
                         <ImageView
                             android:id="@+id/ivEmail"
                             android:layout_width="32dp"
@@ -788,7 +661,6 @@
                             android:clickable="true"
                             android:focusable="true"
                             app:tint="@color/text_secondary" />
-
                         <ImageView
                             android:id="@+id/ivQQ"
                             android:layout_width="32dp"
@@ -799,16 +671,11 @@
                             android:focusable="true"
                             app:tint="@color/text_secondary" />
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            
             <View
                 android:layout_width="match_parent"
                 android:layout_height="32dp" />
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

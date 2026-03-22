@@ -5,11 +5,9 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/background_primary">
-
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbarGuide"
             android:layout_width="match_parent"
@@ -19,32 +17,27 @@
             app:titleTextColor="@color/text_white"
             app:navigationIcon="@drawable/ic_back" />
     </com.google.android.material.appbar.AppBarLayout>
-
     <androidx.core.widget.NestedScrollView
         android:id="@+id/guideScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:padding="16dp">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -52,7 +45,6 @@
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -62,7 +54,6 @@
                         android:textColor="@color/text_secondary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -70,13 +61,11 @@
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -84,7 +73,6 @@
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:id="@+id/tocOverview"
                         android:layout_width="match_parent"
@@ -97,7 +85,6 @@
                         android:textStyle="bold"
                         android:clickable="true"
                         android:focusable="true" />
-
                     <TextView
                         android:id="@+id/tocAutoReserve"
                         android:layout_width="match_parent"
@@ -110,7 +97,6 @@
                         android:textStyle="bold"
                         android:clickable="true"
                         android:focusable="true" />
-
                     <TextView
                         android:id="@+id/tocAutoFind"
                         android:layout_width="match_parent"
@@ -123,7 +109,6 @@
                         android:textStyle="bold"
                         android:clickable="true"
                         android:focusable="true" />
-
                     <TextView
                         android:id="@+id/tocLateProtection"
                         android:layout_width="match_parent"
@@ -136,7 +121,6 @@
                         android:textStyle="bold"
                         android:clickable="true"
                         android:focusable="true" />
-
                     <TextView
                         android:id="@+id/tocVisualSeat"
                         android:layout_width="match_parent"
@@ -149,7 +133,6 @@
                         android:textStyle="bold"
                         android:clickable="true"
                         android:focusable="true" />
-
                     <TextView
                         android:id="@+id/tocServerDeploy"
                         android:layout_width="match_parent"
@@ -164,26 +147,22 @@
                         android:focusable="true" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <View
                 android:id="@+id/anchorOverview"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="16dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -191,7 +170,6 @@
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -202,26 +180,22 @@
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <View
                 android:id="@+id/anchorAutoReserve"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="14dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -229,7 +203,6 @@
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -240,26 +213,22 @@
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <View
                 android:id="@+id/anchorAutoFind"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="14dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -267,7 +236,6 @@
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -278,26 +246,22 @@
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <View
                 android:id="@+id/anchorLateProtection"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="14dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -305,7 +269,6 @@
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -316,26 +279,22 @@
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <View
                 android:id="@+id/anchorVisualSeat"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="14dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -343,7 +302,6 @@
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -354,26 +312,22 @@
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <View
                 android:id="@+id/anchorServerDeploy"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="14dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -381,7 +335,6 @@
                         android:textSize="17sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -392,11 +345,9 @@
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="24dp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
 </LinearLayout>

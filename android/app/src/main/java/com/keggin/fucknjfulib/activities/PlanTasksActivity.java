@@ -53,8 +53,8 @@ public class PlanTasksActivity extends AppCompatActivity {
         boolean enabled;
         String areaName;
         int seatNumber;
-        String startTime; 
-        String endTime;   
+        String startTime;
+        String endTime;
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -281,10 +281,8 @@ public class PlanTasksActivity extends AppCompatActivity {
     private void showTimePickerForDay(String dayKey, boolean isStart, TextView tvValue, TimeSelectedCallback callback) {
         String fallback = isStart ? Constants.DEFAULT_START_TIME : getDefaultCloseTime(dayKey);
         int[] hm = parseTimeOrDefault(tvValue.getText().toString(), fallback);
-
         new TimePickerDialog(this, (view, hourOfDay, minute) -> {
             String selected = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
-
             if (!isStart) {
                 String closeTime = getDefaultCloseTime(dayKey);
                 Integer selectedMinutes = parseTimeToMinutes(selected);
@@ -294,12 +292,10 @@ public class PlanTasksActivity extends AppCompatActivity {
                     Toast.makeText(this, "结束时间已自动限制到闭馆时间 " + closeTime, Toast.LENGTH_SHORT).show();
                 }
             }
-
             tvValue.setText(selected);
             callback.onSelected(selected);
         }, hm[0], hm[1], true).show();
     }
-
     private int[] parseTimeOrDefault(String value, String fallback) {
         String target = (value == null || value.trim().isEmpty()) ? fallback : value.trim();
         try {
@@ -313,7 +309,6 @@ public class PlanTasksActivity extends AppCompatActivity {
             }
         } catch (Exception ignored) {
         }
-
         try {
             String[] parts = fallback.split(":");
             return new int[] { Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) };

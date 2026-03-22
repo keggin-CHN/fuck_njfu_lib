@@ -45,7 +45,6 @@ public class SystemPermissionChecker {
         String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase();
         boolean isHuaweiFamily = manufacturer.contains("huawei") || manufacturer.contains("honor");
         if (isHuaweiFamily) {
-            // HarmonyOS/EMUI 下“后台运行/自启动”常无法通过标准 API 精准判断，改为手动检查策略
             return isNotificationPermissionGranted(context)
                     && isExactAlarmPermissionGranted(context);
         }
@@ -69,7 +68,6 @@ public class SystemPermissionChecker {
             openAppDetailsSettings(context);
         }
     }
-
     public static void openExactAlarmSettings(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
@@ -83,17 +81,13 @@ public class SystemPermissionChecker {
         }
         openAppDetailsSettings(context);
     }
-
     public static void openBatteryOptimizationSettings(Context context) {
         String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase();
         boolean isHuaweiFamily = manufacturer.contains("huawei") || manufacturer.contains("honor");
-
-        // Mate60/HarmonyOS 稳定策略：直接打开当前应用详情页，避免 ROM 私有页面兼容性问题
         if (isHuaweiFamily) {
             openAppDetailsSettings(context);
             return;
         }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             try {
                 Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
@@ -104,7 +98,6 @@ public class SystemPermissionChecker {
                 }
             } catch (Exception ignored) {
             }
-
             try {
                 Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -114,7 +107,6 @@ public class SystemPermissionChecker {
             } catch (Exception ignored) {
             }
         }
-
         try {
             Intent intent = new Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -123,14 +115,11 @@ public class SystemPermissionChecker {
             }
         } catch (Exception ignored) {
         }
-
         openAppDetailsSettings(context);
     }
-
     public static void openAutoStartSettings(Context context) {
         String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase();
         boolean success = false;
-
         if (manufacturer.contains("xiaomi")) {
             success = tryStartActivity(context, "com.miui.securitycenter",
                     "com.miui.permcenter.autostart.AutoStartManagementActivity");
@@ -139,7 +128,6 @@ public class SystemPermissionChecker {
                         "com.miui.powerkeeper.ui.HiddenAppsContainerManagementActivity");
             }
         } else if (manufacturer.contains("huawei") || manufacturer.contains("honor")) {
-            // Mate60/HarmonyOS 稳定策略：直接打开应用详情页，由用户进入“启动管理/电池”
             openAppDetailsSettings(context);
             return;
         } else if (manufacturer.contains("oppo") || manufacturer.contains("realme") || manufacturer.contains("oneplus")) {
@@ -183,7 +171,6 @@ public class SystemPermissionChecker {
             success = tryStartActivity(context, "com.lenovo.security",
                     "com.lenovo.security.purebackground.PureBackgroundActivity");
         }
-
         if (!success) {
             openAppDetailsSettings(context);
         }
@@ -200,7 +187,6 @@ public class SystemPermissionChecker {
     }
     private static boolean tryStartIntent(Context context, Intent intent) {
         try {
-            // 对隐式 Intent 先做可处理性判断，避免弹“没有应用可执行此操作”
             if (intent.getComponent() == null) {
                 PackageManager pm = context.getPackageManager();
                 if (intent.resolveActivity(pm) == null) {
@@ -213,7 +199,6 @@ public class SystemPermissionChecker {
             return false;
         }
     }
-
     private static boolean tryStartActivityWithPackageExtra(Context context, String packageName, String activityName) {
         try {
             Intent intent = new Intent();
@@ -226,7 +211,6 @@ public class SystemPermissionChecker {
             return false;
         }
     }
-
     private static boolean tryStartActionIntent(Context context, String action, String pkg, boolean includePackageExtra) {
         try {
             Intent intent = new Intent(action);
@@ -243,7 +227,6 @@ public class SystemPermissionChecker {
             return false;
         }
     }
-
     private static boolean tryLaunchPackage(Context context, String packageName) {
         try {
             PackageManager pm = context.getPackageManager();
@@ -258,7 +241,6 @@ public class SystemPermissionChecker {
             return false;
         }
     }
-
     private static void openAppDetailsSettings(Context context) {
         try {
             Intent appDetails = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);

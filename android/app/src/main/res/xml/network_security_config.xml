@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
-    
-    
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">webvpn.njfu.edu.cn</domain>
         <domain includeSubdomains="true">libseat.njfu.edu.cn</domain>
@@ -16,8 +13,6 @@
             <certificates src="system" />
         </trust-anchors>
     </domain-config>
-
-    <!-- 允许服务器 API 使用 HTTP 明文 -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">om.rainplay.cn</domain>
     </domain-config>

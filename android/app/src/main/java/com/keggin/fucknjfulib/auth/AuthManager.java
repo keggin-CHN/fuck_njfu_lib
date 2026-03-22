@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.auth;
-
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,7 +11,6 @@ import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.utils.Constants;
 import com.keggin.fucknjfulib.utils.LocalLogManager;
 import com.keggin.fucknjfulib.utils.ProgressListener;
-
 public class AuthManager {
     private static final String TAG = "AuthManager";
     private static AuthManager instance;
@@ -23,38 +21,30 @@ public class AuthManager {
     private boolean isAuthenticated = false;
     private String errorMessage;
     private LocalLogManager localLog;
-
     public static class AuthResult {
         public final boolean success;
         public final String message;
-
         public AuthResult(boolean success, String message) {
             this.success = success;
             this.message = message;
         }
     }
-
     public interface AuthCallback {
         void onSuccess(String token, String accNo);
-
         void onNeedCaptcha(byte[] captchaImage);
-
         void onFailure(String errorMessage);
     }
-
     private AuthManager(Context context) {
         this.context = context.getApplicationContext();
         initSecurePrefs();
         this.localLog = LocalLogManager.getInstance(this.context);
     }
-
     public static synchronized AuthManager getInstance(Context context) {
         if (instance == null) {
             instance = new AuthManager(context);
         }
         return instance;
     }
-
     private void initSecurePrefs() {
         try {
             MasterKey masterKey = new MasterKey.Builder(context)
@@ -71,7 +61,6 @@ public class AuthManager {
             securePrefs = context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE);
         }
     }
-
     public void saveCredentials(String username, String eduPassword, String libPassword) {
         securePrefs.edit()
                 .putString(Constants.PREF_USERNAME, username)
@@ -79,17 +68,14 @@ public class AuthManager {
                 .putString(Constants.PREF_LIB_PASSWORD, libPassword)
                 .apply();
     }
-
     public String getSavedUsername() {
         return securePrefs.getString(Constants.PREF_USERNAME, null);
     }
-
     public boolean hasCredentials() {
         return getSavedUsername() != null
                 && securePrefs.getString(Constants.PREF_EDU_PASSWORD, null) != null
                 && securePrefs.getString(Constants.PREF_LIB_PASSWORD, null) != null;
     }
-
     public void clearCredentials() {
         securePrefs.edit()
                 .remove(Constants.PREF_USERNAME)
@@ -104,7 +90,6 @@ public class AuthManager {
         casAuthenticator = null;
         libAuthenticator = null;
     }
-
     public boolean authenticate(ProgressListener listener) {
         String username = securePrefs.getString(Constants.PREF_USERNAME, null);
         String eduPassword = securePrefs.getString(Constants.PREF_EDU_PASSWORD, null);
@@ -115,7 +100,6 @@ public class AuthManager {
         }
         return authenticate(username, eduPassword, libPassword, listener);
     }
-
     public synchronized boolean authenticate(String username, String eduPassword, String libPassword, ProgressListener listener) {
         Log.d(TAG, "开始认证流程...");
         HttpClientManager.getInstance(context).clearCookies();
@@ -151,7 +135,6 @@ public class AuthManager {
         Log.d(TAG, "完整认证流程成功！");
         return true;
     }
-
     public boolean authenticateWithCaptcha(String captcha) {
         if (casAuthenticator == null) {
             errorMessage = "请先开始认证流程";
@@ -182,7 +165,6 @@ public class AuthManager {
         isAuthenticated = true;
         return true;
     }
-
     public byte[] getCaptchaImage() {
         if (casAuthenticator == null) {
             String username = securePrefs.getString(Constants.PREF_USERNAME, null);
@@ -196,14 +178,12 @@ public class AuthManager {
         }
         return null;
     }
-
     public boolean isAuthValid() {
         if (!isAuthenticated || libAuthenticator == null) {
             return false;
         }
         return libAuthenticator.isTokenValid();
     }
-
     public boolean refreshAuth() {
         isAuthenticated = false;
         casAuthenticator = null;
@@ -211,7 +191,6 @@ public class AuthManager {
         HttpClientManager.getInstance(context).clearCookies();
         return authenticate(null);
     }
-
     public AuthResult loginCAS(String username, String password) {
         Log.d(TAG, "开始CAS统一认证...");
         HttpClientManager.getInstance(context).clearCookies();
@@ -230,7 +209,6 @@ public class AuthManager {
         localLog.i(TAG, "CAS统一认证成功");
         return new AuthResult(true, "统一认证成功");
     }
-
     public AuthResult loginLibrary(String username, String password) {
         Log.d(TAG, "开始图书馆认证...");
         securePrefs.edit()
@@ -256,7 +234,6 @@ public class AuthManager {
         localLog.i(TAG, "图书馆认证成功，Token已获取");
         return new AuthResult(true, "登录成功");
     }
-
     public boolean ensureLoggedIn() {
         if (isAuthenticated && isAuthValid()) {
             return true;
@@ -281,7 +258,6 @@ public class AuthManager {
         }
         return authenticate(null);
     }
-
     public void scheduleLateProtection() {
         boolean lateProtectionEnabled = securePrefs.getBoolean(Constants.PREF_PREVENT_LATE, false);
         if (lateProtectionEnabled) {
@@ -294,33 +270,27 @@ public class AuthManager {
             }
         }
     }
-
     public String getToken() {
         if (libAuthenticator != null) {
             return libAuthenticator.getToken();
         }
         return securePrefs.getString(Constants.PREF_LAST_AUTH_TOKEN, null);
     }
-
     public String getAccNo() {
         if (libAuthenticator != null) {
             return libAuthenticator.getAccNo();
         }
         return securePrefs.getString(Constants.PREF_LAST_AUTH_ACC_NO, null);
     }
-
     public boolean isAuthenticated() {
         return isAuthenticated;
     }
-
     public boolean isNeedCaptcha() {
         return casAuthenticator != null && casAuthenticator.isNeedCaptcha();
     }
-
     public String getErrorMessage() {
         return errorMessage;
     }
-
     public SharedPreferences getSecurePrefs() {
         return securePrefs;
     }

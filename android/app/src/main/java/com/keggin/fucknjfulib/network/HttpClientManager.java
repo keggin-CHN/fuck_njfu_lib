@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.network;
-
 import android.content.Context;
 import android.util.Log;
 import com.keggin.fucknjfulib.utils.LocalLogManager;
@@ -18,7 +17,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
 public class HttpClientManager {
     private static final String TAG = "HttpClientManager";
     private static HttpClientManager instance;
@@ -26,7 +24,6 @@ public class HttpClientManager {
     private PersistentCookieStore cookieStore;
     private Context appContext;
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-
     private HttpClientManager(Context context) {
         this.appContext = context.getApplicationContext();
         cookieStore = new PersistentCookieStore(context.getApplicationContext());
@@ -39,29 +36,24 @@ public class HttpClientManager {
                 .followSslRedirects(false)
                 .build();
     }
-
     public static synchronized HttpClientManager getInstance(Context context) {
         if (instance == null && context != null) {
             instance = new HttpClientManager(context);
         }
         return instance;
     }
-
     public static synchronized HttpClientManager getInstance() {
         if (instance == null) {
             throw new IllegalStateException("HttpClientManager is not initialized, call getInstance(Context) first.");
         }
         return instance;
     }
-
     public void clearCookies() {
         cookieStore.clear();
     }
-
     public String getCookie(String domain, String name) {
         return cookieStore.getCookieValue(domain, name);
     }
-
     public void addCookie(String domain, String name, String value) {
         Cookie cookie = new Cookie.Builder()
                 .domain(domain)
@@ -72,7 +64,6 @@ public class HttpClientManager {
         HttpUrl url = new HttpUrl.Builder().scheme("https").host(domain).build();
         cookieStore.addCookie(url, cookie);
     }
-
     public String getClientTicket() {
         String ticket = getCookie("webvpn.njfu.edu.cn", "my_client_ticket");
         if (ticket == null) {
@@ -80,11 +71,9 @@ public class HttpClientManager {
         }
         return ticket;
     }
-
     public Response get(String url) throws IOException {
         return get(url, null);
     }
-
     public Response get(String url, Map<String, String> headers) throws IOException {
         Request.Builder builder = new Request.Builder()
                 .url(url)
@@ -101,7 +90,6 @@ public class HttpClientManager {
         logHttpToDb("GET", request, response);
         return response;
     }
-
     public Response postForm(String url, Map<String, String> formData, Map<String, String> headers) throws IOException {
         FormBody.Builder formBuilder = new FormBody.Builder();
         if (formData != null) {
@@ -125,7 +113,6 @@ public class HttpClientManager {
         logHttpToDb("POST", request, response);
         return response;
     }
-
     public Response postJson(String url, String jsonBody, Map<String, String> headers) throws IOException {
         RequestBody body = RequestBody.create(jsonBody, JSON);
         Request.Builder builder = new Request.Builder()
@@ -145,7 +132,6 @@ public class HttpClientManager {
         logHttpToDb("POST JSON", request, response);
         return response;
     }
-
     public Response delete(String url, Map<String, String> headers) throws IOException {
         Request.Builder builder = new Request.Builder()
                 .url(url)
@@ -163,7 +149,6 @@ public class HttpClientManager {
         logHttpToDb("DELETE", request, response);
         return response;
     }
-
     public static String getResponseBody(Response response) throws IOException {
         if (response == null || response.body() == null) {
             return null;
@@ -174,16 +159,12 @@ public class HttpClientManager {
             response.close();
         }
     }
-
     public static String getRedirectLocation(Response response) {
         if (response == null) {
             return null;
         }
         return response.header("Location");
     }
-    // Removed inner CookieStore class as it's replaced by PersistentCookieStore
-
-    /** Formats OkHttp headers into a multi-line string. */
     private static String headersToString(okhttp3.Headers headers) {
         if (headers == null)
             return "";
@@ -193,8 +174,6 @@ public class HttpClientManager {
         }
         return sb.toString().trim();
     }
-
-    /** Logs the request/response to LocalLogManager (non-blocking best-effort). */
     private void logHttpToDb(String method, Request req, Response resp) {
         try {
             if (appContext == null)
@@ -204,7 +183,6 @@ public class HttpClientManager {
             String respHeaders = resp != null ? headersToString(resp.headers()) : "";
             int code = resp != null ? resp.code() : -1;
             String url = req.url().toString();
-            // Shorten token value for privacy
             reqHeaders = reqHeaders.replaceAll("(token: )[a-f0-9]{6,}", "$1***");
             lm.logHttp(method, url, code, reqHeaders, respHeaders);
         } catch (Exception ignored) {

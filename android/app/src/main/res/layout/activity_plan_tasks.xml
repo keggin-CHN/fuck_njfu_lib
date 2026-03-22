@@ -4,12 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_primary">
-
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
-
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -19,18 +17,15 @@
             app:title="计划任务"
             app:titleTextColor="@color/text_white" />
     </com.google.android.material.appbar.AppBarLayout>
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -38,13 +33,11 @@
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/card_background"
                 android:layout_marginBottom="16dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -52,7 +45,6 @@
                         android:textStyle="bold"
                         android:textSize="16sp"
                         android:textColor="@color/text_primary" />
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -62,7 +54,6 @@
                         android:textColor="@color/text_secondary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -71,7 +62,6 @@
                 android:textColor="@color/primary"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardMonday"
                 android:layout_width="match_parent"
@@ -83,14 +73,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp">
-
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -98,14 +86,12 @@
                         android:padding="8dp"
                         android:background="@drawable/bg_circle_primary"
                         app:tint="@color/text_white" />
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
                             android:id="@+id/tvMondayTitle"
                             android:layout_width="wrap_content"
@@ -114,7 +100,6 @@
                             android:textSize="16sp"
                             android:textColor="@color/text_primary"
                             android:textStyle="bold" />
-
                         <TextView
                             android:id="@+id/tvMondaySummary"
                             android:layout_width="wrap_content"
@@ -124,7 +109,6 @@
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -132,7 +116,6 @@
                         app:tint="@color/text_hint" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardTuesday"
                 android:layout_width="match_parent"
@@ -144,14 +127,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp">
-
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -159,14 +140,12 @@
                         android:padding="8dp"
                         android:background="@drawable/bg_circle_primary"
                         app:tint="@color/text_white" />
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
                             android:id="@+id/tvTuesdayTitle"
                             android:layout_width="wrap_content"
@@ -175,7 +154,6 @@
                             android:textSize="16sp"
                             android:textColor="@color/text_primary"
                             android:textStyle="bold" />
-
                         <TextView
                             android:id="@+id/tvTuesdaySummary"
                             android:layout_width="wrap_content"
@@ -185,7 +163,6 @@
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -193,7 +170,6 @@
                         app:tint="@color/text_hint" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardWednesday"
                 android:layout_width="match_parent"
@@ -205,14 +181,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp">
-
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -220,14 +194,12 @@
                         android:padding="8dp"
                         android:background="@drawable/bg_circle_primary"
                         app:tint="@color/text_white" />
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
                             android:id="@+id/tvWednesdayTitle"
                             android:layout_width="wrap_content"
@@ -236,7 +208,6 @@
                             android:textSize="16sp"
                             android:textColor="@color/text_primary"
                             android:textStyle="bold" />
-
                         <TextView
                             android:id="@+id/tvWednesdaySummary"
                             android:layout_width="wrap_content"
@@ -246,7 +217,6 @@
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -254,7 +224,6 @@
                         app:tint="@color/text_hint" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardThursday"
                 android:layout_width="match_parent"
@@ -266,14 +235,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp">
-
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -281,14 +248,12 @@
                         android:padding="8dp"
                         android:background="@drawable/bg_circle_primary"
                         app:tint="@color/text_white" />
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
                             android:id="@+id/tvThursdayTitle"
                             android:layout_width="wrap_content"
@@ -297,7 +262,6 @@
                             android:textSize="16sp"
                             android:textColor="@color/text_primary"
                             android:textStyle="bold" />
-
                         <TextView
                             android:id="@+id/tvThursdaySummary"
                             android:layout_width="wrap_content"
@@ -307,7 +271,6 @@
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -315,7 +278,6 @@
                         app:tint="@color/text_hint" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardFriday"
                 android:layout_width="match_parent"
@@ -327,14 +289,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp">
-
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -342,14 +302,12 @@
                         android:padding="8dp"
                         android:background="@drawable/bg_circle_primary"
                         app:tint="@color/text_white" />
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
                             android:id="@+id/tvFridayTitle"
                             android:layout_width="wrap_content"
@@ -358,7 +316,6 @@
                             android:textSize="16sp"
                             android:textColor="@color/text_primary"
                             android:textStyle="bold" />
-
                         <TextView
                             android:id="@+id/tvFridaySummary"
                             android:layout_width="wrap_content"
@@ -368,7 +325,6 @@
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -376,7 +332,6 @@
                         app:tint="@color/text_hint" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardSaturday"
                 android:layout_width="match_parent"
@@ -388,14 +343,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp">
-
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -403,14 +356,12 @@
                         android:padding="8dp"
                         android:background="@drawable/bg_circle_primary"
                         app:tint="@color/text_white" />
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
                             android:id="@+id/tvSaturdayTitle"
                             android:layout_width="wrap_content"
@@ -419,7 +370,6 @@
                             android:textSize="16sp"
                             android:textColor="@color/text_primary"
                             android:textStyle="bold" />
-
                         <TextView
                             android:id="@+id/tvSaturdaySummary"
                             android:layout_width="wrap_content"
@@ -429,7 +379,6 @@
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -437,7 +386,6 @@
                         app:tint="@color/text_hint" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardSunday"
                 android:layout_width="match_parent"
@@ -449,14 +397,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?attr/selectableItemBackground">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp">
-
                     <ImageView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
@@ -464,14 +410,12 @@
                         android:padding="8dp"
                         android:background="@drawable/bg_circle_primary"
                         app:tint="@color/text_white" />
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
-
                         <TextView
                             android:id="@+id/tvSundayTitle"
                             android:layout_width="wrap_content"
@@ -480,7 +424,6 @@
                             android:textSize="16sp"
                             android:textColor="@color/text_primary"
                             android:textStyle="bold" />
-
                         <TextView
                             android:id="@+id/tvSundaySummary"
                             android:layout_width="wrap_content"
@@ -490,7 +433,6 @@
                             android:textSize="12sp"
                             android:textColor="@color/text_secondary" />
                     </LinearLayout>
-
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
@@ -498,11 +440,9 @@
                         app:tint="@color/text_hint" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="32dp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

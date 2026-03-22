@@ -49,12 +49,9 @@ public class LateProtectionService extends Service {
     }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // 兜底：只要通过 startForegroundService 拉起，先立刻进入前台，避免 5 秒超时崩溃
         startForeground(NOTIFICATION_ID, createServiceNotification("迟到保护服务运行中..."));
-
         String action = intent != null ? intent.getAction() : null;
         LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "收到动作: " + action);
-
         if (ACTION_SCHEDULE.equals(action)) {
             scheduleChecksForUpcomingReservations(startId);
         } else if (ACTION_CHECK.equals(action)) {
@@ -67,7 +64,6 @@ public class LateProtectionService extends Service {
             stopForeground(true);
             stopSelf(startId);
         } else {
-            // 未知/空 action：快速收尾，避免服务悬挂
             LocalLogManager.getInstance(LateProtectionService.this).w(TAG, "未知动作，结束服务: " + action);
             stopForeground(true);
             stopSelf(startId);
@@ -140,7 +136,6 @@ public class LateProtectionService extends Service {
             }
         });
     }
-
     private boolean scheduleCheckForReservation(SeatReservation.ReservationInfo info) {
         if (info == null || info.uuid == null || info.uuid.trim().isEmpty()) {
             LocalLogManager.getInstance(LateProtectionService.this).w(TAG, "预约信息缺少 uuid，跳过迟到检查调度");
@@ -159,7 +154,6 @@ public class LateProtectionService extends Service {
                     "跳过非今日预约迟到检查调度: " + info.uuid + " onDate=" + reservationDate);
             return false;
         }
-
         long checkTime = info.beginTime - Constants.LATE_CHECK_MINUTES_BEFORE * 60L * 1000L;
         long now = System.currentTimeMillis();
         if (checkTime <= now) {
@@ -238,7 +232,6 @@ public class LateProtectionService extends Service {
                             "跳过非今日预约迟到保护执行: " + uuid + " onDate=" + targetDate);
                     return;
                 }
-
                 String reservationDate = (targetResv.onDate != null && !targetResv.onDate.trim().isEmpty())
                         ? targetResv.onDate
                         : formatDateFromMillis(beginTime);
@@ -256,7 +249,6 @@ public class LateProtectionService extends Service {
                         : "未知座位";
                 String originalDetail = "原预约：" + originalSeatDesc
                         + "\n日期：" + reservationDate + "  时段：" + sourceStartTime + " - " + sourceEndDisplay;
-
                 String status = targetResv.statusName;
                 if (status != null && (status.contains("使用") || status.contains("签到"))) {
                     LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "用户已签到，无需保护");
@@ -264,10 +256,8 @@ public class LateProtectionService extends Service {
                     return;
                 }
                 LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "用户未签到，执行迟到保护...");
-
                 String newStartTime = DateUtils.addHours(sourceStartTime, Constants.LATE_PROTECTION_DELAY_HOURS);
                 String normalizedStartTime = DateUtils.normalizeTimeFormat(newStartTime);
-
                 String areaName = resolveAreaName(targetResv, prefs);
                 int seatNumber = resolveSeatNumber(targetResv, prefs);
                 if (areaName == null || areaName.trim().isEmpty() || seatNumber <= 0) {
@@ -278,7 +268,6 @@ public class LateProtectionService extends Service {
                 if ("未知座位".equals(originalSeatDesc)) {
                     originalSeatDesc = areaName + " " + seatNumber + "号";
                 }
-
                 String closeTime = DateUtils.getEndTimeWithoutSeconds(reservationDate);
                 if (sourceEndTime == null || sourceEndTime.trim().isEmpty()) {
                     sourceEndTime = prefs.getString(Constants.PREF_END_TIME, Constants.DEFAULT_END_TIME);
@@ -290,23 +279,19 @@ public class LateProtectionService extends Service {
                 String normalizedEndTime = DateUtils.normalizeTimeFormat(endTime);
                 originalDetail = "原预约：" + originalSeatDesc
                         + "\n日期：" + reservationDate + "  时段：" + sourceStartTime + " - " + sourceEndTime;
-
                 boolean canRebook = DateUtils.isValidDuration(normalizedStartTime, normalizedEndTime, 2);
-
                 SeatReservation.ReserveResult cancelResult = reservation.cancelReservation(uuid);
                 if (!cancelResult.success) {
                     LocalLogManager.getInstance(LateProtectionService.this).e(TAG, "取消预约失败: " + cancelResult.message);
                     showResultNotification(false, "迟到保护失败：无法取消原预约\n" + originalDetail);
                     return;
                 }
-
                 if (!canRebook) {
                     LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "剩余时间不足2小时，已取消原预约，不再重约");
                     showResultNotification(true,
                             "迟到保护已执行：已取消原预约，不再重约（剩余时长不足2小时）\n" + originalDetail);
                     return;
                 }
-
                 LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "已取消原预约，准备重新预约...");
                 SeatReservation.ReserveResult reserveResult = reservation.reserveSeat(
                         areaName, seatNumber, reservationDate, normalizedStartTime, endTime);
@@ -360,7 +345,6 @@ public class LateProtectionService extends Service {
         }
         return endMinutes > closeMinutes ? closeTime : endTime;
     }
-
     @Nullable
     private Integer parseTimeToMinutes(String hhmm) {
         if (hhmm == null)
@@ -376,7 +360,6 @@ public class LateProtectionService extends Service {
             return null;
         }
     }
-
     private String buildScheduleDetail(SeatReservation.ReservationInfo info) {
         if (info == null) {
             return "• 未知预约";
@@ -399,7 +382,6 @@ public class LateProtectionService extends Service {
                 + "\n日期：" + reservationDate + "  时段：" + startTime + " - " + endTime
                 + "\n检查时间：" + checkTimeText;
     }
-
     private String formatDateFromMillis(long timestamp) {
         if (timestamp <= 0) {
             return DateUtils.getTodayDate();
@@ -407,7 +389,6 @@ public class LateProtectionService extends Service {
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
         return sdf.format(new java.util.Date(timestamp));
     }
-
     @Nullable
     private String resolveAreaName(SeatReservation.ReservationInfo info, SharedPreferences prefs) {
         if (info != null && info.areaName != null && !info.areaName.trim().isEmpty()) {
@@ -421,7 +402,6 @@ public class LateProtectionService extends Service {
         }
         return prefs.getString(Constants.PREF_TARGET_AREA, null);
     }
-
     private int resolveSeatNumber(SeatReservation.ReservationInfo info, SharedPreferences prefs) {
         if (info != null) {
             Integer fromLabel = tryParsePositiveInt(info.seatLabel);
@@ -441,7 +421,6 @@ public class LateProtectionService extends Service {
         int fromPrefs = prefs.getInt(Constants.PREF_TARGET_SEAT, 0);
         return fromPrefs > 0 ? fromPrefs : 0;
     }
-
     @Nullable
     private Integer tryParsePositiveInt(String raw) {
         if (raw == null || raw.trim().isEmpty()) {
@@ -454,7 +433,6 @@ public class LateProtectionService extends Service {
             return null;
         }
     }
-
     private void cancelScheduledChecks() {
         SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
         Set<String> uuids = prefs.getStringSet(PREF_KEY_LATE_SCHEDULED_UUIDS, null);
@@ -480,7 +458,6 @@ public class LateProtectionService extends Service {
         prefs.edit().remove(PREF_KEY_LATE_SCHEDULED_UUIDS).apply();
         LocalLogManager.getInstance(LateProtectionService.this).i(TAG, "已取消所有迟到保护检查任务");
     }
-
     private void rememberScheduledUuid(String uuid) {
         SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
         Set<String> oldSet = prefs.getStringSet(PREF_KEY_LATE_SCHEDULED_UUIDS, null);
@@ -488,7 +465,6 @@ public class LateProtectionService extends Service {
         newSet.add(uuid);
         prefs.edit().putStringSet(PREF_KEY_LATE_SCHEDULED_UUIDS, newSet).apply();
     }
-
     private void removeScheduledUuid(String uuid) {
         SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
         Set<String> oldSet = prefs.getStringSet(PREF_KEY_LATE_SCHEDULED_UUIDS, null);
@@ -504,7 +480,6 @@ public class LateProtectionService extends Service {
             }
         }
     }
-
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -527,7 +502,6 @@ public class LateProtectionService extends Service {
                 .setOngoing(true)
                 .build();
     }
-
     private Notification createCheckingNotification() {
         return createServiceNotification("正在检查签到状态...");
     }

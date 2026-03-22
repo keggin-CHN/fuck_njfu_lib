@@ -1,22 +1,15 @@
 package com.keggin.fucknjfulib.network;
-
 import android.util.Log;
-
 import com.keggin.fucknjfulib.storage.PreferenceManager;
-
 import org.json.JSONObject;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import okhttp3.Response;
-
 public class ServerTaskSynchronizer {
     private static final String TAG = "ServerTaskSynchronizer";
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
-
     public static void syncTaskToServer(PreferenceManager preferenceManager) {
         executor.execute(() -> {
             try {
@@ -36,12 +29,10 @@ public class ServerTaskSynchronizer {
                 body.put("end_time", preferenceManager.getEndTime());
                 body.put("auto_reserve", preferenceManager.isAutoReserveEnabled());
                 body.put("prevent_late", preferenceManager.isLateProtectionEnabled());
-
                 String weeklyPlanJson = preferenceManager.getWeeklyPlanTasksJson();
                 if (weeklyPlanJson != null && !weeklyPlanJson.trim().isEmpty()) {
                     body.put("weekly_plan", new JSONObject(weeklyPlanJson));
                 }
-
                 HttpClientManager httpClient = HttpClientManager.getInstance(null);
                 String url = serverUrl + "/api/task/register";
                 Map<String, String> headers = new HashMap<>();
@@ -70,7 +61,6 @@ public class ServerTaskSynchronizer {
             }
         });
     }
-
     public static void deleteServerTask(PreferenceManager preferenceManager) {
         executor.execute(() -> {
             try {
@@ -81,7 +71,6 @@ public class ServerTaskSynchronizer {
                     Log.w(TAG, "未配置服务器或未注册任务，无需删除");
                     return;
                 }
-
                 HttpClientManager httpClient = HttpClientManager.getInstance(null);
                 String url = serverUrl + "/api/task/" + taskId;
                 Map<String, String> headers = new HashMap<>();
@@ -92,7 +81,6 @@ public class ServerTaskSynchronizer {
                 try {
                     if (response.isSuccessful()) {
                         Log.i(TAG, "服务器端任务已删除");
-                        // 只需要清除 taskId
                         preferenceManager.setServerTaskId("");
                     } else {
                         Log.e(TAG, "删除服务器任务失败: HTTP " + response.code());

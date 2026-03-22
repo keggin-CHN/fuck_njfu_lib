@@ -1,14 +1,11 @@
 package com.keggin.fucknjfulib.utils;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 public class Constants {
     public static final String DEFAULT_AREA = "二层A区";
     public static final int DEFAULT_SEAT = 1;
     public static final String DEFAULT_START_TIME = "07:30";
     public static final String DEFAULT_END_TIME = "22:00";
-
     public static class SeatArea {
         public final String name;
         public final int firstSeatId;
@@ -16,7 +13,6 @@ public class Constants {
         public final int roomId;
         public final int floor;
         public final String area;
-
         public SeatArea(String name, int firstSeatId, int seatsCount, int roomId, int floor, String area) {
             this.name = name;
             this.firstSeatId = firstSeatId;
@@ -25,14 +21,12 @@ public class Constants {
             this.floor = floor;
             this.area = area;
         }
-
         public int getSeatId(int seatNumber) {
             if (seatNumber < 1 || seatNumber > seatsCount) {
                 return -1;
             }
             return firstSeatId + seatNumber - 1;
         }
-
         public int[] getSeatIds() {
             int[] ids = new int[seatsCount];
             for (int i = 0; i < seatsCount; i++) {
@@ -41,7 +35,6 @@ public class Constants {
             return ids;
         }
     }
-
     public static class AreaInfo {
         public final String name;
         public final int roomId;
@@ -49,7 +42,6 @@ public class Constants {
         public final int[] seatIds;
         public final int floor;
         public final String area;
-
         public AreaInfo(SeatArea seatArea) {
             this.name = seatArea.name;
             this.roomId = seatArea.roomId;
@@ -59,7 +51,6 @@ public class Constants {
             this.area = seatArea.area;
         }
     }
-
     public static final SeatArea[] SEAT_AREAS_ARRAY = {
             new SeatArea("二层A区", 100455361, 441, 100455344, 2, "A"),
             new SeatArea("二层B区", 100455802, 96, 100455346, 2, "B"),
@@ -82,7 +73,6 @@ public class Constants {
             SEAT_AREAS_MAP.put(area.name, new AreaInfo(area));
         }
     }
-
     public static SeatArea getAreaByName(String name) {
         for (SeatArea area : SEAT_AREAS) {
             if (area.name.equals(name)) {
@@ -91,7 +81,6 @@ public class Constants {
         }
         return null;
     }
-
     public static String[] getAreaAndSeatNumber(int devId) {
         for (SeatArea area : SEAT_AREAS) {
             int endId = area.firstSeatId + area.seatsCount - 1;
@@ -102,7 +91,6 @@ public class Constants {
         }
         return null;
     }
-
     public static final int DEFAULT_RESERVE_HOUR = 7;
     public static final int DEFAULT_RESERVE_MINUTE = 0;
     public static final int DEFAULT_RESERVE_SECOND = 20;

@@ -48,9 +48,7 @@ public class AutoReserveService extends Service {
     }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // 兜底：在 Android 8+ 使用 startForegroundService 启动时，必须在 5 秒内进入前台，否则会被系统杀死
         startForeground(NOTIFICATION_ID, createServiceNotification("自动预约服务准备中..."));
-
         if (intent == null) {
             return START_NOT_STICKY;
         }
@@ -78,8 +76,8 @@ public class AutoReserveService extends Service {
         Intent intent = new Intent(this, AutoReserveReceiver.class);
         intent.setAction(ACTION_EXECUTE);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, 
-                ALARM_REQUEST_CODE, 
+                this,
+                ALARM_REQUEST_CODE,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -123,30 +121,21 @@ public class AutoReserveService extends Service {
                 .edit()
                 .putLong("next_reserve_time", calendar.getTimeInMillis())
                 .apply();
-
-        // 同时通过 WorkManager 注册备份任务
         scheduleWorkManagerBackup(calendar.getTimeInMillis());
     }
-
-    /**
-     * 使用 WorkManager 作为 AlarmManager 的备份调度
-     */
     private void scheduleWorkManagerBackup(long targetTimeMillis) {
         try {
             long delay = targetTimeMillis - System.currentTimeMillis();
-            if (delay <= 0) delay = 60 * 1000; // 至少1分钟
-
+            if (delay <= 0) delay = 60 * 1000;
             OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(AutoReserveWorker.class)
                     .setInitialDelay(delay, TimeUnit.MILLISECONDS)
                     .addTag(AutoReserveWorker.WORK_NAME)
                     .build();
-
             WorkManager.getInstance(this)
                     .enqueueUniqueWork(
                             AutoReserveWorker.WORK_NAME,
                             androidx.work.ExistingWorkPolicy.REPLACE,
                             workRequest);
-
             LocalLogManager.getInstance(this).i(TAG,
                     "WorkManager 备份任务已注册，延迟 " + (delay / 1000 / 60) + " 分钟");
         } catch (Exception e) {
@@ -162,8 +151,6 @@ public class AutoReserveService extends Service {
             boolean shouldReschedule = false;
             try {
                 LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "开始执行自动预约...");
-
-                // 记录执行时间，用于去重
                 getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE)
                         .edit()
                         .putLong("last_reserve_execute_time", System.currentTimeMillis())
@@ -226,7 +213,6 @@ public class AutoReserveService extends Service {
                     reserveSucceeded = result.success;
                     showResultNotification(result.success, result.message + "\n" + reservationDetail);
                 }
-
                 if (reserveSucceeded) {
                     scheduleLateProtectionIfEnabled();
                 }
@@ -253,13 +239,12 @@ public class AutoReserveService extends Service {
         Intent intent = new Intent(this, AutoReserveReceiver.class);
         intent.setAction(ACTION_EXECUTE);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, 
-                ALARM_REQUEST_CODE, 
+                this,
+                ALARM_REQUEST_CODE,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
         alarmManager.cancel(pendingIntent);
-        // 同时取消 WorkManager
         try {
             WorkManager.getInstance(this).cancelUniqueWork(AutoReserveWorker.WORK_NAME);
         } catch (Exception e) {
@@ -294,7 +279,6 @@ public class AutoReserveService extends Service {
                 .setOngoing(true)
                 .build();
     }
-
     private Notification createExecutingNotification() {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("正在预约座位")
@@ -311,12 +295,10 @@ public class AutoReserveService extends Service {
                 ? DateUtils.formatTimestamp(nextTime)
                 : "未设置";
         String reserveDate = getReservationDateForExecution(nextTime);
-
         String areaName = prefs.getString(Constants.PREF_TARGET_AREA, null);
         int seatNumber = prefs.getInt(Constants.PREF_TARGET_SEAT, 0);
         String startTime = prefs.getString(Constants.PREF_START_TIME, Constants.DEFAULT_START_TIME);
         String endTime = prefs.getString(Constants.PREF_END_TIME, Constants.DEFAULT_END_TIME);
-
         WeeklyPlanConfig weeklyPlan = getTomorrowWeeklyPlan(prefs);
         if (weeklyPlan != null && weeklyPlan.enabled) {
             areaName = weeklyPlan.areaName;
@@ -324,12 +306,10 @@ public class AutoReserveService extends Service {
             startTime = weeklyPlan.startTime;
             endTime = weeklyPlan.endTime;
         }
-
         String closeTime = DateUtils.getEndTimeWithoutSeconds(reserveDate);
         endTime = clampEndTime(endTime, closeTime);
         String detail = buildReservationDetail(reserveDate, areaName, seatNumber, startTime, endTime);
         String message = "下次执行时间：" + timeStr + "\n" + detail;
-
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("自动预约已开启")
                 .setContentText(message)
@@ -352,7 +332,6 @@ public class AutoReserveService extends Service {
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.notify(NOTIFICATION_ID + 2, notification);
     }
-
     private String buildReservationDetail(String reservationDate, String areaName, int seatNumber, String startTime, String endTime) {
         String dateText = (reservationDate == null || reservationDate.trim().isEmpty())
                 ? DateUtils.getTomorrowDate()
@@ -369,7 +348,6 @@ public class AutoReserveService extends Service {
                 + "\n目标座位：" + displayArea + " " + seatText
                 + "\n预约时段：" + startText + " - " + endText;
     }
-
     private String resolveAreaDisplayName(String areaName) {
         if (areaName == null || areaName.trim().isEmpty()) {
             return "未设置区域";
@@ -380,7 +358,6 @@ public class AutoReserveService extends Service {
         }
         return areaName;
     }
-
     private String getReservationDateForExecution(long executeAtMillis) {
         if (executeAtMillis <= 0) {
             return DateUtils.getTomorrowDate();
@@ -500,10 +477,6 @@ public class AutoReserveService extends Service {
         }
         LocalLogManager.getInstance(AutoReserveService.this).i(TAG, "预约成功后已触发迟到保护任务重排");
     }
-
-    /**
-     * 启动保活服务
-     */
     private void startKeepAliveService() {
         try {
             Intent intent = new Intent(this, KeepAliveService.class);
@@ -517,12 +490,7 @@ public class AutoReserveService extends Service {
             LocalLogManager.getInstance(this).e(TAG, "启动保活服务失败: " + e.getMessage());
         }
     }
-
-    /**
-     * 停止保活服务
-     */
     private void stopKeepAliveService() {
-        // 只在两个功能都关闭时停止
         SharedPreferences prefs = getSharedPreferences(Constants.PREF_NAME, MODE_PRIVATE);
         boolean preventLate = prefs.getBoolean(Constants.PREF_PREVENT_LATE, false);
         if (!preventLate) {
@@ -533,10 +501,6 @@ public class AutoReserveService extends Service {
             } catch (Exception ignored) {}
         }
     }
-
-    /**
-     * 请求电池优化豁免
-     */
     private void requestBatteryOptimizationIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -552,7 +516,6 @@ public class AutoReserveService extends Service {
             }
         }
     }
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {

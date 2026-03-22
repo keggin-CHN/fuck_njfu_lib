@@ -9,32 +9,25 @@
     app:cardCornerRadius="8dp"
     app:cardElevation="1dp"
     app:cardBackgroundColor="@color/card_background">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
-
-        <!-- 左侧彩色竖条指示日志级别 -->
         <View
             android:id="@+id/viewLevelIndicator"
             android:layout_width="4dp"
             android:layout_height="match_parent"
             android:background="@color/success" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="12dp">
-
-            <!-- 顶部: 时间 + 级别标签 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
-
                 <TextView
                     android:id="@+id/tvLogTime"
                     android:layout_width="0dp"
@@ -43,7 +36,6 @@
                     android:textSize="11sp"
                     android:textColor="@color/text_hint"
                     android:fontFamily="monospace" />
-
                 <TextView
                     android:id="@+id/tvLogLevel"
                     android:layout_width="wrap_content"
@@ -55,8 +47,6 @@
                     android:textColor="@color/text_white"
                     android:background="@drawable/bg_log_level_pill" />
             </LinearLayout>
-
-            <!-- TAG -->
             <TextView
                 android:id="@+id/tvLogTag"
                 android:layout_width="match_parent"
@@ -65,8 +55,6 @@
                 android:textSize="11sp"
                 android:textColor="@color/info"
                 android:fontFamily="monospace" />
-
-            <!-- 日志消息 -->
             <TextView
                 android:id="@+id/tvLogMessage"
                 android:layout_width="match_parent"
@@ -75,7 +63,6 @@
                 android:textSize="13sp"
                 android:textColor="@color/text_primary"
                 android:lineSpacingMultiplier="1.2" />
-
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

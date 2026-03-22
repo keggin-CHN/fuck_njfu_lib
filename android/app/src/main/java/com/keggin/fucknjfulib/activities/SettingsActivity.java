@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.activities;
-
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -42,7 +41,6 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import okhttp3.Response;
-
 public class SettingsActivity extends AppCompatActivity {
     private static final String TAG = "SettingsActivity";
     private static final String FEATURE_NOTIFY_CHANNEL_ID = "feature_status_channel";
@@ -50,14 +48,10 @@ public class SettingsActivity extends AppCompatActivity {
     private static final int NOTIFY_ID_LATE_PROTECTION = 3202;
     private static final int NOTIFY_ID_AUTO_FIND = 3203;
     private Toolbar toolbar;
-
-    // 服务器连接
     private TextInputEditText etServerUrl;
     private TextInputEditText etApiKey;
     private TextView tvServerStatus;
     private MaterialButton btnVerifyServer;
-
-    // 预约设置
     private LinearLayout layoutTargetArea;
     private LinearLayout layoutTargetSeat;
     private LinearLayout layoutStartTime;
@@ -72,8 +66,6 @@ public class SettingsActivity extends AppCompatActivity {
     private SwitchMaterial switchDarkMode;
     private LinearLayout layoutTheme;
     private TextView tvThemeMode;
-
-    // 账号 & 关于
     private TextView tvStudentId;
     private LinearLayout layoutLogout;
     private TextView tvVersion;
@@ -83,7 +75,6 @@ public class SettingsActivity extends AppCompatActivity {
     private ImageView ivQQ;
     private PreferenceManager preferenceManager;
     private ExecutorService executor;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,17 +87,12 @@ public class SettingsActivity extends AppCompatActivity {
         setupClickListeners();
         loadUserProfile();
     }
-
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-
-        // 服务器连接
         etServerUrl = findViewById(R.id.etServerUrl);
         etApiKey = findViewById(R.id.etApiKey);
         tvServerStatus = findViewById(R.id.tvServerStatus);
         btnVerifyServer = findViewById(R.id.btnVerifyServer);
-
-        // 预约设置
         layoutTargetArea = findViewById(R.id.layoutTargetArea);
         layoutTargetSeat = findViewById(R.id.layoutTargetSeat);
         layoutStartTime = findViewById(R.id.layoutStartTime);
@@ -121,8 +107,6 @@ public class SettingsActivity extends AppCompatActivity {
         switchDarkMode = findViewById(R.id.switchDarkMode);
         layoutTheme = findViewById(R.id.layoutTheme);
         tvThemeMode = findViewById(R.id.tvThemeMode);
-
-        // 账号 & 关于
         tvStudentId = findViewById(R.id.tvStudentId);
         layoutLogout = findViewById(R.id.layoutLogout);
         tvVersion = findViewById(R.id.tvVersion);
@@ -131,7 +115,6 @@ public class SettingsActivity extends AppCompatActivity {
         ivEmail = findViewById(R.id.ivEmail);
         ivQQ = findViewById(R.id.ivQQ);
     }
-
     private void setupToolbar() {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
@@ -139,9 +122,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> finish());
     }
-
     private void loadSettings() {
-        // 服务器连接
         String serverUrl = preferenceManager.getServerApiUrl();
         String apiKey = preferenceManager.getApiKey();
         if (serverUrl != null && !serverUrl.isEmpty()) {
@@ -150,8 +131,6 @@ public class SettingsActivity extends AppCompatActivity {
         if (apiKey != null && !apiKey.isEmpty()) {
             etApiKey.setText(apiKey);
         }
-
-        // 预约设置
         String areaKey = preferenceManager.getTargetArea();
         tvTargetArea.setText(preferenceManager.getAreaName(areaKey));
         tvTargetSeat.setText(String.valueOf(preferenceManager.getTargetSeat()));
@@ -162,8 +141,6 @@ public class SettingsActivity extends AppCompatActivity {
         switchAutoReserve.setChecked(preferenceManager.isAutoReserveEnabled());
         switchLateProtection.setChecked(preferenceManager.isLateProtectionEnabled());
         switchAutoFindSeat.setChecked(preferenceManager.isAutoFindSeatEnabled());
-
-        // 外观
         boolean dark;
         if (preferenceManager.hasDarkModeConfigured()) {
             dark = preferenceManager.isDarkModeEnabled();
@@ -175,12 +152,9 @@ public class SettingsActivity extends AppCompatActivity {
         if (tvThemeMode != null) {
             tvThemeMode.setText(dark ? "深色" : "浅色");
         }
-
-        // 账号
         tvStudentId.setText("学号：" + preferenceManager.getStudentId());
         tvVersion.setText(BuildConfig.VERSION_NAME);
     }
-
     private void loadUserProfile() {
         executor.execute(() -> {
             try {
@@ -230,12 +204,8 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
     }
-
     private void setupClickListeners() {
-        // --- 服务器连接 ---
         btnVerifyServer.setOnClickListener(v -> verifyServerConnection());
-
-        // 输入失焦后自动保存
         etServerUrl.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
                 String url = etServerUrl.getText() != null ? etServerUrl.getText().toString().trim() : "";
@@ -250,8 +220,6 @@ public class SettingsActivity extends AppCompatActivity {
                 ServerTaskSynchronizer.syncTaskToServer(preferenceManager);
             }
         });
-
-        // --- 预约设置 ---
         layoutTargetArea.setOnClickListener(v -> showAreaPicker());
         layoutTargetSeat.setOnClickListener(v -> showSeatPicker());
         layoutStartTime.setOnClickListener(v -> showTimePicker(true));
@@ -310,28 +278,20 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
         switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // hidden switch for compatibility only
         });
         if (layoutTheme != null) {
             layoutTheme.setOnClickListener(v -> showThemeChooser());
         }
         layoutLogout.setOnClickListener(v -> showLogoutConfirm());
-
         if (ivGithub != null) ivGithub.setOnClickListener(v -> openGithubPage());
         if (ivEmail != null) ivEmail.setOnClickListener(v -> sendEmail());
         if (ivQQ != null) ivQQ.setOnClickListener(v -> addQQFriend());
     }
-
-    // =========================================================================
-    // 服务器连接验证
-    // =========================================================================
     private void verifyServerConnection() {
-        // 先保存当前输入
         String url = etServerUrl.getText() != null ? etServerUrl.getText().toString().trim() : "";
         String key = etApiKey.getText() != null ? etApiKey.getText().toString().trim() : "";
         preferenceManager.setServerApiUrl(url);
         preferenceManager.setApiKey(key);
-
         if (url.isEmpty()) {
             tvServerStatus.setText("请输入服务器地址");
             tvServerStatus.setTextColor(getResources().getColor(R.color.error, null));
@@ -342,11 +302,9 @@ public class SettingsActivity extends AppCompatActivity {
             tvServerStatus.setTextColor(getResources().getColor(R.color.error, null));
             return;
         }
-
         tvServerStatus.setText("验证中...");
         tvServerStatus.setTextColor(getResources().getColor(R.color.text_secondary, null));
         btnVerifyServer.setEnabled(false);
-
         executor.execute(() -> {
             try {
                 HttpClientManager httpClient = HttpClientManager.getInstance(null);
@@ -389,14 +347,6 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
     }
-
-    // =========================================================================
-    // 服务器任务同步已移至 ServerTaskSynchronizer
-    // =========================================================================
-
-    // =========================================================================
-    // 主题选择
-    // =========================================================================
     private void showThemeChooser() {
         String[] items = new String[] { "浅色", "深色" };
         int checked = preferenceManager.isDarkModeEnabled() ? 1 : 0;
@@ -417,10 +367,6 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
-    // =========================================================================
-    // 预约设置弹窗
-    // =========================================================================
     private void showAreaPicker() {
         List<String> areaKeys = new ArrayList<>(Constants.SEAT_AREAS_MAP.keySet());
         String[] areaNames = new String[areaKeys.size()];
@@ -449,7 +395,6 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void showSeatPicker() {
         String areaKey = preferenceManager.getTargetArea();
         Constants.AreaInfo areaInfo = Constants.SEAT_AREAS_MAP.get(areaKey);
@@ -495,12 +440,10 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void showTimePicker(boolean isStartTime) {
         String fallback = isStartTime ? Constants.DEFAULT_START_TIME : Constants.DEFAULT_END_TIME;
         String currentTime = isStartTime ? preferenceManager.getStartTime() : preferenceManager.getEndTime();
         int[] hm = parseTimeOrDefault(currentTime, fallback);
-
         new TimePickerDialog(
                 this,
                 (view, hourOfDay, minute) -> {
@@ -518,7 +461,6 @@ public class SettingsActivity extends AppCompatActivity {
                 hm[1],
                 true).show();
     }
-
     private int[] parseTimeOrDefault(String value, String fallback) {
         String target = (value == null || value.trim().isEmpty()) ? fallback : value.trim();
         try {
@@ -539,10 +481,6 @@ public class SettingsActivity extends AppCompatActivity {
             return new int[] { 7, 30 };
         }
     }
-
-    // =========================================================================
-    // 登出
-    // =========================================================================
     private void showLogoutConfirm() {
         new AlertDialog.Builder(this)
                 .setTitle("退出登录")
@@ -553,7 +491,6 @@ public class SettingsActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void performLogout() {
         ServerTaskSynchronizer.deleteServerTask(preferenceManager);
         preferenceManager.clearCredentials();
@@ -562,10 +499,6 @@ public class SettingsActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
-
-    // =========================================================================
-    // 工具方法
-    // =========================================================================
     private String buildTargetConfigSummary() {
         String areaKey = preferenceManager.getTargetArea();
         String areaName = preferenceManager.getAreaName(areaKey);
@@ -584,7 +517,6 @@ public class SettingsActivity extends AppCompatActivity {
         }
         return "目标：" + areaName + " " + seatText + "\n时段：" + startTime + " - " + endTime;
     }
-
     private void showFeatureNotification(int notifyId, String title, String message) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -609,7 +541,6 @@ public class SettingsActivity extends AppCompatActivity {
         } catch (SecurityException ignored) {
         }
     }
-
     private void sendEmail() {
         try {
             Intent intent = new Intent(Intent.ACTION_SENDTO);
@@ -619,7 +550,6 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "未找到邮件应用", Toast.LENGTH_SHORT).show();
         }
     }
-
     private void addQQFriend() {
         try {
             String url = "mqqapi://card/show_pslcard?src_type=internal&version=1&uin=239289001&card_type=friend&source=qrcode";
@@ -635,7 +565,6 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
     }
-
     private void openGithubPage() {
         String url = getString(R.string.setting_github_url);
         try {
@@ -646,7 +575,6 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show();
         }
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();

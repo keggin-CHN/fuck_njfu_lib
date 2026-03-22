@@ -13,9 +13,9 @@ public class LateProtectionReceiver extends BroadcastReceiver {
         if (LateProtectionService.ACTION_CHECK.equals(action)) {
             Intent serviceIntent = new Intent(context, LateProtectionService.class);
             serviceIntent.setAction(LateProtectionService.ACTION_CHECK);
-            serviceIntent.putExtra(LateProtectionService.EXTRA_RESERVATION_UUID, 
+            serviceIntent.putExtra(LateProtectionService.EXTRA_RESERVATION_UUID,
                     intent.getStringExtra(LateProtectionService.EXTRA_RESERVATION_UUID));
-            serviceIntent.putExtra(LateProtectionService.EXTRA_BEGIN_TIME, 
+            serviceIntent.putExtra(LateProtectionService.EXTRA_BEGIN_TIME,
                     intent.getLongExtra(LateProtectionService.EXTRA_BEGIN_TIME, 0));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent);

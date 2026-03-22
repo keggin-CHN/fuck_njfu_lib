@@ -4,13 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_primary">
-
-    <!-- App Bar with gradient -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/primary">
-
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -20,14 +17,11 @@
             app:titleTextColor="@color/text_white"
             app:navigationIcon="@drawable/ic_back" />
     </com.google.android.material.appbar.AppBarLayout>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <!-- Filter Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -38,28 +32,23 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
             app:cardBackgroundColor="@color/card_background">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
-
-                <!-- Row 1: Area + Date -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:layout_marginBottom="10dp">
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:layout_marginEnd="8dp">
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -68,7 +57,6 @@
                             android:textColor="@color/text_hint"
                             android:textStyle="bold"
                             android:layout_marginBottom="4dp" />
-
                         <Spinner
                             android:id="@+id/spinnerArea"
                             android:layout_width="match_parent"
@@ -76,14 +64,12 @@
                             android:background="@drawable/bg_spinner"
                             android:padding="4dp" />
                     </LinearLayout>
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="vertical"
                         android:layout_marginStart="8dp">
-
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -92,7 +78,6 @@
                             android:textColor="@color/text_hint"
                             android:textStyle="bold"
                             android:layout_marginBottom="4dp" />
-
                         <Spinner
                             android:id="@+id/spinnerDate"
                             android:layout_width="match_parent"
@@ -101,8 +86,6 @@
                             android:padding="4dp" />
                     </LinearLayout>
                 </LinearLayout>
-
-                <!-- Query Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnQuery"
                     android:layout_width="match_parent"
@@ -117,8 +100,6 @@
                     app:iconPadding="8dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- Hint / Legend Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -128,7 +109,6 @@
             android:paddingEnd="16dp"
             android:paddingTop="8dp"
             android:paddingBottom="4dp">
-
             <View
                 android:layout_width="14dp"
                 android:layout_height="14dp"
@@ -141,7 +121,6 @@
                 android:textSize="11sp"
                 android:textColor="@color/text_hint"
                 android:layout_marginEnd="16dp" />
-
             <View
                 android:layout_width="14dp"
                 android:layout_height="14dp"
@@ -153,12 +132,10 @@
                 android:text="占用"
                 android:textSize="11sp"
                 android:textColor="@color/text_hint" />
-
             <View
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1" />
-
             <TextView
                 android:id="@+id/tvEmptyHint"
                 android:layout_width="wrap_content"
@@ -168,19 +145,15 @@
                 android:textColor="@color/text_hint"
                 android:visibility="visible" />
         </LinearLayout>
-
-        <!-- Seat Map Area -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
-
             <com.keggin.fucknjfulib.views.SeatMapView
                 android:id="@+id/seatMapView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@color/background_secondary" />
-
             <TextView
                 android:id="@+id/tvZoomScale"
                 android:layout_width="wrap_content"
@@ -198,8 +171,6 @@
                 android:textStyle="bold"
                 android:elevation="4dp" />
         </FrameLayout>
-
-        <!-- Loading Overlay -->
         <FrameLayout
             android:id="@+id/loadingOverlay"
             android:layout_width="match_parent"
@@ -209,14 +180,11 @@
             android:visibility="gone"
             android:clickable="true"
             android:focusable="true">
-
             <ProgressBar
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:indeterminateTint="@color/text_white" />
         </FrameLayout>
-
     </LinearLayout>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

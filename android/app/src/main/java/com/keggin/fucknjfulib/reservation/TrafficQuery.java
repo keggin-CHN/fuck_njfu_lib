@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.reservation;
-
 import android.util.Log;
 import com.keggin.fucknjfulib.network.HttpClientManager;
 import com.keggin.fucknjfulib.utils.Constants;
@@ -7,12 +6,9 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 import okhttp3.Response;
-
 public class TrafficQuery {
     private static final String TAG = "TrafficQuery";
-    // 通过 WebVPN 代理访问，避免校外无法直连
     private static final String TRAFFIC_API_URL = "https://webvpn.njfu.edu.cn/webvpn/LjIwMS4xNjkuMjE4LjE2OA==/LjE0Ny4xMDEuMTUyLjEwMi4xMDEuMTAyLjE1Ny45Ny4xNTEuOTkuMTA0LjEwMi4xNTIuMTEyLjExMS4xNTM=/book/view";
-
     public static class TrafficInfo {
         public int currentCount;
         public int totalCapacity;
@@ -20,12 +16,10 @@ public class TrafficQuery {
         public String updateTime;
         public boolean success;
         public String errorMessage;
-
         public TrafficInfo() {
             this.totalCapacity = Constants.LIBRARY_TOTAL_CAPACITY;
         }
     }
-
     public static TrafficInfo queryCurrentTraffic(android.content.Context context) {
         TrafficInfo info = new TrafficInfo();
         try {
@@ -37,7 +31,6 @@ public class TrafficQuery {
                 return info;
             }
             String token = authManager.getToken();
-
             HttpClientManager httpClient = HttpClientManager.getInstance(context);
             Map<String, String> headers = new HashMap<>();
             headers.put("Accept",
@@ -45,11 +38,7 @@ public class TrafficQuery {
             headers.put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
             headers.put("Accept-Encoding", "identity");
             headers.put("Connection", "close");
-
-            // Notice we do NOT pass the `token` header. The headcount page expects the
-            // WebVPN cookie which HttpClientManager handles.
             Response response = httpClient.get(TRAFFIC_API_URL, headers);
-
             if (response != null && (response.code() == 302 || response.code() == 301)) {
                 Log.w(TAG, "WebVPN session Expired (302) in TrafficQuery, forcing re-auth...");
                 response.close();
@@ -61,7 +50,6 @@ public class TrafficQuery {
                     return info;
                 }
             }
-
             if (response != null && response.isSuccessful() && response.body() != null) {
                 byte[] responseBytes = null;
                 try {
@@ -79,40 +67,28 @@ public class TrafficQuery {
                     response.close();
                     return info;
                 }
-
                 String html = new String(responseBytes, java.nio.charset.StandardCharsets.UTF_8);
-                // 检查编码，如果乱码（没找到关键字）则尝试 GBK
                 if (!html.contains("图书馆") && !html.contains("可用")) {
                     try {
                         html = new String(responseBytes, "GBK");
                     } catch (Exception ignored) {
                     }
                 }
-
                 Log.d(TAG, "HTML info: length=" + html.length());
-
-                // 更加宽容的解析逻辑：直接寻找文字附近的数字
                 int availVal = -1;
                 int limitVal = -1;
-
                 try {
-                    // 1. 精准匹配 (要求数字 span 和文本 span 之间不能包含其他 span)
                     java.util.regex.Pattern pPreciseAvailable = java.util.regex.Pattern
                             .compile("(?s)>(\\d+)</span\\s*>\\s*(?:<br/?>\\s*)?<span>\\s*剩余可用\\s*</span>");
                     java.util.regex.Pattern pPreciseLimit = java.util.regex.Pattern
                             .compile("(?s)>(\\d+)</span\\s*>\\s*(?:<br/?>\\s*)?<span>\\s*入馆限制\\s*</span>");
-
                     java.util.regex.Matcher m1 = pPreciseAvailable.matcher(html);
                     if (m1.find())
                         availVal = Integer.parseInt(m1.group(1));
-
                     java.util.regex.Matcher m2 = pPreciseLimit.matcher(html);
                     if (m2.find())
                         limitVal = Integer.parseInt(m2.group(1));
-
-                    // 2. 如果精准匹配失败，尝试更健壮的模糊匹配
                     if (availVal == -1 || limitVal == -1) {
-                        // 寻找所有的数字及其后的文本，判断距离
                         java.util.regex.Pattern pAll = java.util.regex.Pattern
                                 .compile("(\\d+)[^\\d<]{0,100}?(剩余可用|入馆限制)");
                         java.util.regex.Matcher mAll = pAll.matcher(html);
@@ -127,11 +103,7 @@ public class TrafficQuery {
                 } catch (Exception e) {
                     Log.e(TAG, "Parsing error: " + e.getMessage());
                 }
-
                 if (availVal != -1 && limitVal != -1) {
-                    // limitVal from HTML is the entry limit (e.g., 5000), not the actual seat
-                    // count.
-                    // Use LIBRARY_TOTAL_CAPACITY (sum of all area seats) for occupancy display.
                     info.totalCapacity = Constants.LIBRARY_TOTAL_CAPACITY;
                     info.currentCount = Math.max(0, limitVal - availVal);
                     info.occupancyRate = (float) info.currentCount / info.totalCapacity * 100;
@@ -140,7 +112,6 @@ public class TrafficQuery {
                     info.success = true;
                     Log.d(TAG, "Parsed successfully: Avail=" + availVal + ", Limit=" + limitVal);
                 } else {
-                    // Fallback to old IDs just in case
                     java.util.regex.Pattern pRseat = java.util.regex.Pattern.compile("id=\"lblRseat\"[^>]*>(\\d+)<");
                     java.util.regex.Matcher mRseat = pRseat.matcher(html);
                     if (mRseat.find()) {
@@ -178,7 +149,6 @@ public class TrafficQuery {
         }
         return info;
     }
-
     public static String getOccupancyDescription(float rate) {
         if (rate < 30) {
             return "空闲";
@@ -190,7 +160,6 @@ public class TrafficQuery {
             return "拥挤";
         }
     }
-
     public static int getOccupancyColor(float rate) {
         if (rate < 30) {
             return android.R.color.holo_green_dark;

@@ -18,8 +18,8 @@ public class AutoFinder {
     public static class AutoFindResult {
         public boolean success;
         public String message;
-        public SeatQuery.SeatInfo reservedSeat;  
-        public List<SeatQuery.SeatInfo> alternatives;  
+        public SeatQuery.SeatInfo reservedSeat;
+        public List<SeatQuery.SeatInfo> alternatives;
         public AutoFindResult(boolean success, String message) {
             this.success = success;
             this.message = message;
@@ -54,13 +54,13 @@ public class AutoFinder {
                 areaName, dateStr, startTime, endTime, DEFAULT_ALTERNATIVES_LIMIT);
         if (alternatives.isEmpty()) {
             Log.d(TAG, "未找到可用的备选座位");
-            AutoFindResult findResult = new AutoFindResult(false, 
+            AutoFindResult findResult = new AutoFindResult(false,
                     "目标座位已被占用，且该区域无其他可用座位");
             return findResult;
         }
         Log.d(TAG, "找到 " + alternatives.size() + " 个备选座位");
         if (!autoReserve) {
-            AutoFindResult findResult = new AutoFindResult(false, 
+            AutoFindResult findResult = new AutoFindResult(false,
                     "目标座位已被占用，找到 " + alternatives.size() + " 个备选座位");
             findResult.alternatives = alternatives;
             return findResult;
@@ -77,35 +77,35 @@ public class AutoFinder {
                     altArea, altSeatNumber, dateStr, startTime, endTime);
             if (altResult.success) {
                 Log.d(TAG, "备选座位预约成功: " + alt.devName);
-                AutoFindResult findResult = new AutoFindResult(true, 
+                AutoFindResult findResult = new AutoFindResult(true,
                         "自动寻座成功: " + alt.devName);
                 findResult.reservedSeat = alt;
                 return findResult;
             }
         }
         Log.d(TAG, "所有备选座位预约均失败");
-        AutoFindResult findResult = new AutoFindResult(false, 
+        AutoFindResult findResult = new AutoFindResult(false,
                 "目标座位已被占用，备选座位预约也失败了");
         findResult.alternatives = alternatives;
         return findResult;
     }
     public AutoFindResult autoFindAndReserveToday(String areaName, int seatNumber,
                                                    String startTime, String endTime) {
-        return tryReserveWithAutoFind(areaName, seatNumber, 
+        return tryReserveWithAutoFind(areaName, seatNumber,
                 DateUtils.getTodayDate(), startTime, endTime, true);
     }
     public AutoFindResult autoFindAndReserveTomorrow(String areaName, int seatNumber,
                                                       String startTime, String endTime) {
-        return tryReserveWithAutoFind(areaName, seatNumber, 
+        return tryReserveWithAutoFind(areaName, seatNumber,
                 DateUtils.getTomorrowDate(), startTime, endTime, true);
     }
     public List<SeatQuery.SeatInfo> getAlternatives(String areaName, String dateStr,
                                                      String startTime, String endTime) {
-        return seatQuery.findAvailableSeats(areaName, dateStr, startTime, endTime, 
+        return seatQuery.findAvailableSeats(areaName, dateStr, startTime, endTime,
                 DEFAULT_ALTERNATIVES_LIMIT);
     }
     public SeatReservation.ReserveResult reserveAlternative(SeatQuery.SeatInfo seat,
-                                                             String dateStr, 
+                                                             String dateStr,
                                                              String startTime, String endTime) {
         String[] areaAndSeat = Constants.getAreaAndSeatNumber(seat.devId);
         if (areaAndSeat == null) {

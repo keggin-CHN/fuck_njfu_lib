@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.activities;
-
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,19 +6,15 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-
 import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
 import com.keggin.fucknjfulib.network.ApiConstants;
 import com.keggin.fucknjfulib.network.HttpClientManager;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,28 +24,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import okhttp3.Response;
-
 public class AccountInfoActivity extends AppCompatActivity {
-
     private TextView tvUserName, tvUserDept, tvStudentId, tvUserClass;
     private TextView tvPunishCount, tvPunishStatus, tvNoPunish;
     private LinearLayout layoutPunishList;
     private FrameLayout loadingOverlay;
     private ExecutorService executor;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account_info);
-
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null)
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> finish());
-
         tvUserName = findViewById(R.id.tvUserName);
         tvUserDept = findViewById(R.id.tvUserDept);
         tvStudentId = findViewById(R.id.tvStudentId);
@@ -60,11 +49,9 @@ public class AccountInfoActivity extends AppCompatActivity {
         tvNoPunish = findViewById(R.id.tvNoPunish);
         layoutPunishList = findViewById(R.id.layoutPunishList);
         loadingOverlay = findViewById(R.id.loadingOverlay);
-
         executor = Executors.newSingleThreadExecutor();
         loadAccountInfo();
     }
-
     private void loadAccountInfo() {
         loadingOverlay.setVisibility(View.VISIBLE);
         executor.execute(() -> {
@@ -84,8 +71,6 @@ public class AccountInfoActivity extends AppCompatActivity {
                 headers.put("token", token);
                 headers.put("lan", "1");
                 headers.put("Accept", ApiConstants.ACCEPT_JSON);
-
-                // --- Fetch user info ---
                 String userName = "", userDept = "";
                 String studentId = new PreferenceManager(this).getStudentId();
                 String userClass = "";
@@ -107,9 +92,6 @@ public class AccountInfoActivity extends AppCompatActivity {
                         }
                     }
                 }
-
-                // --- Fetch credit surplus (remaining score) ---
-                // Response: {"data":{"total8":600,"8":600}}
                 int creditTotal = -1, creditRemain = -1;
                 Response surplusResp = http.get(ApiConstants.getCreditSurplusUrl(), headers);
                 if (surplusResp.isSuccessful()) {
@@ -125,10 +107,6 @@ public class AccountInfoActivity extends AppCompatActivity {
                         }
                     }
                 }
-
-                // --- Fetch credit records (violation history) ---
-                // Response: {"data":[{creditKindName, devName, thisUseScore, gmtCreate,
-                // status}]}
                 JSONArray creditList = new JSONArray();
                 Response creditResp = http.get(ApiConstants.getCreditRecUrl() + "&page=1&pageNum=20", headers);
                 if (creditResp.isSuccessful()) {
@@ -142,8 +120,6 @@ public class AccountInfoActivity extends AppCompatActivity {
                         }
                     }
                 }
-
-                // Capture final refs
                 final String finalName = userName.isEmpty() ? studentId : userName;
                 final String finalDept = userDept;
                 final String finalStudentId = studentId;
@@ -151,21 +127,17 @@ public class AccountInfoActivity extends AppCompatActivity {
                 final JSONArray finalList = creditList;
                 final int finalTotal = creditTotal;
                 final int finalRemain = creditRemain;
-
                 runOnUiThread(() -> {
                     loadingOverlay.setVisibility(View.GONE);
                     tvUserName.setText(finalName);
                     tvUserDept.setText(finalDept);
                     tvStudentId.setText(finalStudentId);
                     tvUserClass.setText(finalClass);
-
-                    // Credit score display in punish count field
                     if (finalTotal >= 0) {
                         tvPunishCount.setText(finalRemain + " / " + finalTotal);
                     } else {
                         tvPunishCount.setText(String.valueOf(finalList.length()));
                     }
-
                     int count = finalList.length();
                     if (count == 0) {
                         tvPunishStatus.setText("无记录");
@@ -185,7 +157,6 @@ public class AccountInfoActivity extends AppCompatActivity {
             }
         });
     }
-
     private String getSemesterString(long timestamp) {
         java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.setTimeInMillis(timestamp);
@@ -199,18 +170,15 @@ public class AccountInfoActivity extends AppCompatActivity {
             return (year - 1) + "-" + year + "-2";
         }
     }
-
     private void buildCreditRows(JSONArray creditList) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
         layoutPunishList.removeAllViews();
-        
         List<JSONObject> list = new ArrayList<>();
         for (int i = 0; i < creditList.length(); i++) {
             JSONObject item = creditList.optJSONObject(i);
             if (item != null) list.add(item);
         }
         java.util.Collections.sort(list, (a, b) -> Long.compare(b.optLong("gmtCreate", 0), a.optLong("gmtCreate", 0)));
-
         String currentSemester = "";
         for (int i = 0; i < list.size(); i++) {
             try {
@@ -220,7 +188,6 @@ public class AccountInfoActivity extends AppCompatActivity {
                 int score = item.optInt("thisUseScore", 0);
                 long ts = item.optLong("gmtCreate", 0);
                 int status = item.optInt("status", 1);
-
                 String semester = ts > 0 ? getSemesterString(ts) : "未知学期";
                 if (!semester.equals(currentSemester)) {
                     currentSemester = semester;
@@ -234,18 +201,15 @@ public class AccountInfoActivity extends AppCompatActivity {
                     header.setTypeface(null, android.graphics.Typeface.BOLD);
                     layoutPunishList.addView(header);
                 }
-
                 View row = LayoutInflater.from(this).inflate(R.layout.item_punish_record, layoutPunishList, false);
                 TextView tvTitle = row.findViewById(R.id.tvPunishTitle);
                 TextView tvTime = row.findViewById(R.id.tvPunishTime);
                 TextView tvPoints = row.findViewById(R.id.tvPunishPoints);
-
                 String titleText = (i + 1) + ". " + kind;
                 if (!dev.isEmpty())
                     titleText += "（" + dev + "）";
                 tvTitle.setText(titleText);
                 tvTime.setText(ts > 0 ? sdf.format(new Date(ts)) : "");
-
                 if (status == 2) {
                     tvPoints.setText("已撤销");
                     tvPoints.setTextColor(0xFF9E9E9E);
@@ -258,7 +222,6 @@ public class AccountInfoActivity extends AppCompatActivity {
             }
         }
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();

@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.auth;
-
 import android.util.Log;
 import com.keggin.fucknjfulib.crypto.RSACipher;
 import com.keggin.fucknjfulib.network.ApiConstants;
@@ -11,7 +10,6 @@ import java.util.Map;
 import android.content.Context;
 import okhttp3.Response;
 import com.keggin.fucknjfulib.utils.ProgressListener;
-
 public class LibraryAuthenticator {
     private static final String TAG = "LibraryAuthenticator";
     private final String username;
@@ -23,7 +21,6 @@ public class LibraryAuthenticator {
     private String errorMessage;
     private final Context context;
     private final ProgressListener progressListener;
-
     public LibraryAuthenticator(Context context, String username, String libPassword, ProgressListener progressListener) {
         this.context = context.getApplicationContext();
         this.username = username;
@@ -31,11 +28,9 @@ public class LibraryAuthenticator {
         this.httpClient = HttpClientManager.getInstance(this.context);
         this.progressListener = progressListener;
     }
-
     public boolean authenticate() {
         return authenticate(5);
     }
-
     public boolean authenticate(int maxAttempts) {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             Log.d(TAG, "图书馆认证尝试 " + attempt + "/" + maxAttempts);
@@ -69,7 +64,6 @@ public class LibraryAuthenticator {
         }
         return false;
     }
-
     private String[] getPublicKeyAndNonce() {
         try {
             Map<String, String> headers = new HashMap<>();
@@ -100,7 +94,6 @@ public class LibraryAuthenticator {
             return null;
         }
     }
-
     private boolean submitLogin(String encryptedPassword) throws IOException {
         Log.d(TAG, "提交图书馆登录...");
         JSONObject payload = new JSONObject();
@@ -148,7 +141,6 @@ public class LibraryAuthenticator {
             return false;
         }
     }
-
     public boolean isTokenValid() {
         if (token == null || accNo == null) {
             return false;
@@ -174,29 +166,23 @@ public class LibraryAuthenticator {
         }
         return false;
     }
-
     public void setTokenFromCache(String token, String accNo) {
         this.token = token;
         this.accNo = accNo;
         this.lastAuthTime = System.currentTimeMillis();
     }
-
     public String getToken() {
         return token;
     }
-
     public String getAccNo() {
         return accNo;
     }
-
     public long getLastAuthTime() {
         return lastAuthTime;
     }
-
     public String getErrorMessage() {
         return errorMessage;
     }
-
     private void reportProgress(int percent, String message) {
         if (progressListener != null) {
             progressListener.onProgress(percent, message);

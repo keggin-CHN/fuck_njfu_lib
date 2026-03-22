@@ -15,7 +15,6 @@ public class BootReceiver extends BroadcastReceiver {
             SharedPreferences prefs = context.getSharedPreferences(Constants.PREF_NAME, Context.MODE_PRIVATE);
             boolean autoReserve = prefs.getBoolean(Constants.PREF_AUTO_RESERVE, false);
             boolean preventLate = prefs.getBoolean(Constants.PREF_PREVENT_LATE, false);
-
             if (autoReserve) {
                 Log.d(TAG, "恢复自动预约定时任务");
                 Intent serviceIntent = new Intent(context, AutoReserveService.class);
@@ -36,7 +35,6 @@ public class BootReceiver extends BroadcastReceiver {
                     context.startService(serviceIntent);
                 }
             }
-            // 启动保活服务
             if (autoReserve || preventLate) {
                 Log.d(TAG, "启动保活服务");
                 try {

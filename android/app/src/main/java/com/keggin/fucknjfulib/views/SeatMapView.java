@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.views;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -14,13 +13,11 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
-
 import com.keggin.fucknjfulib.reservation.SeatQuery;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 public class SeatMapView extends View {
     private static final String TAG = "SeatMapView";
     private static final float POINT_SIZE = 14f;
@@ -63,7 +60,6 @@ public class SeatMapView extends View {
     }
     private static class TablePair {
         SeatQuery.SeatInfo seat1, seat2;
-
         TablePair(SeatQuery.SeatInfo s1, SeatQuery.SeatInfo s2) {
             seat1 = s1;
             seat2 = s2;
@@ -85,49 +81,39 @@ public class SeatMapView extends View {
         density = ctx.getResources().getDisplayMetrics().density;
         bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bitmapPaint.setFilterBitmap(true);
-        
         availablePaint = makePaint("#4CAF50");
         occupiedPaint = makePaint("#FF9800");
         selectedPaint = makePaint("#2196F3");
-
         selectedStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         selectedStrokePaint.setColor(Color.parseColor("#0D47A1"));
         selectedStrokePaint.setStyle(Paint.Style.STROKE);
         selectedStrokePaint.setStrokeWidth(3f);
-
         bgPaint = makePaint("#E8E8E8");
         roomBgPaint = makePaint("#FFFFFF");
-
         tablePaint = makePaint("#C8A96E");
         tableStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         tableStrokePaint.setColor(Color.parseColor("#A68B5B"));
         tableStrokePaint.setStyle(Paint.Style.STROKE);
         tableStrokePaint.setStrokeWidth(1f);
-
         wallPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         wallPaint.setColor(Color.parseColor("#999999"));
         wallPaint.setStyle(Paint.Style.STROKE);
         wallPaint.setStrokeWidth(2f);
-
         seatTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         seatTextPaint.setColor(Color.WHITE);
         seatTextPaint.setTextSize(POINT_SIZE * 0.8f);
         seatTextPaint.setTextAlign(Paint.Align.CENTER);
         seatTextPaint.setFakeBoldText(true);
-
         seatBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         seatBorderPaint.setColor(Color.parseColor("#33000000"));
         seatBorderPaint.setStyle(Paint.Style.STROKE);
         seatBorderPaint.setStrokeWidth(1f * density);
-
         legendPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         legendPaint.setStyle(Paint.Style.FILL);
-
         legendTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         legendTextPaint.setColor(Color.parseColor("#666666"));
         legendTextPaint.setTextSize(11 * density);
         legendTextPaint.setTextAlign(Paint.Align.LEFT);
-
         scaleDetector = new ScaleGestureDetector(ctx, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(ScaleGestureDetector d) {
@@ -140,7 +126,6 @@ public class SeatMapView extends View {
                 return true;
             }
         });
-
         gestureDetector = new GestureDetector(ctx, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
@@ -151,13 +136,11 @@ public class SeatMapView extends View {
                 invalidate();
                 return true;
             }
-
             @Override
             public boolean onSingleTapUp(MotionEvent e) {
                 handleTap(e.getX(), e.getY());
                 return true;
             }
-
             @Override
             public boolean onDoubleTap(MotionEvent e) {
                 float nextScale;
@@ -168,7 +151,6 @@ public class SeatMapView extends View {
                 } else {
                     nextScale = 1.0f;
                 }
-
                 float oldScale = Math.max(0.5f, scaleFactor);
                 if (nextScale == 1.0f) {
                     translateX = 0f;
@@ -188,14 +170,12 @@ public class SeatMapView extends View {
             }
         });
     }
-
     private Paint makePaint(String color) {
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         p.setColor(Color.parseColor(color));
         p.setStyle(Paint.Style.FILL);
         return p;
     }
-
     public void setSeats(List<SeatQuery.SeatInfo> seatList) {
         seats = seatList != null ? seatList : new ArrayList<>();
         selectedSeat = null;
@@ -207,7 +187,6 @@ public class SeatMapView extends View {
         translateY = 0f;
         invalidate();
     }
-    
     public void setRoomBackground(int roomId) {
         if (roomId <= 0) {
             backgroundBitmap = null;
@@ -233,19 +212,15 @@ public class SeatMapView extends View {
         Log.d(TAG, "本地背景图加载成功: " + resName + " " + bitmap.getWidth() + "x" + bitmap.getHeight());
         invalidate();
     }
-
     public void setBackground(SeatQuery.RoomBackground background) {
-        // 保留兼容接口，背景图改为按 roomId 从 drawable 本地加载
         if (background == null) {
             backgroundBitmap = null;
             invalidate();
         }
     }
-
     public SeatQuery.SeatInfo getSelectedSeat() {
         return selectedSeat;
     }
-
     private void detectTables() {
         tables.clear();
         if (seats.isEmpty())
@@ -275,7 +250,6 @@ public class SeatMapView extends View {
             }
         }
     }
-
     public void setOnSeatClickListener(OnSeatClickListener l) {
         onSeatClickListener = l;
     }
@@ -284,14 +258,11 @@ public class SeatMapView extends View {
         super.onDraw(canvas);
         int vw = getWidth(), vh = getHeight();
         if (vw == 0 || vh == 0) return;
-
         canvas.drawRect(0, 0, vw, vh, bgPaint);
-
         float roomRatio = (backgroundBitmap != null)
                 ? (float) backgroundBitmap.getWidth() / backgroundBitmap.getHeight()
                 : 16f / 9f;
         float viewRatio = (float) vw / vh;
-
         float rw, rh, rl, rt;
         if (viewRatio > roomRatio) {
             rh = vh;
@@ -305,38 +276,29 @@ public class SeatMapView extends View {
             rt = (vh - rh) / 2f;
         }
         roomRect.set(rl, rt, rl + rw, rt + rh);
-
         canvas.save();
         canvas.translate(translateX, translateY);
         canvas.scale(scaleFactor, scaleFactor, roomRect.centerX(), roomRect.centerY());
-
         canvas.drawRect(roomRect, roomBgPaint);
         if (backgroundBitmap != null) {
-            bitmapPaint.setAlpha(166); // 对齐 HTML bg-image 的 opacity: 0.65
+            bitmapPaint.setAlpha(166);
             canvas.drawBitmap(backgroundBitmap, null, roomRect, bitmapPaint);
             bitmapPaint.setAlpha(255);
         }
-
-        float seatSize = POINT_SIZE; // 对齐 HTML seat width/height=14px
+        float seatSize = POINT_SIZE;
         float radius = seatSize / 2f;
-
         for (SeatQuery.SeatInfo seat : seats) {
             if (seat.coordX < 0 || seat.coordY < 0) continue;
-
-            // 对齐 HTML: left/top 是座位左上角锚点（默认非 center-anchor）
             float left = roomRect.left + (seat.coordX / 100f) * roomRect.width();
             float top = roomRect.top + (seat.coordY / 100f) * roomRect.height();
             float cx = left + radius;
             float cy = top + radius;
-
             Paint p = seat == selectedSeat ? selectedPaint : seat.isAvailable() ? availablePaint : occupiedPaint;
             canvas.drawCircle(cx, cy, radius, p);
             canvas.drawCircle(cx, cy, radius, seatBorderPaint);
-
             if (seat == selectedSeat) {
                 canvas.drawCircle(cx, cy, radius + 3f, selectedStrokePaint);
             }
-
             String seatNum = extractNum(seat.devName);
             if (seatNum != null && !seatNum.trim().isEmpty()) {
                 float textSize = seatNum.length() >= 3 ? POINT_SIZE * 0.55f : POINT_SIZE * 0.7f;
@@ -346,7 +308,6 @@ public class SeatMapView extends View {
                 canvas.drawText(seatNum, cx, baseline, seatTextPaint);
             }
         }
-
         canvas.restore();
     }
     private void drawLegend(Canvas canvas, int w, int h) {
@@ -355,21 +316,17 @@ public class SeatMapView extends View {
         float r = 5 * density;
         float g = 5 * density;
         float sp = 72 * density;
-
         legendPaint.setColor(Color.parseColor("#4CAF50"));
         canvas.drawCircle(x + r, y - r, r, legendPaint);
         canvas.drawText("空闲", x + r * 2 + g, y, legendTextPaint);
-
         x += sp;
         legendPaint.setColor(Color.parseColor("#FF9800"));
         canvas.drawCircle(x + r, y - r, r, legendPaint);
         canvas.drawText("使用中", x + r * 2 + g, y, legendTextPaint);
-
         x += sp + 12 * density;
         legendPaint.setColor(Color.parseColor("#2196F3"));
         canvas.drawCircle(x + r, y - r, r, legendPaint);
         canvas.drawText("选中", x + r * 2 + g, y, legendTextPaint);
-
         int a = 0;
         for (SeatQuery.SeatInfo s : seats)
             if (s.isAvailable())
@@ -377,7 +334,6 @@ public class SeatMapView extends View {
         String st = a + "/" + seats.size();
         canvas.drawText(st, w - legendTextPaint.measureText(st) - 10 * density, y, legendTextPaint);
     }
-
     private String extractNum(String name) {
         if (name == null)
             return null;
@@ -395,39 +351,29 @@ public class SeatMapView extends View {
             }
         return null;
     }
-
     private void handleTap(float tapX, float tapY) {
         if (roomRect.isEmpty()) return;
-
-        // 逆变换：先去平移，再围绕 roomRect 中心逆缩放
         float sx = (tapX - translateX - roomRect.centerX()) / scaleFactor + roomRect.centerX();
         float sy = (tapY - translateY - roomRect.centerY()) / scaleFactor + roomRect.centerY();
-
         float seatSize = POINT_SIZE;
         float radius = seatSize / 2f;
-
         float bestDist = Float.MAX_VALUE;
         SeatQuery.SeatInfo best = null;
-
         for (SeatQuery.SeatInfo seat : seats) {
             if (seat.coordX < 0 || seat.coordY < 0) continue;
-
             float left = roomRect.left + (seat.coordX / 100f) * roomRect.width();
             float top = roomRect.top + (seat.coordY / 100f) * roomRect.height();
             float cx = left + radius;
             float cy = top + radius;
-
             float dx = sx - cx;
             float dy = sy - cy;
             float d = (float) Math.sqrt(dx * dx + dy * dy);
             float hitR = Math.max(radius, 14f * density / Math.max(scaleFactor, 0.5f));
-
             if (d <= hitR && d < bestDist) {
                 bestDist = d;
                 best = seat;
             }
         }
-
         if (best != null) {
             selectedSeat = best;
             invalidate();
@@ -444,7 +390,6 @@ public class SeatMapView extends View {
             performClick();
         return true;
     }
-
     @Override
     public boolean performClick() {
         return super.performClick();

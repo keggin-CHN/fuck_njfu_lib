@@ -4,12 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_primary">
-
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/primary">
-
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -19,19 +17,15 @@
             app:titleTextColor="@color/text_white"
             app:navigationIcon="@drawable/ic_back" />
     </com.google.android.material.appbar.AppBarLayout>
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
-
-            <!-- Profile Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -39,21 +33,17 @@
                 app:cardElevation="4dp"
                 app:cardBackgroundColor="@color/primary"
                 android:layout_marginBottom="16dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="20dp">
-
-                    <!-- Avatar + Name row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
-
                         <ImageView
                             android:layout_width="56dp"
                             android:layout_height="56dp"
@@ -63,14 +53,12 @@
                             android:backgroundTint="#33FFFFFF"
                             app:tint="@color/text_white"
                             android:contentDescription="avatar" />
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical"
                             android:layout_marginStart="16dp">
-
                             <TextView
                                 android:id="@+id/tvUserName"
                                 android:layout_width="wrap_content"
@@ -79,7 +67,6 @@
                                 android:textSize="22sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/text_white" />
-
                             <TextView
                                 android:id="@+id/tvUserDept"
                                 android:layout_width="wrap_content"
@@ -90,13 +77,10 @@
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
                     </LinearLayout>
-
-                    <!-- Info grid -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -122,7 +106,6 @@
                                 android:textColor="#AAFFFFFF"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -151,8 +134,6 @@
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            <!-- Violation Records Section -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -161,7 +142,6 @@
                 android:textColor="@color/primary"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -169,21 +149,17 @@
                 app:cardElevation="3dp"
                 app:cardBackgroundColor="@color/card_background"
                 android:layout_marginBottom="16dp">
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
-                    <!-- Summary row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:layout_marginBottom="12dp">
-
                         <ImageView
                             android:layout_width="36dp"
                             android:layout_height="36dp"
@@ -193,14 +169,12 @@
                             android:padding="6dp"
                             app:tint="#FF6F00"
                             android:contentDescription="warning" />
-
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical"
                             android:layout_marginStart="12dp">
-
                             <TextView
                                 android:id="@+id/tvPunishCount"
                                 android:layout_width="wrap_content"
@@ -209,7 +183,6 @@
                                 android:textSize="18sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/text_primary" />
-
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -217,8 +190,6 @@
                                 android:textSize="12sp"
                                 android:textColor="@color/text_secondary" />
                         </LinearLayout>
-
-                        <!-- Status badge -->
                         <TextView
                             android:id="@+id/tvPunishStatus"
                             android:layout_width="wrap_content"
@@ -233,22 +204,16 @@
                             android:paddingTop="4dp"
                             android:paddingBottom="4dp" />
                     </LinearLayout>
-
-                    <!-- Divider -->
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/divider"
                         android:layout_marginBottom="12dp" />
-
-                    <!-- Violation list -->
                     <LinearLayout
                         android:id="@+id/layoutPunishList"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical" />
-
-                    <!-- Empty state -->
                     <TextView
                         android:id="@+id/tvNoPunish"
                         android:layout_width="match_parent"
@@ -261,11 +226,8 @@
                         android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
@@ -280,5 +242,4 @@
             android:layout_gravity="center"
             android:indeterminateTint="@color/text_white" />
     </FrameLayout>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

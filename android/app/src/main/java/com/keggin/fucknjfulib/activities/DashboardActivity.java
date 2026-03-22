@@ -1,5 +1,4 @@
 package com.keggin.fucknjfulib.activities;
-
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -43,7 +42,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 public class DashboardActivity extends AppCompatActivity {
     private static final String FEATURE_NOTIFY_CHANNEL_ID = "feature_status_channel";
     private static final int NOTIFY_ID_AUTO_FIND = 3101;
@@ -94,7 +92,6 @@ public class DashboardActivity extends AppCompatActivity {
     private SeatReservation.ReservationInfo currentReservation;
     private SeatReservation.ReservationInfo todayReservationForActions;
     private SeatReservation.ReservationInfo tomorrowReservationForActions;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -104,10 +101,8 @@ public class DashboardActivity extends AppCompatActivity {
         initViews();
         setupClickListeners();
     }
-
     private android.os.Handler autoRefreshHandler;
     private Runnable autoRefreshRunnable;
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -118,13 +113,11 @@ public class DashboardActivity extends AppCompatActivity {
         checkPunishInfo();
         startAutoRefresh();
     }
-
     @Override
     protected void onPause() {
         super.onPause();
         stopAutoRefresh();
     }
-
     private void startAutoRefresh() {
         if (autoRefreshHandler == null) {
             autoRefreshHandler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -133,22 +126,19 @@ public class DashboardActivity extends AppCompatActivity {
             autoRefreshRunnable = new Runnable() {
                 @Override
                 public void run() {
-                    // Silent background update
                     loadCurrentReservation(false);
-                    autoRefreshHandler.postDelayed(this, 60000); // 1 minute
+                    autoRefreshHandler.postDelayed(this, 60000);
                 }
             };
         }
         autoRefreshHandler.removeCallbacks(autoRefreshRunnable);
         autoRefreshHandler.postDelayed(autoRefreshRunnable, 60000);
     }
-
     private void stopAutoRefresh() {
         if (autoRefreshHandler != null && autoRefreshRunnable != null) {
             autoRefreshHandler.removeCallbacks(autoRefreshRunnable);
         }
     }
-
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
         btnSettings = findViewById(R.id.btnSettings);
@@ -194,7 +184,6 @@ public class DashboardActivity extends AppCompatActivity {
         pbRefresh = findViewById(R.id.pbRefresh);
         btnRefreshReservation = findViewById(R.id.btnRefreshReservation);
     }
-
     private void setupClickListeners() {
         btnSettings.setOnClickListener(v -> navigateToSettings());
         if (btnGuide != null) {
@@ -229,28 +218,19 @@ public class DashboardActivity extends AppCompatActivity {
             cardAccountInfo.setOnClickListener(v -> navigateToAccountInfo());
         if (cardPlanTasks != null)
             cardPlanTasks.setOnClickListener(v -> navigateToPlanTasks());
-
         if (btnRefreshReservation != null) {
             btnRefreshReservation.setOnClickListener(v -> loadCurrentReservation(true));
         }
     }
-
     private void navigateToAccountInfo() {
         startActivity(new Intent(this, AccountInfoActivity.class));
     }
-
     private void navigateToPlanTasks() {
         startActivity(new Intent(this, PlanTasksActivity.class));
     }
-
     private void navigateToUserGuide() {
         startActivity(new Intent(this, UserGuideActivity.class));
     }
-
-    /**
-     * Loads punish count in background and updates the badge on the Account Info
-     * card.
-     */
     private void checkPunishInfo() {
         executor.execute(() -> {
             try {
@@ -295,11 +275,9 @@ public class DashboardActivity extends AppCompatActivity {
             }
         });
     }
-
     private void loadCurrentReservation() {
         loadCurrentReservation(true);
     }
-
     private void loadCurrentReservation(boolean showRefreshIndicator) {
         if (showRefreshIndicator) {
             if (btnRefreshReservation != null) btnRefreshReservation.setVisibility(View.GONE);
@@ -312,7 +290,6 @@ public class DashboardActivity extends AppCompatActivity {
                 tvLoadingStatus.setText("准备就绪...");
             }
         }
-        
         ProgressListener progressListener = showRefreshIndicator ? (percent, message) -> runOnUiThread(() -> {
             if (layoutLoadingProgress != null && layoutLoadingProgress.getVisibility() == View.VISIBLE) {
                 progressIndicator.setProgressCompat(percent, true);
@@ -336,7 +313,6 @@ public class DashboardActivity extends AppCompatActivity {
                     });
                     return;
                 }
-                
                 SeatReservation seatReservation = new SeatReservation(authManager);
                 seatReservation.setProgressListener(progressListener);
                 List<SeatReservation.ReservationInfo> reservations = seatReservation.getTodayAndTomorrowReservations();
@@ -346,7 +322,6 @@ public class DashboardActivity extends AppCompatActivity {
                         reservations, DateUtils.getTomorrowDate());
                 SeatReservation.ReservationInfo primaryReservation = selectPrimaryReservation(
                         todayReservation, tomorrowReservation);
-
                 runOnUiThread(() -> {
                         if (showRefreshIndicator) {
                             if (layoutLoadingProgress != null) layoutLoadingProgress.setVisibility(View.GONE);
@@ -369,7 +344,6 @@ public class DashboardActivity extends AppCompatActivity {
             }
         });
     }
-
     private boolean loadCachedReservation() {
         String cached = preferenceManager.getCachedCurrentReservation();
         if (cached == null || cached.trim().isEmpty()) {
@@ -383,7 +357,6 @@ public class DashboardActivity extends AppCompatActivity {
                 String tomorrow = DateUtils.getTomorrowDate();
                 SeatReservation.ReservationInfo todayReservation = null;
                 SeatReservation.ReservationInfo tomorrowReservation = null;
-
                 if (today.equals(info.onDate)) {
                     todayReservation = info;
                 } else if (tomorrow.equals(info.onDate)) {
@@ -393,7 +366,6 @@ public class DashboardActivity extends AppCompatActivity {
                     showReservationLoadingState();
                     return false;
                 }
-
                 currentReservation = selectPrimaryReservation(todayReservation, tomorrowReservation);
                 updateReservationUI(todayReservation, tomorrowReservation);
                 return true;
@@ -404,7 +376,6 @@ public class DashboardActivity extends AppCompatActivity {
         showReservationLoadingState();
         return false;
     }
-
     private void showReservationLoadingState() {
         if (tvNoReservationText != null) {
             tvNoReservationText.setText(R.string.loading);
@@ -412,7 +383,6 @@ public class DashboardActivity extends AppCompatActivity {
         layoutNoReservation.setVisibility(View.VISIBLE);
         layoutReservationInfo.setVisibility(View.GONE);
     }
-
     private void cacheCurrentReservationIfNeeded(SeatReservation.ReservationInfo reservation) {
         if (reservation != null && reservation.hasReservation) {
             try {
@@ -423,7 +393,6 @@ public class DashboardActivity extends AppCompatActivity {
             preferenceManager.clearCachedCurrentReservation();
         }
     }
-
     private SeatReservation.ReservationInfo parseReservationInfo(String json) throws Exception {
         JSONObject obj = new JSONObject(json);
         SeatReservation.ReservationInfo info = new SeatReservation.ReservationInfo();
@@ -447,7 +416,6 @@ public class DashboardActivity extends AppCompatActivity {
         info.latestCheckInTime = obj.optLong("latestCheckInTime", 0);
         return info;
     }
-
     private String toReservationJson(SeatReservation.ReservationInfo reservation) throws Exception {
         JSONObject obj = new JSONObject();
         obj.put("hasReservation", reservation.hasReservation);
@@ -470,12 +438,10 @@ public class DashboardActivity extends AppCompatActivity {
         obj.put("latestCheckInTime", reservation.latestCheckInTime);
         return obj.toString();
     }
-
     private void updateReservationUI(SeatReservation.ReservationInfo todayReservation,
             SeatReservation.ReservationInfo tomorrowReservation) {
         boolean hasTodayReservation = todayReservation != null && todayReservation.hasReservation;
         boolean hasTomorrowReservation = tomorrowReservation != null && tomorrowReservation.hasReservation;
-
         if (!hasTodayReservation && !hasTomorrowReservation) {
             if (tvNoReservationText != null) {
                 tvNoReservationText.setText(R.string.no_reservation);
@@ -487,35 +453,28 @@ public class DashboardActivity extends AppCompatActivity {
             updateActionButtonsForReservations(null, null);
             return;
         }
-
         layoutNoReservation.setVisibility(View.GONE);
         layoutReservationInfo.setVisibility(View.VISIBLE);
-
         if (tvReservationSeat != null && tvReservationSeat.getParent() instanceof View) {
             ((View) tvReservationSeat.getParent()).setVisibility(View.GONE);
         }
-
         if (layoutTodayReservation != null) {
             layoutTodayReservation.setVisibility(hasTodayReservation ? View.VISIBLE : View.GONE);
         }
         if (layoutTomorrowReservation != null) {
             layoutTomorrowReservation.setVisibility(hasTomorrowReservation ? View.VISIBLE : View.GONE);
         }
-
         if (hasTodayReservation) {
             bindDayReservation(todayReservation, true);
         }
         if (hasTomorrowReservation) {
             bindDayReservation(tomorrowReservation, false);
         }
-
         todayReservationForActions = hasTodayReservation ? todayReservation : null;
         tomorrowReservationForActions = hasTomorrowReservation ? tomorrowReservation : null;
-
         currentReservation = selectPrimaryReservation(todayReservationForActions, tomorrowReservationForActions);
         updateActionButtonsForReservations(todayReservationForActions, tomorrowReservationForActions);
     }
-
     private String formatSeatLine(SeatReservation.ReservationInfo reservation) {
         if (reservation == null || !reservation.hasReservation) {
             return "座位：暂无预约";
@@ -531,40 +490,33 @@ public class DashboardActivity extends AppCompatActivity {
         }
         return "座位：" + area;
     }
-
     private void bindDayReservation(SeatReservation.ReservationInfo reservation, boolean isToday) {
         TextView labelView = isToday ? tvTodayReservationLabel : tvTomorrowReservationLabel;
         TextView seatView = isToday ? tvTodayReservationSeat : tvTomorrowReservationSeat;
         TextView timeView = isToday ? tvTodayReservationTime : tvTomorrowReservationTime;
         TextView statusView = isToday ? tvTodayReservationStatus : tvTomorrowReservationStatus;
         LinearLayout container = isToday ? layoutTodayReservation : layoutTomorrowReservation;
-
         if (reservation == null || !reservation.hasReservation) {
             if (container != null) {
                 container.setVisibility(View.GONE);
             }
             return;
         }
-
         if (container != null) {
             container.setVisibility(View.VISIBLE);
         }
-
         String defaultDate = isToday ? DateUtils.getTodayDate() : DateUtils.getTomorrowDate();
         String dayPrefix = isToday ? "今天" : "明天";
         String dateText = reservation.onDate != null && !reservation.onDate.trim().isEmpty()
                 ? reservation.onDate
                 : defaultDate;
         labelView.setText(dayPrefix + " · " + dateText);
-
         seatView.setText(formatSeatLine(reservation));
         String start = reservation.startTime != null && !reservation.startTime.trim().isEmpty() ? reservation.startTime : "--:--";
         String end = reservation.endTime != null && !reservation.endTime.trim().isEmpty() ? reservation.endTime : "--:--";
         timeView.setText(start + " - " + end);
         statusView.setText(getStatusText(reservation.state));
         statusView.setTextColor(getStatusColor(reservation.state));
-
-        // 暂离状态下，追加最晚返回时间
         if ("AWAY".equals(reservation.state) && reservation.tempLeaveEndTime > 0) {
             Calendar deadline = Calendar.getInstance();
             deadline.add(Calendar.MINUTE, reservation.tempLeaveEndTime);
@@ -572,11 +524,9 @@ public class DashboardActivity extends AppCompatActivity {
                     deadline.get(Calendar.HOUR_OF_DAY), deadline.get(Calendar.MINUTE));
             statusView.setText("暂离 · 最晚 " + deadlineStr + " 返回（剩余 " + reservation.tempLeaveEndTime + " 分钟）");
         }
-        // 未签到状态下，显示最晚签到时间
         if ("RESERVE".equals(reservation.state) && reservation.latestCheckInTime > 0) {
             long now = System.currentTimeMillis();
             if (now >= reservation.beginTime) {
-                // 已过开始时间，显示最晚签到截止
                 java.util.Date deadlineDate = new java.util.Date(reservation.latestCheckInTime);
                 String deadlineStr = new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
                         .format(deadlineDate);
@@ -590,7 +540,6 @@ public class DashboardActivity extends AppCompatActivity {
             }
         }
     }
-
     private SeatReservation.ReservationInfo pickFirstReservationForDate(
             List<SeatReservation.ReservationInfo> reservations, String date) {
         if (reservations == null || reservations.isEmpty() || date == null) {
@@ -610,7 +559,6 @@ public class DashboardActivity extends AppCompatActivity {
         }
         return best;
     }
-
     private SeatReservation.ReservationInfo selectPrimaryReservation(
             SeatReservation.ReservationInfo todayReservation,
             SeatReservation.ReservationInfo tomorrowReservation) {
@@ -622,10 +570,8 @@ public class DashboardActivity extends AppCompatActivity {
         }
         return null;
     }
-
     private void updateActionButtonsForReservations(SeatReservation.ReservationInfo todayReservation,
             SeatReservation.ReservationInfo tomorrowReservation) {
-        // 官方风格：按钮常显，不可用时置灰
         if (btnTodaySignIn != null) {
             btnTodaySignIn.setVisibility(View.GONE);
             setButtonEnabled(btnTodaySignIn, false);
@@ -645,26 +591,19 @@ public class DashboardActivity extends AppCompatActivity {
         if (btnTomorrowCancelReservation != null) {
             btnTomorrowCancelReservation.setVisibility(View.GONE);
         }
-
         if (todayReservation != null && todayReservation.hasReservation) {
             String st = normalizeActionState(todayReservation);
-            // 关系梳理：
-            // - RESERVE/LATE(未开始、待签到)：取消预约
-            // - CHECK_IN(已签到/进行中)：暂时离开 + 提前结束
-            // - AWAY(暂离)：返回 + 提前结束
             if ("RESERVE".equals(st) || "LATE".equals(st)) {
                 if (btnTodayCancelReservation != null) {
                     btnTodayCancelReservation.setVisibility(View.VISIBLE);
                     setButtonEnabled(btnTodayCancelReservation, true);
                 }
             } else if ("AWAY".equals(st)) {
-                // 暂离状态：只显示提前结束
                 if (btnTodayEndEarly != null) {
                     btnTodayEndEarly.setVisibility(View.VISIBLE);
                     setButtonEnabled(btnTodayEndEarly, true);
                 }
             } else if ("CHECK_IN".equals(st)) {
-                // 已签到：显示"暂时离开" + 提前结束
                 if (btnTodayTempLeave != null) {
                     btnTodayTempLeave.setText(R.string.btn_temp_leave);
                     btnTodayTempLeave.setVisibility(View.VISIBLE);
@@ -676,13 +615,10 @@ public class DashboardActivity extends AppCompatActivity {
                 }
             }
         }
-
         if (tomorrowReservation != null && tomorrowReservation.hasReservation) {
             if (btnTomorrowCancelReservation != null) btnTomorrowCancelReservation.setVisibility(View.VISIBLE);
         }
     }
-
-
     private String normalizeActionState(SeatReservation.ReservationInfo r) {
         if (r == null) return null;
         String st = r.state == null ? "" : r.state.trim();
@@ -693,18 +629,13 @@ public class DashboardActivity extends AppCompatActivity {
         if (raw.contains("暂离") || raw.contains("离座") || raw.contains("暂时离开")) return "AWAY";
         if (raw.contains("未开始") || raw.contains("待开始") || raw.contains("预约") || raw.contains("待签到") || raw.contains("未签到")) return "RESERVE";
         if (raw.contains("使用") || raw.contains("签到") || raw.contains("在馆") || raw.contains("入座") || raw.contains("学习中") || raw.contains("进行中")) return "CHECK_IN";
-
-        // 不再用时间段强推 CHECK_IN（你学校是到馆后服务器自动签到）
-        // 未明确签到前一律按 RESERVE 处理，避免误显示“暂时离开/提前结束”。
         return "RESERVE";
     }
-
     private void setButtonEnabled(MaterialButton btn, boolean enabled) {
         if (btn == null) return;
         btn.setEnabled(enabled);
         btn.setAlpha(enabled ? 1.0f : 0.45f);
     }
-
     private String getStatusText(String state) {
         if (state == null)
             return "未知";
@@ -721,7 +652,6 @@ public class DashboardActivity extends AppCompatActivity {
                 return state;
         }
     }
-
     private int getStatusColor(String state) {
         if (state == null)
             return getColor(R.color.text_secondary);
@@ -738,7 +668,6 @@ public class DashboardActivity extends AppCompatActivity {
                 return getColor(R.color.text_secondary);
         }
     }
-
     private void updateButtonVisibility(MaterialButton actionButton, String state) {
         if (actionButton == null) {
             return;
@@ -756,10 +685,8 @@ public class DashboardActivity extends AppCompatActivity {
             actionButton.setVisibility(View.GONE);
         }
     }
-
     private void showReserveNowDialog() {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_reserve_now, null);
-
         MaterialButton btnDateToday = dialogView.findViewById(R.id.btnDateToday);
         MaterialButton btnDateTomorrow = dialogView.findViewById(R.id.btnDateTomorrow);
         Spinner spinnerArea = dialogView.findViewById(R.id.spinnerArea);
@@ -768,8 +695,6 @@ public class DashboardActivity extends AppCompatActivity {
         TextInputEditText etEndTime = dialogView.findViewById(R.id.etEndTime);
         MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancel);
         MaterialButton btnReserveConfirm = dialogView.findViewById(R.id.btnReserveConfirm);
-
-        // Area spinner
         List<String> areaKeys = new ArrayList<>(Constants.SEAT_AREAS_MAP.keySet());
         List<String> areaNames = new ArrayList<>();
         for (String key : areaKeys) {
@@ -783,15 +708,9 @@ public class DashboardActivity extends AppCompatActivity {
         int idx = areaKeys.indexOf(lastArea);
         if (idx >= 0)
             spinnerArea.setSelection(idx);
-
-        // Default seat from preferences
         int lastSeat = preferenceManager.getTargetSeat();
         etSeatNumber.setText(lastSeat > 0 ? String.valueOf(lastSeat) : "");
-
-        // Date selection: use deep-blue for selected, neutral for unselected
         final String[] selectedDate = { DateUtils.getTodayDate() };
-
-        // Helper to apply selected/unselected states
         java.util.function.BiConsumer<MaterialButton, Boolean> applyDateStyle = (btn, selected) -> {
             if (selected) {
                 btn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(R.color.primary)));
@@ -803,17 +722,14 @@ public class DashboardActivity extends AppCompatActivity {
                 btn.setStrokeColor(android.content.res.ColorStateList.valueOf(getColor(R.color.primary)));
             }
         };
-        // Initial state: always today selected
         applyDateStyle.accept(btnDateToday, true);
         applyDateStyle.accept(btnDateTomorrow, false);
-
         Runnable refreshEndTimeByDate = () -> {
             String closeTimeForDate = DateUtils.getEndTimeWithoutSeconds(selectedDate[0]);
             String currentEnd = etEndTime.getText() != null ? etEndTime.getText().toString().trim() : "";
             String endCandidate = currentEnd.isEmpty() ? closeTimeForDate : currentEnd;
             etEndTime.setText(DateUtils.clampEndTime(endCandidate, closeTimeForDate));
         };
-
         btnDateToday.setOnClickListener(v -> {
             selectedDate[0] = DateUtils.getTodayDate();
             applyDateStyle.accept(btnDateToday, true);
@@ -826,8 +742,6 @@ public class DashboardActivity extends AppCompatActivity {
             applyDateStyle.accept(btnDateToday, false);
             refreshEndTimeByDate.run();
         });
-
-        // Default times
         String defStart = preferenceManager.getStartTime();
         String defEnd = preferenceManager.getEndTime();
         String fallbackStartTime = (defStart != null && !defStart.trim().isEmpty())
@@ -836,11 +750,8 @@ public class DashboardActivity extends AppCompatActivity {
         String fallbackEndTime = (defEnd != null && !defEnd.trim().isEmpty())
                 ? defEnd
                 : DateUtils.getEndTimeWithoutSeconds(selectedDate[0]);
-
         etStartTime.setText(fallbackStartTime);
         etEndTime.setText(DateUtils.clampEndTime(fallbackEndTime, DateUtils.getEndTimeWithoutSeconds(selectedDate[0])));
-
-        // TimePicker for start time
         etStartTime.setOnClickListener(v -> {
             String cur = etStartTime.getText() != null
                     ? etStartTime.getText().toString()
@@ -856,8 +767,6 @@ public class DashboardActivity extends AppCompatActivity {
                     (tp, hour, minute) -> etStartTime.setText(String.format("%02d:%02d", hour, minute)), h, m, true)
                     .show();
         });
-
-        // TimePicker for end time
         etEndTime.setOnClickListener(v -> {
             String defaultEnd = DateUtils.getEndTimeWithoutSeconds(selectedDate[0]);
             String cur = etEndTime.getText() != null ? etEndTime.getText().toString() : defaultEnd;
@@ -872,14 +781,12 @@ public class DashboardActivity extends AppCompatActivity {
                     (tp, hour, minute) -> etEndTime.setText(String.format("%02d:%02d", hour, minute)), h, m, true)
                     .show();
         });
-
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
-
         btnCancel.setOnClickListener(v -> dialog.dismiss());
         btnReserveConfirm.setOnClickListener(v -> {
             int areaIdx = spinnerArea.getSelectedItemPosition();
@@ -889,7 +796,6 @@ public class DashboardActivity extends AppCompatActivity {
                 Toast.makeText(this, "区域无效", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             String seatStr = etSeatNumber.getText() != null ? etSeatNumber.getText().toString().trim() : "";
             int seatNum;
             try {
@@ -902,7 +808,6 @@ public class DashboardActivity extends AppCompatActivity {
                 Toast.makeText(this, "座位号超出范围 (1-" + areaInfo.seatCount + ")", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             String date = selectedDate[0];
             String closeTime = DateUtils.getEndTimeWithoutSeconds(date);
             String startTime = etStartTime.getText() != null && etStartTime.getText().toString().trim().length() > 0
@@ -912,13 +817,11 @@ public class DashboardActivity extends AppCompatActivity {
                     ? etEndTime.getText().toString().trim()
                     : closeTime;
             endTime = DateUtils.clampEndTime(endTime, closeTime);
-
             dialog.dismiss();
             executeReserveNow(areaInfo, seatNum, startTime, endTime, date);
         });
         dialog.show();
     }
-
     private void executeReserveNow(Constants.AreaInfo areaInfo, int seatNumber, String startTime, String endTime,
             String date) {
         showLoading(true);
@@ -935,7 +838,6 @@ public class DashboardActivity extends AppCompatActivity {
                 String closeTime = DateUtils.getEndTimeWithoutSeconds(date);
                 String clampedEndTime = DateUtils.clampEndTime(endTime, closeTime);
                 boolean autoFindSeat = preferenceManager.isAutoFindSeatEnabled();
-
                 if (autoFindSeat) {
                     AutoFinder autoFinder = new AutoFinder(authManager);
                     AutoFinder.AutoFindResult findResult = autoFinder.tryReserveWithAutoFind(
@@ -995,7 +897,6 @@ public class DashboardActivity extends AppCompatActivity {
             }
         });
     }
-
     private void signIn(SeatReservation.ReservationInfo targetReservation) {
         if (targetReservation == null || !targetReservation.hasReservation)
             return;
@@ -1033,7 +934,6 @@ public class DashboardActivity extends AppCompatActivity {
             }
         });
     }
-
     private void awayOrBack(SeatReservation.ReservationInfo targetReservation) {
         if (targetReservation == null || !targetReservation.hasReservation)
             return;
@@ -1044,14 +944,12 @@ public class DashboardActivity extends AppCompatActivity {
                 SeatReservation seatReservation = new SeatReservation(authManager);
                 SeatReservation.OperationResult result;
                 if ("AWAY".equals(targetReservation.state)) {
-                    // 返回座位
                     if (targetReservation.resvIdInt > 0) {
                         result = seatReservation.backFromLeave(targetReservation.resvIdInt);
                     } else {
                         result = seatReservation.back(targetReservation.resvId);
                     }
                 } else {
-                    // 暂时离开
                     if (targetReservation.resvIdInt > 0) {
                         result = seatReservation.tempLeave(targetReservation.resvIdInt);
                     } else {
@@ -1075,7 +973,6 @@ public class DashboardActivity extends AppCompatActivity {
             }
         });
     }
-
     private void endEarly(SeatReservation.ReservationInfo targetReservation) {
         if (targetReservation == null || !targetReservation.hasReservation)
             return;
@@ -1110,7 +1007,6 @@ public class DashboardActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void cancelReservation(SeatReservation.ReservationInfo targetReservation, String dayLabel) {
         if (targetReservation == null || !targetReservation.hasReservation)
             return;
@@ -1123,7 +1019,6 @@ public class DashboardActivity extends AppCompatActivity {
                 .setNegativeButton("取消", null)
                 .show();
     }
-
     private void performCancelReservation(SeatReservation.ReservationInfo targetReservation) {
         showLoading(true);
         executor.execute(() -> {
@@ -1151,25 +1046,21 @@ public class DashboardActivity extends AppCompatActivity {
             }
         });
     }
-
     private void showModifyReservationDialog(SeatReservation.ReservationInfo targetReservation, String dayLabel) {
         if (targetReservation == null || !targetReservation.hasReservation) {
             Toast.makeText(this, "暂无可修改的预约", Toast.LENGTH_SHORT).show();
             return;
         }
-
         Constants.AreaInfo areaInfo = resolveAreaInfoForReservation(targetReservation);
         int seatNumber = resolveSeatNumberForReservation(targetReservation);
         if (areaInfo == null || seatNumber <= 0 || seatNumber > areaInfo.seatCount) {
             Toast.makeText(this, "无法识别当前预约座位，无法修改", Toast.LENGTH_LONG).show();
             return;
         }
-
         final String date = (targetReservation.onDate != null && !targetReservation.onDate.trim().isEmpty())
                 ? targetReservation.onDate
                 : DateUtils.getTodayDate();
         final String closeTime = DateUtils.getEndTimeWithoutSeconds(date);
-
         String defaultStart = (targetReservation.startTime != null && !targetReservation.startTime.trim().isEmpty())
                 ? targetReservation.startTime
                 : Constants.DEFAULT_START_TIME;
@@ -1177,19 +1068,16 @@ public class DashboardActivity extends AppCompatActivity {
                 ? targetReservation.endTime
                 : closeTime;
         defaultEnd = DateUtils.clampEndTime(defaultEnd, closeTime);
-
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_simple_reserve, null);
         TextView tvSeatInfo = dialogView.findViewById(R.id.tvSeatInfo);
         TextInputEditText etStartTime = dialogView.findViewById(R.id.etStartTime);
         TextInputEditText etEndTime = dialogView.findViewById(R.id.etEndTime);
         MaterialButton btnCancelReserve = dialogView.findViewById(R.id.btnCancelReserve);
         MaterialButton btnConfirmReserve = dialogView.findViewById(R.id.btnConfirmReserve);
-
         tvSeatInfo.setText(dayLabel + " · " + date + " · " + areaInfo.name + " " + seatNumber + "号");
         etStartTime.setText(defaultStart);
         etEndTime.setText(defaultEnd);
         btnConfirmReserve.setText("确认修改");
-
         etStartTime.setOnClickListener(v -> {
             String cur = etStartTime.getText() != null ? etStartTime.getText().toString().trim() : defaultStart;
             int h = 7, m = 30;
@@ -1203,7 +1091,6 @@ public class DashboardActivity extends AppCompatActivity {
                     (tp, hour, minute) -> etStartTime.setText(String.format("%02d:%02d", hour, minute)),
                     h, m, true).show();
         });
-
         etEndTime.setOnClickListener(v -> {
             String cur = etEndTime.getText() != null ? etEndTime.getText().toString().trim() : closeTime;
             int h = Integer.parseInt(closeTime.split(":")[0]), m = 0;
@@ -1217,14 +1104,12 @@ public class DashboardActivity extends AppCompatActivity {
                     (tp, hour, minute) -> etEndTime.setText(String.format("%02d:%02d", hour, minute)),
                     h, m, true).show();
         });
-
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
-
         btnCancelReserve.setOnClickListener(v -> dialog.dismiss());
         btnConfirmReserve.setOnClickListener(v -> {
             String startInput = etStartTime.getText() != null ? etStartTime.getText().toString().trim() : "";
@@ -1233,31 +1118,25 @@ public class DashboardActivity extends AppCompatActivity {
                 Toast.makeText(this, "请完整选择开始和结束时间", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             String normalizedStart = DateUtils.normalizeTimeFormat(startInput);
             String normalizedEnd = DateUtils.normalizeTimeFormat(DateUtils.clampEndTime(endInput, closeTime));
             if (!DateUtils.isValidDuration(normalizedStart, normalizedEnd, 2)) {
                 Toast.makeText(this, "预约时长必须至少2小时", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             dialog.dismiss();
-
             String finalStartInput = startInput;
             String todayStr = DateUtils.getTodayDate();
             if (date.equals(todayStr)) {
-                String nowTime = DateUtils.formatTimestampToTime(System.currentTimeMillis()); // Gets current time HH:mm
+                String nowTime = DateUtils.formatTimestampToTime(System.currentTimeMillis());
                 if (finalStartInput.compareTo(nowTime) < 0) {
                     finalStartInput = nowTime;
                 }
             }
-
             performModifyReservation(targetReservation, areaInfo, seatNumber, finalStartInput, normalizedEnd.substring(0, 5), date);
         });
-
         dialog.show();
     }
-
     private void performModifyReservation(SeatReservation.ReservationInfo targetReservation,
             Constants.AreaInfo areaInfo, int seatNumber, String startTime, String endTime, String date) {
         showLoading(true);
@@ -1273,7 +1152,6 @@ public class DashboardActivity extends AppCompatActivity {
                     });
                     return;
                 }
-
                 String resvId = (targetReservation.resvId != null && !targetReservation.resvId.trim().isEmpty())
                         ? targetReservation.resvId
                         : targetReservation.uuid;
@@ -1284,18 +1162,15 @@ public class DashboardActivity extends AppCompatActivity {
                     });
                     return;
                 }
-
                 SeatReservation seatReservation = new SeatReservation(authManager);
                 SeatReservation.OperationResult cancelResult;
                 boolean isUsing = "CHECK_IN".equals(targetReservation.state) || "AWAY".equals(targetReservation.state);
-
                 if (isUsing) {
                     cancelResult = seatReservation.endAhead(targetReservation.uuid);
                 } else {
                     cancelResult = seatReservation.cancelReservation(
                             authManager.getToken(), authManager.getAccNo(), resvId);
                 }
-
                 if (!cancelResult.success) {
                     runOnUiThread(() -> {
                         showLoading(false);
@@ -1304,7 +1179,6 @@ public class DashboardActivity extends AppCompatActivity {
                     });
                     return;
                 }
-
                 SeatReservation.ReservationResult reserveResult = seatReservation.reserveSeat(
                         authManager.getToken(),
                         authManager.getAccNo(),
@@ -1313,7 +1187,6 @@ public class DashboardActivity extends AppCompatActivity {
                         startTime,
                         endTime,
                         date);
-
                 runOnUiThread(() -> {
                     showLoading(false);
                     if (reserveResult.success) {
@@ -1338,7 +1211,6 @@ public class DashboardActivity extends AppCompatActivity {
             }
         });
     }
-
     private Constants.AreaInfo resolveAreaInfoForReservation(SeatReservation.ReservationInfo reservation) {
         if (reservation == null) {
             return null;
@@ -1357,7 +1229,6 @@ public class DashboardActivity extends AppCompatActivity {
         }
         return null;
     }
-
     private int resolveSeatNumberForReservation(SeatReservation.ReservationInfo reservation) {
         if (reservation == null) {
             return 0;
@@ -1377,7 +1248,6 @@ public class DashboardActivity extends AppCompatActivity {
         }
         return 0;
     }
-
     private Integer tryParsePositiveInt(String raw) {
         if (raw == null || raw.trim().isEmpty()) {
             return null;
@@ -1389,7 +1259,6 @@ public class DashboardActivity extends AppCompatActivity {
             return null;
         }
     }
-
     private void checkTraffic() {
         showLoading(true);
         executor.execute(() -> {
@@ -1397,9 +1266,7 @@ public class DashboardActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 showLoading(false);
                 if (trafficInfo.success) {
-                    // Inflate custom traffic info dialog
                     View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_traffic_info, null);
-
                     TextView tvCount = dialogView.findViewById(R.id.tv_current_count);
                     TextView tvTotal = dialogView.findViewById(R.id.tv_total_capacity);
                     TextView tvRate = dialogView.findViewById(R.id.tv_occupancy_rate);
@@ -1407,13 +1274,11 @@ public class DashboardActivity extends AppCompatActivity {
                     ProgressBar pbOccupancy = dialogView.findViewById(R.id.pb_occupancy);
                     com.google.android.material.button.MaterialButton btnConfirm = dialogView
                             .findViewById(R.id.btn_confirm);
-
                     tvCount.setText(String.valueOf(trafficInfo.currentCount));
                     tvTotal.setText(String.valueOf(trafficInfo.totalCapacity));
                     tvRate.setText(String.format("%.1f%%", trafficInfo.occupancyRate));
                     tvTime.setText("更新于 " + (trafficInfo.updateTime != null ? trafficInfo.updateTime : "--:--"));
                     pbOccupancy.setProgress(Math.min(100, (int) trafficInfo.occupancyRate));
-
                     AlertDialog dialog = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
                             .setView(dialogView)
                             .create();
@@ -1428,7 +1293,6 @@ public class DashboardActivity extends AppCompatActivity {
             });
         });
     }
-
     private void updateAutoStatus() {
         boolean autoReserve = preferenceManager.isAutoReserveEnabled();
         ivAutoReserveStatus.setColorFilter(getColor(autoReserve ? R.color.success : R.color.text_hint));
@@ -1443,11 +1307,9 @@ public class DashboardActivity extends AppCompatActivity {
         tvAutoFindStatus.setText(autoFind ? "已开启" : "未开启");
         tvAutoFindStatus.setTextColor(getColor(autoFind ? R.color.success : R.color.text_hint));
     }
-
     private void showLoading(boolean show) {
         loadingOverlay.setVisibility(show ? View.VISIBLE : View.GONE);
     }
-
     private void showFeatureNotification(int notifyId, String title, String message) {
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -1470,23 +1332,18 @@ public class DashboardActivity extends AppCompatActivity {
                     .setAutoCancel(true);
             NotificationManagerCompat.from(this).notify(notifyId, builder.build());
         } catch (SecurityException ignored) {
-            // Android 13+ 用户未授予通知权限时忽略异常
         }
     }
-
     private void navigateToSettings() {
         Intent intent = new Intent(this, SettingsActivity.class);
         startActivity(intent);
     }
-
     private void navigateToSeatQuery() {
         startActivity(new Intent(this, SeatQueryActivity.class));
     }
-
     private void navigateToVisualSeat() {
         startActivity(new Intent(this, VisualSeatActivity.class));
     }
-
     private void navigateToLogin() {
         preferenceManager.setLoggedIn(false);
         Intent intent = new Intent(this, LoginActivity.class);
@@ -1494,11 +1351,9 @@ public class DashboardActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
-
     private String getTomorrowCloseTime() {
         return DateUtils.getEndTimeWithoutSeconds(DateUtils.getTomorrowDate());
     }
-
     private void ensureLateProtectionScheduleIfEnabled() {
         if (preferenceManager == null || !preferenceManager.isLateProtectionEnabled()) {
             return;
@@ -1511,9 +1366,6 @@ public class DashboardActivity extends AppCompatActivity {
             startService(serviceIntent);
         }
     }
-
-
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -1521,5 +1373,4 @@ public class DashboardActivity extends AppCompatActivity {
             executor.shutdown();
         }
     }
-
 }
