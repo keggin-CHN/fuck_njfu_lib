@@ -30,6 +30,8 @@ import com.keggin.fucknjfulib.auth.AuthManager;
 import com.keggin.fucknjfulib.network.ApiConstants;
 import com.keggin.fucknjfulib.network.HttpClientManager;
 import com.keggin.fucknjfulib.network.ServerTaskSynchronizer;
+import com.keggin.fucknjfulib.services.AutoReserveService;
+import com.keggin.fucknjfulib.services.LateProtectionService;
 import com.keggin.fucknjfulib.storage.PreferenceManager;
 import com.keggin.fucknjfulib.utils.Constants;
 import org.json.JSONObject;
@@ -235,6 +237,7 @@ public class SettingsActivity extends AppCompatActivity {
                         "自动预约已开启",
                         "由服务器每日自动执行预约任务\n" + targetSummary);
             } else {
+                dispatchAutoReserveCancel();
                 Toast.makeText(this, "自动预约已关闭", Toast.LENGTH_SHORT).show();
                 showFeatureNotification(
                         NOTIFY_ID_AUTO_RESERVE,
@@ -253,6 +256,7 @@ public class SettingsActivity extends AppCompatActivity {
                         "迟到保护已开启",
                         "由服务器执行迟到保护检查\n" + targetSummary);
             } else {
+                dispatchLateProtectionCancel();
                 Toast.makeText(this, "迟到保护已关闭", Toast.LENGTH_SHORT).show();
                 showFeatureNotification(
                         NOTIFY_ID_LATE_PROTECTION,
@@ -498,6 +502,32 @@ public class SettingsActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+    private void dispatchAutoReserveCancel() {
+        try {
+            Intent serviceIntent = new Intent(this, AutoReserveService.class);
+            serviceIntent.setAction(AutoReserveService.ACTION_CANCEL);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "触发自动预约取消失败: " + e.getMessage());
+        }
+    }
+    private void dispatchLateProtectionCancel() {
+        try {
+            Intent serviceIntent = new Intent(this, LateProtectionService.class);
+            serviceIntent.setAction(LateProtectionService.ACTION_CANCEL);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "触发迟到保护取消失败: " + e.getMessage());
+        }
     }
     private String buildTargetConfigSummary() {
         String areaKey = preferenceManager.getTargetArea();
