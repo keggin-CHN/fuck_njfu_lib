@@ -258,10 +258,10 @@ public class DashboardActivity extends AppCompatActivity {
                             runOnUiThread(() -> {
                                 if (tvViolationBadge != null) {
                                     if (count == 0) {
-                                        tvViolationBadge.setText("记录正常");
+                                        tvViolationBadge.setText("正常");
                                         tvViolationBadge.setTextColor(0xFF388E3C);
                                     } else {
-                                        tvViolationBadge.setText("违约: " + count + " 条");
+                                        tvViolationBadge.setText("违约中");
                                         tvViolationBadge.setTextColor(0xFFE53935);
                                     }
                                 }

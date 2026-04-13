@@ -133,18 +133,18 @@ public class AccountInfoActivity extends AppCompatActivity {
                     tvUserDept.setText(finalDept);
                     tvStudentId.setText(finalStudentId);
                     tvUserClass.setText(finalClass);
+                    int count = finalList.length();
                     if (finalTotal >= 0) {
                         tvPunishCount.setText(finalRemain + " / " + finalTotal);
                     } else {
-                        tvPunishCount.setText(String.valueOf(finalList.length()));
+                        tvPunishCount.setText(count == 0 ? "正常" : "违约中");
                     }
-                    int count = finalList.length();
                     if (count == 0) {
-                        tvPunishStatus.setText("无记录");
+                        tvPunishStatus.setText("正常");
                         tvPunishStatus.setTextColor(0xFF388E3C);
                         tvNoPunish.setVisibility(View.VISIBLE);
                     } else {
-                        tvPunishStatus.setText("共 " + count + " 条");
+                        tvPunishStatus.setText("违约中");
                         tvPunishStatus.setTextColor(0xFFE53935);
                         buildCreditRows(finalList);
                     }
