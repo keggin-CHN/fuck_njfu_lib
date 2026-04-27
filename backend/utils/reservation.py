@@ -120,7 +120,7 @@ class SeatReservation:
         }
         logger.info(
             f"用户 {self.user.username} 开始预约: 区域 {area}, 座位号 {seat_number}, 日期 {date_str}, 时间 {start_time} - {end_time}")
-        max_retries = 2
+        max_retries = 8
         for retry in range(max_retries):
             try:
                 response = self.authenticator.session.post(
@@ -132,7 +132,8 @@ class SeatReservation:
                     if handle_ip_block(response, "座位预约"):
                         logger.info("IP 封禁处理成功，重试预约请求...")
                         import time
-                        time.sleep(2)
+                        import random
+                        time.sleep(random.uniform(1.5, 3.5))
                         continue
                     else:
                         logger.error("IP 封禁处理失败")
@@ -176,8 +177,25 @@ class SeatReservation:
                                             send_notification=send_notification
                                         )
                                         return True, message
+                        
+                        no_retry_keywords = ["已被预约", "已有预约", "已预约", "正在被预约", "时长不足", "时间段", "座位号无效", "配置无效", "已经"]
+                        if any(k in error_msg for k in no_retry_keywords):
+                            message = f"预约失败: {error_msg}"
+                            logger.error(f"用户 {self.user.username} {message} (业务限制，不再重试)")
+                            self._record_reservation_history(
+                                area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
+                                is_late_protection=is_late_protection, is_auto_find=is_auto_find,
+                                send_notification=send_notification
+                            )
+                            return False, message
+                        
                         message = f"预约失败: {error_msg}"
-                        logger.error(f"用户 {self.user.username} {message}")
+                        logger.warning(f"用户 {self.user.username} {message}，准备重试")
+                        if retry < max_retries - 1:
+                            import time
+                            import random
+                            time.sleep(random.uniform(1.0, 2.5))
+                            continue
                         self._record_reservation_history(
                             area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
                             is_late_protection=is_late_protection, is_auto_find=is_auto_find,
@@ -187,7 +205,12 @@ class SeatReservation:
                 else:
                     status = response.status_code if response else "请求失败"
                     message = f"预约请求失败，状态码：{status}"
-                    logger.error(f"用户 {self.user.username} {message}")
+                    logger.warning(f"用户 {self.user.username} {message}，准备重试")
+                    if retry < max_retries - 1:
+                        import time
+                        import random
+                        time.sleep(random.uniform(1.0, 2.5))
+                        continue
                     self._record_reservation_history(
                         area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
                         is_late_protection=is_late_protection, is_auto_find=is_auto_find,
@@ -196,10 +219,11 @@ class SeatReservation:
                     return False, message
             except Exception as e:
                 message = f"预约过程出错: {str(e)}"
-                logger.error(f"用户 {self.user.username} {message}")
+                logger.warning(f"用户 {self.user.username} {message}，准备重试")
                 if retry < max_retries - 1:
                     import time
-                    time.sleep(2)
+                    import random
+                    time.sleep(random.uniform(1.0, 2.5))
                     continue
                 self._record_reservation_history(
                     area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
@@ -207,7 +231,7 @@ class SeatReservation:
                     send_notification=send_notification
                 )
                 return False, message
-        message = "预约请求失败：已达最大重试次数"
+        message = f"预约请求失败：已达最大重试次数 ({max_retries}次)"
         self._record_reservation_history(
             area, seat_number, seat_id, date_str, start_time, end_time, "失败", message,
             is_late_protection=is_late_protection, is_auto_find=is_auto_find,
@@ -269,7 +293,7 @@ class SeatReservation:
             "token": self.authenticator.token,
             "lan": "1",
         }
-        max_retries = 2
+        max_retries = 4
         for retry in range(max_retries):
             try:
                 response = self.authenticator.session.get(
@@ -281,7 +305,8 @@ class SeatReservation:
                     if handle_ip_block(response, "获取预约信息"):
                         logger.info("IP 封禁处理成功，重试获取预约信息...")
                         import time
-                        time.sleep(2)
+                        import random
+                        time.sleep(random.uniform(1.5, 3.5))
                         continue
                     else:
                         logger.error("IP 封禁处理失败")
@@ -292,24 +317,29 @@ class SeatReservation:
                         return result.get("data", [])
                     else:
                         message = f"获取预约信息失败: {result.get('message', '未知错误')}"
-                        logger.error(message)
-                        from .logger_utils import add_log
-                        add_log(message, user=self.user, response_code=500, error_message=message)
+                        logger.warning(message)
+                        if retry == max_retries - 1:
+                            from .logger_utils import add_log
+                            add_log(message, user=self.user, response_code=500, error_message=message)
                 else:
                     status = response.status_code if response else "请求失败"
                     message = f"获取预约信息请求失败，状态码：{status}"
-                    logger.error(message)
-                    from .logger_utils import add_log
-                    add_log(message, user=self.user, response_code=status or 500, error_message=message)
+                    logger.warning(message)
+                    if retry == max_retries - 1:
+                        from .logger_utils import add_log
+                        add_log(message, user=self.user, response_code=status or 500, error_message=message)
             except Exception as e:
                 message = f"获取预约信息过程出错: {str(e)}"
-                logger.error(message)
-                if retry < max_retries - 1:
-                    import time
-                    time.sleep(2)
-                    continue
-                from .logger_utils import add_log
-                add_log(message, user=self.user, response_code=500, error_message=message)
+                logger.warning(message)
+                if retry == max_retries - 1:
+                    from .logger_utils import add_log
+                    add_log(message, user=self.user, response_code=500, error_message=message)
+            
+            if retry < max_retries - 1:
+                import time
+                import random
+                time.sleep(random.uniform(1.0, 2.5))
+                continue
         return []
     def get_today_reservations(self):
         today = get_today_date()
@@ -341,7 +371,7 @@ class SeatReservation:
         from .logger_utils import add_log
         logger.info(f"用户 {self.user.username} 尝试取消预约 UUID: {uuid}")
         add_log(f"用户尝试取消预约 UUID: {uuid}", user=self.user)
-        max_retries = 2
+        max_retries = 4
         for retry in range(max_retries):
             try:
                 response = self.authenticator.session.post(
@@ -354,7 +384,8 @@ class SeatReservation:
                     if handle_ip_block(response, "取消预约"):
                         logger.info("IP 封禁处理成功，重试取消预约请求...")
                         import time
-                        time.sleep(2)
+                        import random
+                        time.sleep(random.uniform(1.5, 3.5))
                         continue
                     else:
                         logger.error("IP 封禁处理失败")
@@ -366,24 +397,29 @@ class SeatReservation:
                         return True, "取消预约成功"
                     else:
                         message = f"取消预约失败: {result.get('message', '未知错误')}"
-                        logger.error(message)
-                        add_log(message, user=self.user, response_code=500, error_message=message)
-                        return False, message
+                        logger.warning(message)
+                        if retry == max_retries - 1:
+                            add_log(message, user=self.user, response_code=500, error_message=message)
+                            return False, message
                 else:
                     status = response.status_code if response else "请求失败"
                     message = f"取消预约请求失败，状态码：{status}"
-                    logger.error(message)
-                    add_log(message, user=self.user, response_code=status or 500, error_message=message)
-                    return False, message
+                    logger.warning(message)
+                    if retry == max_retries - 1:
+                        add_log(message, user=self.user, response_code=status or 500, error_message=message)
+                        return False, message
             except Exception as e:
                 message = f"取消预约过程出错: {str(e)}"
-                logger.error(message)
-                if retry < max_retries - 1:
-                    import time
-                    time.sleep(2)
-                    continue
-                add_log(message, user=self.user, response_code=500, error_message=message)
-                return False, message
+                logger.warning(message)
+                if retry == max_retries - 1:
+                    add_log(message, user=self.user, response_code=500, error_message=message)
+                    return False, message
+            
+            if retry < max_retries - 1:
+                import time
+                import random
+                time.sleep(random.uniform(1.0, 2.5))
+                continue
         return False, "取消预约失败：已达最大重试次数"
     def reserve_today_seat(self, area, seat_number, seat_id, start_time, is_late_protection=True, is_auto_find=False):
         today = get_today_date()
