@@ -130,6 +130,24 @@ def encrypt_cas_password(password):
         m += digit * (65536 ** (i // 2))
     c = pow(m, e, n)
     return format(c, '0256x')
+
+def encrypt_cas_password_aes(password, salt):
+    """CAS AES-CBC encryption (pwdDefaultEncryptSalt mode)"""
+    try:
+        from Crypto.Cipher import AES
+        from Crypto.Util.Padding import pad
+        import base64 as b64
+        import random, string
+        key = salt.strip()
+        prefix = ''.join(random.choices(string.ascii_letters + string.digits, k=64))
+        iv = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+        plaintext = prefix + password
+        cipher = AES.new(key.encode('utf-8'), AES.MODE_CBC, iv.encode('utf-8'))
+        ct = cipher.encrypt(pad(plaintext.encode('utf-8'), AES.block_size))
+        return b64.b64encode(ct).decode('utf-8')
+    except Exception as e:
+        logger.error(f'AES-CBC encrypt error: {e}')
+        return password
 def encrypt_lib_password(plaintext_password, nonce, public_key_str):
     if "-----BEGIN PUBLIC KEY-----" not in public_key_str:
         public_key_str = "-----BEGIN PUBLIC KEY-----\n" + public_key_str + "\n-----END PUBLIC KEY-----"
@@ -334,31 +352,55 @@ class LibraryAuthenticator:
             logger.error(f"访问登录页失败，状态码: {response.status_code}")
             return None, False
         soup = BeautifulSoup(response.text, "html.parser")
-        # 新版 CAS (2025+): 只需 execution 和 _eventId，密码用硬编码 RSA 加密
+        # CAS login: detect encryption mode (AES-CBC salt or RSA fallback)
         execution = soup.find("input", {"name": "execution"})
         event_id = soup.find("input", {"name": "_eventId"})
-        login_type_input = soup.find("input", {"name": "loginType"})
+        salt_input = soup.find("input", {"id": "pwdDefaultEncryptSalt"})
+        lt_input = soup.find("input", {"name": "lt"})
+        dllt_input = soup.find("input", {"name": "dllt"})
         execution_val = execution["value"] if execution else None
-        event_id_val = event_id["value"] if event_id else None
-        login_type = login_type_input["value"] if login_type_input else "1"
+        event_id_val = event_id["value"] if event_id else "submit"
         if not execution_val:
-            logger.error(f"登录页参数解析失败: execution={bool(execution_val)}")
+            logger.error(f"Login params error: execution={bool(execution_val)}")
             return None, False
-        encrypted_password = encrypt_cas_password(self.password1)
+        use_aes = bool(salt_input and salt_input.get("value"))
+        if use_aes:
+            salt = salt_input["value"]
+            encrypted_password = encrypt_cas_password_aes(self.password1, salt)
+        else:
+            encrypted_password = encrypt_cas_password(self.password1)
         login_url = HttpClient.get_edu_url(
             "authserver/login?vpn-0&service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
         )
-        login_data = {
-            "vpn-0": "",
-            "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/",
-            "username": self.username,
-            "password": encrypted_password,
-            "execution": execution_val,
-            "encrypted": "true",
-            "_eventId": event_id_val or "submit",
-            "loginType": login_type,
-            "submit": "\u767b \u5f55"
-        }
+                if use_aes:
+            lt_val = lt_input["value"] if lt_input else ""
+            dllt_val = dllt_input["value"] if dllt_input else "userNamePasswordLogin"
+            login_data = {
+                "vpn-0": "",
+                "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/",
+                "username": self.username,
+                "password": encrypted_password,
+                "lt": lt_val,
+                "dllt": dllt_val,
+                "execution": "e1s1",
+                "_eventId": event_id_val or "submit",
+                "rmShown": "1",
+                "submit": "\u767b \u5f55"
+            }
+        else:
+            login_type_input = soup.find("input", {"name": "loginType"})
+            login_type = login_type_input["value"] if login_type_input else "1"
+            login_data = {
+                "vpn-0": "",
+                "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/",
+                "username": self.username,
+                "password": encrypted_password,
+                "execution": execution_val,
+                "encrypted": "true",
+                "_eventId": event_id_val or "submit",
+                "loginType": login_type,
+                "submit": "\u767b \u5f55"
+            }
         headers = {
             "Origin": "https://webvpn.njfu.edu.cn",
             "Referer": login_prepare_url,
@@ -600,31 +642,56 @@ class LibraryAuthenticator:
             }
             login_page = session.get(login_url, headers=headers, timeout=10)
             soup = BeautifulSoup(login_page.text, "html.parser")
-            # 新版 CAS: 只需 execution 和 _eventId
+            # CAS login: detect encryption mode (AES-CBC salt or RSA fallback)
             execution = soup.find("input", {"name": "execution"})
             event_id = soup.find("input", {"name": "_eventId"})
-            login_type_input = soup.find("input", {"name": "loginType"})
+            salt_input = soup.find("input", {"id": "pwdDefaultEncryptSalt"})
+            lt_input = soup.find("input", {"name": "lt"})
+            dllt_input = soup.find("input", {"name": "dllt"})
             if not execution:
                 return False, "无法获取登录表单信息，请刷新页面重试"
             execution_val = execution["value"]
             event_id_val = event_id["value"] if event_id else "submit"
-            login_type = login_type_input["value"] if login_type_input else "1"
-            encrypted_password = encrypt_cas_password(self.password1)
+            use_aes = bool(salt_input and salt_input.get("value"))
+            if use_aes:
+                salt = salt_input["value"]
+                encrypted_password = encrypt_cas_password_aes(self.password1, salt)
+            else:
+                encrypted_password = encrypt_cas_password(self.password1)
             login_post_url = HttpClient.get_edu_url(
                 "authserver/login?vpn-0&service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
             )
-            login_data = {
-                "username": self.username,
-                "password": encrypted_password,
-                "captchaResponse": captcha,
-                "execution": execution_val,
-                "encrypted": "true",
-                "_eventId": event_id_val,
-                "loginType": login_type,
-                "vpn-0": "",
-                "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/",
-                "submit": "\u767b \u5f55"
-            }
+            if use_aes:
+                lt_val = lt_input["value"] if lt_input else ""
+                dllt_val = dllt_input["value"] if dllt_input else "userNamePasswordLogin"
+                login_data = {
+                    "username": self.username,
+                    "password": encrypted_password,
+                    "captchaResponse": captcha,
+                    "lt": lt_val,
+                    "dllt": dllt_val,
+                    "execution": "e1s1",
+                    "_eventId": event_id_val,
+                    "rmShown": "1",
+                    "vpn-0": "",
+                    "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/",
+                    "submit": "\u767b \u5f55"
+                }
+            else:
+                login_type_input = soup.find("input", {"name": "loginType"})
+                login_type = login_type_input["value"] if login_type_input else "1"
+                login_data = {
+                    "username": self.username,
+                    "password": encrypted_password,
+                    "captchaResponse": captcha,
+                    "execution": execution_val,
+                    "encrypted": "true",
+                    "_eventId": event_id_val,
+                    "loginType": login_type,
+                    "vpn-0": "",
+                    "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/",
+                    "submit": "\u767b \u5f55"
+                }
             post_headers = {
                 "Origin": "https://webvpn.njfu.edu.cn",
                 "Referer": login_url,
