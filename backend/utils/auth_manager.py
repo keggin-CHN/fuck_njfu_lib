@@ -8,8 +8,7 @@ import base64
 import os
 import urllib3
 from bs4 import BeautifulSoup
-from Crypto.Cipher import AES, PKCS1_v1_5
-from Crypto.Util.Padding import pad
+from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from cryptography.fernet import Fernet
 from functools import wraps
@@ -110,15 +109,27 @@ def encrypt_password(password):
     return fernet.encrypt(password.encode()).decode()
 def decrypt_password(encrypted_password):
     return fernet.decrypt(encrypted_password.encode()).decode()
-def encrypt_cas_password(password, key):
-    CHARS = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678"
-    prefix = "".join(random.choice(CHARS) for _ in range(64))
-    iv = "".join(random.choice(CHARS) for _ in range(16)).encode("utf-8")
-    plaintext = (prefix + password).encode("utf-8")
-    key_bytes = key.encode("utf-8")
-    cipher = AES.new(key_bytes, AES.MODE_CBC, iv)
-    ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
-    return base64.b64encode(ciphertext).decode("utf-8")
+# 新 CAS 认证使用的硬编码 RSA 公钥 (从 login.js 提取)
+CAS_RSA_MODULUS_HEX = "008aed7e057fe8f14c73550b0e6467b023616ddc8fa91846d2613cdb7f7621e3cada4cd5d812d627af6b87727ade4e26d26208b7326815941492b2204c3167ab2d53df1e3a2c9153bdb7c8c2e968df97a5e7e01cc410f92c4c2c2fba529b3ee988ebc1fca99ff5119e036d732c368acf8beba01aa2fdafa45b21e4de4928d0d403"
+CAS_RSA_EXPONENT_HEX = "010001"
+
+def encrypt_cas_password(password):
+    """
+    CAS 新版 RSA 加密 (2025年起 NJFU CAS 不再使用 AES-CBC，改为硬编码 RSA 公钥)
+    与前端 security.js 的 RSAUtils.encryptedString 逻辑完全一致 (textbook RSA, 无 PKCS#1 padding)
+    """
+    n = int(CAS_RSA_MODULUS_HEX, 16)
+    e = int(CAS_RSA_EXPONENT_HEX, 16)
+    chunk_size = 126  # 2 * biHighIndex(modulus) = 2 * 63
+    char_codes = [ord(c) for c in password]
+    while len(char_codes) % chunk_size:
+        char_codes.append(0)
+    m = 0
+    for i in range(0, chunk_size, 2):
+        digit = char_codes[i] + char_codes[i + 1] * 256
+        m += digit * (65536 ** (i // 2))
+    c = pow(m, e, n)
+    return format(c, '0256x')
 def encrypt_lib_password(plaintext_password, nonce, public_key_str):
     if "-----BEGIN PUBLIC KEY-----" not in public_key_str:
         public_key_str = "-----BEGIN PUBLIC KEY-----\n" + public_key_str + "\n-----END PUBLIC KEY-----"
@@ -266,12 +277,11 @@ class LibraryAuthenticator:
             logger.error(f"获取初始 ticket 失败: {e}")
             logger.error(traceback.format_exc())
         return None
-    def check_need_captcha(self, username, salt, client_ticket=None):
+    def check_need_captcha(self, username, salt=None, client_ticket=None):
         url = HttpClient.get_edu_url("authserver/needCaptcha.html")
         params = {
             "vpn-12-uia.njfu.edu.cn": "",
             "username": username,
-            "pwdEncrypt2": salt,
             "_": str(int(time.time() * 1000))
         }
         headers = {"X-Requested-With": "XMLHttpRequest"}
@@ -324,19 +334,17 @@ class LibraryAuthenticator:
             logger.error(f"访问登录页失败，状态码: {response.status_code}")
             return None, False
         soup = BeautifulSoup(response.text, "html.parser")
-        lt = soup.find("input", {"name": "lt"})["value"] if soup.find("input", {"name": "lt"}) else None
-        salt = soup.find("input", {"id": "pwdDefaultEncryptSalt"})["value"] if soup.find("input", {
-            "id": "pwdDefaultEncryptSalt"}) else None
-        dllt = soup.find("input", {"name": "dllt"})["value"] if soup.find("input", {"name": "dllt"}) else None
-        execution = soup.find("input", {"name": "execution"})["value"] if soup.find("input",
-                                                                                    {"name": "execution"}) else None
-        event_id = soup.find("input", {"name": "_eventId"})["value"] if soup.find("input",
-                                                                                  {"name": "_eventId"}) else None
-        rm_shown = soup.find("input", {"name": "rmShown"})["value"] if soup.find("input", {"name": "rmShown"}) else None
-        if not all([lt, salt, dllt, execution, event_id, rm_shown]):
-            logger.error(f"登录页参数解析失败: lt={bool(lt)}, salt={bool(salt)}, dllt={bool(dllt)}, execution={bool(execution)}, event_id={bool(event_id)}, rm_shown={bool(rm_shown)}")
+        # 新版 CAS (2025+): 只需 execution 和 _eventId，密码用硬编码 RSA 加密
+        execution = soup.find("input", {"name": "execution"})
+        event_id = soup.find("input", {"name": "_eventId"})
+        login_type_input = soup.find("input", {"name": "loginType"})
+        execution_val = execution["value"] if execution else None
+        event_id_val = event_id["value"] if event_id else None
+        login_type = login_type_input["value"] if login_type_input else "1"
+        if not execution_val:
+            logger.error(f"登录页参数解析失败: execution={bool(execution_val)}")
             return None, False
-        encrypted_password = encrypt_cas_password(self.password1, salt)
+        encrypted_password = encrypt_cas_password(self.password1)
         login_url = HttpClient.get_edu_url(
             "authserver/login?vpn-0&service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
         )
@@ -345,11 +353,11 @@ class LibraryAuthenticator:
             "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/",
             "username": self.username,
             "password": encrypted_password,
-            "lt": lt,
-            "dllt": dllt,
-            "execution": execution,
-            "_eventId": event_id,
-            "rmShown": rm_shown
+            "execution": execution_val,
+            "encrypted": "true",
+            "_eventId": event_id_val or "submit",
+            "loginType": login_type,
+            "submit": "\u767b \u5f55"
         }
         headers = {
             "Origin": "https://webvpn.njfu.edu.cn",
@@ -388,7 +396,7 @@ class LibraryAuthenticator:
                 pass
             return None, False
         elif login_response.status_code == 200:
-            need_captcha = self.check_need_captcha(self.username, salt)
+            need_captcha = self.check_need_captcha(self.username)
             return None, need_captcha
         else:
             logger.error(f"登录失败，状态码: {login_response.status_code}")
@@ -592,18 +600,16 @@ class LibraryAuthenticator:
             }
             login_page = session.get(login_url, headers=headers, timeout=10)
             soup = BeautifulSoup(login_page.text, "html.parser")
-            form_elements = {
-                "lt": soup.find("input", {"name": "lt"}),
-                "salt": soup.find("input", {"id": "pwdDefaultEncryptSalt"}),
-                "dllt": soup.find("input", {"name": "dllt"}),
-                "execution": soup.find("input", {"name": "execution"}),
-                "event_id": soup.find("input", {"name": "_eventId"}),
-                "rm_shown": soup.find("input", {"name": "rmShown"})
-            }
-            if not all(form_elements.values()):
+            # 新版 CAS: 只需 execution 和 _eventId
+            execution = soup.find("input", {"name": "execution"})
+            event_id = soup.find("input", {"name": "_eventId"})
+            login_type_input = soup.find("input", {"name": "loginType"})
+            if not execution:
                 return False, "无法获取登录表单信息，请刷新页面重试"
-            form_data = {key: element["value"] for key, element in form_elements.items()}
-            encrypted_password = encrypt_cas_password(self.password1, form_data["salt"])
+            execution_val = execution["value"]
+            event_id_val = event_id["value"] if event_id else "submit"
+            login_type = login_type_input["value"] if login_type_input else "1"
+            encrypted_password = encrypt_cas_password(self.password1)
             login_post_url = HttpClient.get_edu_url(
                 "authserver/login?vpn-0&service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
             )
@@ -611,13 +617,13 @@ class LibraryAuthenticator:
                 "username": self.username,
                 "password": encrypted_password,
                 "captchaResponse": captcha,
-                "lt": form_data["lt"],
-                "dllt": form_data["dllt"],
-                "execution": form_data["execution"],
-                "_eventId": form_data["event_id"],
-                "rmShown": form_data["rm_shown"],
+                "execution": execution_val,
+                "encrypted": "true",
+                "_eventId": event_id_val,
+                "loginType": login_type,
                 "vpn-0": "",
-                "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/"
+                "service": "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/",
+                "submit": "\u767b \u5f55"
             }
             post_headers = {
                 "Origin": "https://webvpn.njfu.edu.cn",
