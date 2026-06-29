@@ -372,7 +372,7 @@ class LibraryAuthenticator:
         login_url = HttpClient.get_edu_url(
             "authserver/login?vpn-0&service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F"
         )
-                if use_aes:
+        if use_aes:
             lt_val = lt_input["value"] if lt_input else ""
             dllt_val = dllt_input["value"] if dllt_input else "userNamePasswordLogin"
             login_data = {
