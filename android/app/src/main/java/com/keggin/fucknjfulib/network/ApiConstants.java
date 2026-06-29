@@ -15,9 +15,9 @@ public class ApiConstants {
         return BASE_URL + VPN_PREFIX + EDU_SUFFIX
                 + "/authserver/login?vpn-0&service=https%3A%2F%2Fwebvpn.njfu.edu.cn%2Frump_frontend%2FloginFromCas%2F";
     }
-    public static String getNeedCaptchaUrl(String username, String salt) {
+    public static String getNeedCaptchaUrl(String username) {
         return BASE_URL + VPN_PREFIX + EDU_SUFFIX + "/authserver/needCaptcha.html?vpn-12-uia.njfu.edu.cn=&username="
-                + username + "&pwdEncrypt2=" + salt + "&_=" + System.currentTimeMillis();
+                + username + "&_=" + System.currentTimeMillis();
     }
     public static String getCaptchaUrl() {
         return BASE_URL + VPN_PREFIX + EDU_SUFFIX + "/authserver/captcha.html?ts=" + System.currentTimeMillis();

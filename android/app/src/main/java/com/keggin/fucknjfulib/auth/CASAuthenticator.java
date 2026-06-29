@@ -1,6 +1,7 @@
 package com.keggin.fucknjfulib.auth;
+
 import android.util.Log;
-import com.keggin.fucknjfulib.crypto.AESCipher;
+import com.keggin.fucknjfulib.crypto.CASRSACipher;
 import com.keggin.fucknjfulib.network.ApiConstants;
 import com.keggin.fucknjfulib.network.HttpClientManager;
 import org.jsoup.Jsoup;
@@ -14,22 +15,21 @@ import java.util.regex.Pattern;
 import android.content.Context;
 import okhttp3.Response;
 import com.keggin.fucknjfulib.utils.ProgressListener;
+
 public class CASAuthenticator {
     private static final String TAG = "CASAuthenticator";
     private final String username;
     private final String eduPassword;
     private final HttpClientManager httpClient;
-    private String lt;
-    private String salt;
-    private String dllt;
     private String execution;
     private String eventId;
-    private String rmShown;
+    private String loginType;
     private boolean needCaptcha = false;
     private String clientTicket;
     private String errorMessage;
     private final Context context;
     private final ProgressListener progressListener;
+
     public CASAuthenticator(Context context, String username, String eduPassword, ProgressListener progressListener) {
         this.context = context.getApplicationContext();
         this.username = username;
@@ -37,6 +37,7 @@ public class CASAuthenticator {
         this.httpClient = HttpClientManager.getInstance(this.context);
         this.progressListener = progressListener;
     }
+
     public boolean authenticate() {
         try {
             reportProgress(10, "获取 WebVPN 凭证...");
@@ -63,9 +64,10 @@ public class CASAuthenticator {
             return false;
         }
     }
+
     public boolean authenticateWithCaptcha(String captcha) {
         try {
-            if (salt == null) {
+            if (execution == null) {
                 reportProgress(10, "获取 WebVPN 凭证...");
                 if (!getInitialClientTicket()) {
                     errorMessage = "无法获取初始认证凭证";
@@ -86,6 +88,7 @@ public class CASAuthenticator {
             return false;
         }
     }
+
     private boolean getInitialClientTicket() throws IOException {
         Log.d(TAG, "获取初始 client ticket...");
         Response response = followRedirects(ApiConstants.FRONTEND_LOGIN_URL, null);
@@ -102,6 +105,7 @@ public class CASAuthenticator {
         Log.e(TAG, "获取 client ticket 失败");
         return false;
     }
+
     private void getRouteCookie() {
         try {
             Log.d(TAG, "获取 route cookie...");
@@ -120,6 +124,11 @@ public class CASAuthenticator {
             Log.w(TAG, "获取 route cookie 失败（可以继续）: " + e.getMessage());
         }
     }
+
+    /**
+     * 解析新版 CAS 登录页参数 (2025+)
+     * 只需 execution 和 _eventId，密码用硬编码 RSA 加密
+     */
     private boolean fetchLoginPageParams() throws IOException {
         Log.d(TAG, "获取登录页面参数...");
         Map<String, String> headers = new HashMap<>();
@@ -134,21 +143,22 @@ public class CASAuthenticator {
         }
         Log.d(TAG, "登录页面响应长度: " + html.length());
         Document doc = Jsoup.parse(html);
-        lt = getInputValue(doc, "lt");
-        salt = getInputValue(doc, "pwdDefaultEncryptSalt");
-        dllt = getInputValue(doc, "dllt");
+
+        // 新版 CAS: 只需 execution, _eventId, loginType
         execution = getInputValue(doc, "execution");
         eventId = getInputValue(doc, "_eventId");
-        rmShown = getInputValue(doc, "rmShown");
-        if (lt == null || salt == null) {
-            Log.e(TAG, "登录参数解析失败, lt=" + lt + ", salt=" + salt);
+        loginType = getInputValue(doc, "loginType");
+
+        if (execution == null) {
+            Log.e(TAG, "登录参数解析失败, execution=null");
             Log.e(TAG, "HTML前500字符: " + html.substring(0, Math.min(500, html.length())));
             errorMessage = "无法获取登录参数";
             return false;
         }
-        Log.d(TAG, "成功获取登录参数");
+        Log.d(TAG, "成功获取登录参数: execution=" + execution.substring(0, Math.min(20, execution.length())) + "...");
         return true;
     }
+
     private String getInputValue(Document doc, String idOrName) {
         Element element = doc.getElementById(idOrName);
         if (element != null) {
@@ -160,6 +170,7 @@ public class CASAuthenticator {
         }
         return null;
     }
+
     private Response followRedirects(String url, Map<String, String> headers) throws IOException {
         int maxRedirects = 10;
         String currentUrl = url;
@@ -186,9 +197,11 @@ public class CASAuthenticator {
         Log.e(TAG, "超过最大重定向次数");
         return null;
     }
+
     private boolean checkNeedCaptcha() {
         try {
-            String url = ApiConstants.getNeedCaptchaUrl(username, salt);
+            // 新版 CAS: needCaptcha 不再需要 pwdEncrypt2 参数
+            String url = ApiConstants.getNeedCaptchaUrl(username);
             Map<String, String> headers = new HashMap<>();
             headers.put("X-Requested-With", "XMLHttpRequest");
             Response response = httpClient.get(url, headers);
@@ -204,38 +217,46 @@ public class CASAuthenticator {
         Log.d(TAG, "不需要验证码");
         return false;
     }
+
     private boolean submitLogin() throws IOException {
         return doSubmitLogin(null);
     }
+
     private boolean submitLoginWithCaptcha(String captcha) throws IOException {
         return doSubmitLogin(captcha);
     }
+
     private boolean doSubmitLogin(String captcha) throws IOException {
         Log.d(TAG, "提交登录...");
-        String encryptedPassword = AESCipher.encrypt(eduPassword, salt);
+        // 新版 CAS: 使用 RSA 加密（textbook RSA，无 PKCS#1 padding）
+        String encryptedPassword = CASRSACipher.encrypt(eduPassword);
         if (encryptedPassword == null) {
             errorMessage = "密码加密失败";
             return false;
         }
+
         Map<String, String> formData = new HashMap<>();
         formData.put("vpn-0", "");
         formData.put("service", "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/");
         formData.put("username", username);
         formData.put("password", encryptedPassword);
-        formData.put("lt", lt);
-        formData.put("dllt", dllt != null ? dllt : "userNamePasswordLogin");
         formData.put("execution", execution);
+        formData.put("encrypted", "true");
         formData.put("_eventId", eventId != null ? eventId : "submit");
-        formData.put("rmShown", rmShown != null ? rmShown : "1");
+        formData.put("loginType", loginType != null ? loginType : "1");
+        formData.put("submit", "\u767b \u5f55");
         if (captcha != null) {
             formData.put("captchaResponse", captcha);
         }
+
         Map<String, String> headers = new HashMap<>();
         headers.put("Origin", ApiConstants.BASE_URL);
         headers.put("Referer", ApiConstants.getEduLoginPageUrl());
+
         Response response = httpClient.postForm(ApiConstants.getEduLoginSubmitUrl(), formData, headers);
         int statusCode = response.code();
         Log.d(TAG, "登录响应状态码: " + statusCode);
+
         if (isRedirect(statusCode)) {
             String location = HttpClientManager.getRedirectLocation(response);
             response.close();
@@ -280,9 +301,11 @@ public class CASAuthenticator {
             return false;
         }
     }
+
     private boolean isRedirect(int statusCode) {
         return statusCode >= 300 && statusCode < 400;
     }
+
     private boolean completeAuthWithTicket(String ticket) throws IOException {
         Log.d(TAG, "用 ticket 完成认证...");
         Map<String, String> headers = new HashMap<>();
@@ -296,12 +319,14 @@ public class CASAuthenticator {
         Log.d(TAG, "认证完成, clientTicket: " + (clientTicket != null ? "已获取" : "未获取"));
         return true;
     }
+
     public String getCaptchaUrl() {
         return ApiConstants.getCaptchaUrl();
     }
+
     public byte[] getCaptchaImage() {
         try {
-            if (salt == null) {
+            if (execution == null) {
                 getInitialClientTicket();
                 getRouteCookie();
                 httpClient.get(ApiConstants.getEduLoginPageUrl()).close();
@@ -319,15 +344,19 @@ public class CASAuthenticator {
         }
         return null;
     }
+
     public boolean isNeedCaptcha() {
         return needCaptcha;
     }
+
     public String getErrorMessage() {
         return errorMessage;
     }
+
     public String getClientTicket() {
         return clientTicket;
     }
+
     private void reportProgress(int percent, String message) {
         if (progressListener != null) {
             progressListener.onProgress(percent, message);
