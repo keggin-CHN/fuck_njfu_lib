@@ -154,7 +154,19 @@ public class HttpClientManager {
             return null;
         }
         try {
-            return response.body().string();
+            okio.BufferedSource source = response.body().source();
+            okio.Buffer buffer = new okio.Buffer();
+            try {
+                source.readAll(buffer);
+            } catch (java.io.EOFException e) {
+                Log.w(TAG, "EOFException reading body, returning partial data", e);
+            }
+            java.nio.charset.Charset charset = java.nio.charset.Charset.forName("UTF-8");
+            okhttp3.MediaType contentType = response.body().contentType();
+            if (contentType != null) {
+                charset = contentType.charset(charset);
+            }
+            return buffer.readString(charset);
         } finally {
             response.close();
         }

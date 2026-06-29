@@ -2,6 +2,7 @@ package com.keggin.fucknjfulib.auth;
 
 import android.util.Log;
 import com.keggin.fucknjfulib.crypto.CASRSACipher;
+import com.keggin.fucknjfulib.crypto.AESCipher;
 import com.keggin.fucknjfulib.network.ApiConstants;
 import com.keggin.fucknjfulib.network.HttpClientManager;
 import org.jsoup.Jsoup;
@@ -24,6 +25,9 @@ public class CASAuthenticator {
     private String execution;
     private String eventId;
     private String loginType;
+    private String pwdDefaultEncryptSalt;
+    private String lt;
+    private String dllt;
     private boolean needCaptcha = false;
     private String clientTicket;
     private String errorMessage;
@@ -144,10 +148,13 @@ public class CASAuthenticator {
         Log.d(TAG, "登录页面响应长度: " + html.length());
         Document doc = Jsoup.parse(html);
 
-        // 新版 CAS: 只需 execution, _eventId, loginType
+        // 新版 CAS: 只需 execution, _eventId, loginType (如果用RSA) 或 pwdDefaultEncryptSalt, lt, dllt (如果用AES)
         execution = getInputValue(doc, "execution");
         eventId = getInputValue(doc, "_eventId");
         loginType = getInputValue(doc, "loginType");
+        pwdDefaultEncryptSalt = getInputValue(doc, "pwdDefaultEncryptSalt");
+        lt = getInputValue(doc, "lt");
+        dllt = getInputValue(doc, "dllt");
 
         if (execution == null) {
             Log.e(TAG, "登录参数解析失败, execution=null");
@@ -228,23 +235,37 @@ public class CASAuthenticator {
 
     private boolean doSubmitLogin(String captcha) throws IOException {
         Log.d(TAG, "提交登录...");
-        // 新版 CAS: 使用 RSA 加密（textbook RSA，无 PKCS#1 padding）
-        String encryptedPassword = CASRSACipher.encrypt(eduPassword);
-        if (encryptedPassword == null) {
-            errorMessage = "密码加密失败";
-            return false;
-        }
 
         Map<String, String> formData = new HashMap<>();
         formData.put("vpn-0", "");
         formData.put("service", "https://webvpn.njfu.edu.cn/rump_frontend/loginFromCas/");
         formData.put("username", username);
-        formData.put("password", encryptedPassword);
         formData.put("execution", execution);
-        formData.put("encrypted", "true");
         formData.put("_eventId", eventId != null ? eventId : "submit");
-        formData.put("loginType", loginType != null ? loginType : "1");
         formData.put("submit", "\u767b \u5f55");
+
+        if (pwdDefaultEncryptSalt != null && !pwdDefaultEncryptSalt.isEmpty()) {
+            Log.d(TAG, "使用 AES 加密");
+            String encryptedPassword = AESCipher.encrypt(eduPassword, pwdDefaultEncryptSalt);
+            if (encryptedPassword == null) {
+                errorMessage = "密码AES加密失败";
+                return false;
+            }
+            formData.put("password", encryptedPassword);
+            formData.put("lt", lt != null ? lt : "");
+            formData.put("dllt", dllt != null ? dllt : "userNamePasswordLogin");
+            formData.put("rmShown", "1");
+        } else {
+            Log.d(TAG, "使用 RSA 加密");
+            String encryptedPassword = CASRSACipher.encrypt(eduPassword);
+            if (encryptedPassword == null) {
+                errorMessage = "密码RSA加密失败";
+                return false;
+            }
+            formData.put("password", encryptedPassword);
+            formData.put("encrypted", "true");
+            formData.put("loginType", loginType != null ? loginType : "1");
+        }
         if (captcha != null) {
             formData.put("captchaResponse", captcha);
         }
