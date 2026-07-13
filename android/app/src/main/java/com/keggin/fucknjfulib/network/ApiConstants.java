@@ -64,6 +64,21 @@ public class ApiConstants {
     public static String getEndAheadUrl() {
         return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/ic-web/reserve/endAhaed?vpn-12-libseat.njfu.edu.cn";
     }
+    public static String getAuthAddressUrl() {
+        return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/ic-web/auth/address";
+    }
+    public static String getLibRootUrl() {
+        return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/";
+    }
+    public static String getErrorPageUrl() {
+        return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/#/error";
+    }
+    public static String getLibPathUrl(String path) {
+        if (path.startsWith("/")) {
+            return BASE_URL + VPN_PREFIX + LIB_SUFFIX + path;
+        }
+        return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/" + path;
+    }
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
     public static final String ACCEPT_HTML = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
     public static final String ACCEPT_JSON = "application/json, text/plain, */*";

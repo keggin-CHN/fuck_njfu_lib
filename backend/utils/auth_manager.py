@@ -12,8 +12,16 @@ from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from cryptography.fernet import Fernet
 from functools import wraps
-from config import Config
+
+# 临时注释掉 Config，因为测试脚本在外部覆盖了它
+try:
+    from config import Config
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
+
+# ... 后面的部分不需要全改，我可以直接改 test_auth.py 来打补丁重写 LibraryAuthenticator 里的 second_level_auth 方法以方便调试，不动原始代码。
 _warp_manager = None
 def get_warp_manager():
     """延迟加载 WarpManager 实例"""
@@ -493,16 +501,14 @@ class LibraryAuthenticator:
             if retry < max_retries - 1:
                 time.sleep(2)
         return None, None
-    def second_level_auth(self, max_attempts=5):
-        if not self.my_client_ticket:
-            return None, None
+    def _second_level_auth_legacy(self, max_attempts=5):
         login_url = HttpClient.get_lib_url("ic-web/login/user?vpn-12-libseat.njfu.edu.cn")
         api_headers = {
             "accept": "application/json, text/plain, */*",
             "content-type": "application/json;charset=UTF-8",
         }
         for attempt in range(1, max_attempts + 1):
-            logger.info(f"正在进行第二级认证: 尝试第 {attempt} 次")
+            logger.info(f"正在进行第二级认证(旧版加密): 尝试第 {attempt} 次")
             try:
                 public_key, nonce = self.get_public_key()
                 if not public_key or not nonce:
@@ -528,9 +534,9 @@ class LibraryAuthenticator:
                     json=payload,
                     timeout=15
                 )
-                if check_ip_blocked(response, "第二级认证"):
-                    if handle_ip_block(response, "第二级认证"):
-                        logger.info("IP 封禁处理成功，重试第二级认证...")
+                if check_ip_blocked(response, "第二级认证(旧版)"):
+                    if handle_ip_block(response, "第二级认证(旧版)"):
+                        logger.info("IP 封禁处理成功，重试第二级认证(旧版)...")
                         time.sleep(2)
                         continue
                     else:
@@ -552,6 +558,82 @@ class LibraryAuthenticator:
                 logger.error(f"第 {attempt} 次认证发生异常: {str(e)}")
                 time.sleep(2)
         return None, None
+
+    def _second_level_auth_sso(self, max_attempts=5):
+        import re
+        from urllib.parse import urlparse, parse_qs
+        
+        for attempt in range(1, max_attempts + 1):
+            logger.info(f"正在进行第二级认证(SSO): 尝试第 {attempt} 次")
+            try:
+                # 1. call auth/address to get CAS URL
+                addr_url = HttpClient.get_lib_url("ic-web/auth/address")
+                params = {
+                    "finalAddress": HttpClient.get_lib_url(""),
+                    "errPageUrl": HttpClient.get_lib_url("#/error"),
+                    "manager": "false",
+                    "consoleType": "16"
+                }
+                
+                resp = self.session.get(addr_url, params=params, timeout=10)
+                if check_ip_blocked(resp, "获取CAS地址"):
+                    if handle_ip_block(resp, "获取CAS地址"):
+                        continue
+                
+                data = resp.json()
+                cas_url = data.get("data")
+                if not cas_url:
+                    logger.error("未获取到 SSO CAS URL")
+                    continue
+                    
+                # 2. Visit CAS URL through WebVPN
+                if "libseat.njfu.edu.cn/" in cas_url:
+                    path_and_query = cas_url.split("libseat.njfu.edu.cn/")[1]
+                    cas_url = HttpClient.get_lib_url(path_and_query)
+                
+                self.session.max_redirects = 10
+                cas_resp = self.session.get(cas_url, timeout=15, allow_redirects=True)
+                
+                # 3. Extract JS redirect
+                if cas_resp.status_code == 200:
+                    match = re.search(r"window\.location\.href\s*=\s*['\"]([^'\"]+)['\"]", cas_resp.text)
+                    if match:
+                        redirect_url = match.group(1)
+                        if "libseat.njfu.edu.cn/" in redirect_url:
+                            path_and_query = redirect_url.split("libseat.njfu.edu.cn/")[1]
+                            redirect_url = HttpClient.get_lib_url(path_and_query)
+                        self.session.get(redirect_url, timeout=15, allow_redirects=True)
+                
+                # 4. Fetch user info to get token
+                user_info_url = HttpClient.get_lib_url("ic-web/auth/userInfo")
+                info_resp = self.session.get(user_info_url, timeout=10)
+                if info_resp.status_code == 200:
+                    info_data = info_resp.json().get("data", {})
+                    if info_data and "token" in info_data:
+                        self.token = info_data.get("token")
+                        self.acc_no = info_data.get("accNo")
+                        self.last_auth_time = time.time()
+                        logger.info("SSO 认证成功！")
+                        return self.token, self.acc_no
+                
+                logger.warning(f"第 {attempt} 次认证未成功，状态码: {info_resp.status_code}")
+                time.sleep(2)
+            except Exception as e:
+                logger.error(f"第 {attempt} 次认证发生异常: {str(e)}")
+                time.sleep(2)
+                
+        return None, None
+
+    def second_level_auth(self, max_attempts=5):
+        if not self.my_client_ticket:
+            return None, None
+            
+        token, acc_no = self._second_level_auth_sso(max_attempts=3)
+        if token and acc_no:
+            return token, acc_no
+            
+        logger.warning("SSO认证失败，尝试降级为旧版加密认证流程...")
+        return self._second_level_auth_legacy(max_attempts=max_attempts)
     def authenticate(self):
         try:
             my_client_ticket, need_captcha = self.first_level_auth()

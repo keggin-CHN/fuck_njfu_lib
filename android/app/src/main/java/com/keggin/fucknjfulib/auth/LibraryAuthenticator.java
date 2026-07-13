@@ -32,8 +32,90 @@ public class LibraryAuthenticator {
         return authenticate(5);
     }
     public boolean authenticate(int maxAttempts) {
+        if (authenticateSso(3)) {
+            return true;
+        }
+        Log.w(TAG, "SSO认证失败，尝试降级为旧版加密认证流程...");
+        return authenticateLegacy(maxAttempts);
+    }
+    
+    public boolean authenticateSso(int maxAttempts) {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            Log.d(TAG, "图书馆认证尝试 " + attempt + "/" + maxAttempts);
+            Log.d(TAG, "图书馆认证尝试(SSO) " + attempt + "/" + maxAttempts);
+            try {
+                reportProgress(80, "获取 CAS 跳转地址...");
+                Map<String, String> addressHeaders = new HashMap<>();
+                addressHeaders.put("Accept", ApiConstants.ACCEPT_JSON);
+                String addressUrl = ApiConstants.getAuthAddressUrl() + "?finalAddress=" + android.net.Uri.encode(ApiConstants.getLibRootUrl()) + "&errPageUrl=" + android.net.Uri.encode(ApiConstants.getErrorPageUrl()) + "&manager=false&consoleType=16";
+                Response addressResp = httpClient.get(addressUrl, addressHeaders);
+                if (!addressResp.isSuccessful()) {
+                    addressResp.close();
+                    continue;
+                }
+                String body = HttpClientManager.getResponseBody(addressResp);
+                if (body == null) continue;
+                JSONObject json = new JSONObject(body);
+                String casUrl = json.optString("data", "");
+                if (casUrl.isEmpty()) continue;
+                
+                if (casUrl.contains("libseat.njfu.edu.cn/")) {
+                    String path = casUrl.split("libseat.njfu.edu.cn/")[1];
+                    casUrl = ApiConstants.getLibPathUrl(path);
+                }
+                
+                reportProgress(85, "通过 CAS 获取票据...");
+                Response casResp = httpClient.get(casUrl, null); // Will follow redirects
+                String html = HttpClientManager.getResponseBody(casResp);
+                if (html != null) {
+                    java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("window\\.location\\.href\\s*=\\s*['\"]([^'\"]+)['\"]").matcher(html);
+                    if (matcher.find()) {
+                        String redirectUrl = matcher.group(1);
+                        if (redirectUrl != null && redirectUrl.contains("libseat.njfu.edu.cn/")) {
+                            String path = redirectUrl.split("libseat.njfu.edu.cn/")[1];
+                            redirectUrl = ApiConstants.getLibPathUrl(path);
+                        }
+                        reportProgress(90, "换取 Library Token...");
+                        Response tokenResp = httpClient.get(redirectUrl, null);
+                        tokenResp.close();
+                    }
+                }
+                
+                reportProgress(95, "抓取用户信息...");
+                Map<String, String> infoHeaders = new HashMap<>();
+                infoHeaders.put("Accept", ApiConstants.ACCEPT_JSON);
+                Response infoResp = httpClient.get(ApiConstants.getUserInfoUrl(), infoHeaders);
+                if (infoResp.isSuccessful()) {
+                    String infoBody = HttpClientManager.getResponseBody(infoResp);
+                    if (infoBody != null) {
+                        JSONObject infoJson = new JSONObject(infoBody);
+                        if (infoJson.optInt("code") == 0) {
+                            JSONObject data = infoJson.optJSONObject("data");
+                            if (data != null && data.has("token")) {
+                                this.token = data.getString("token");
+                                this.accNo = data.getString("accNo");
+                                this.lastAuthTime = System.currentTimeMillis();
+                                Log.d(TAG, "图书馆 SSO 认证成功！accNo: " + accNo);
+                                return true;
+                            }
+                        }
+                    }
+                } else {
+                    infoResp.close();
+                }
+                
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                Log.e(TAG, "SSO认证过程出错: " + e.getMessage(), e);
+            }
+        }
+        return false;
+    }
+    public boolean authenticateLegacy(int maxAttempts) {
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            Log.d(TAG, "图书馆认证尝试(旧版加密) " + attempt + "/" + maxAttempts);
             try {
                 reportProgress(80, "获取图书馆加密钥...");
                 String[] keyAndNonce = getPublicKeyAndNonce();
