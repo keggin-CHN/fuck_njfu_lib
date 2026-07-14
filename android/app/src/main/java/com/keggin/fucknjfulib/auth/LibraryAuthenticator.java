@@ -7,6 +7,12 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import android.content.Context;
 import okhttp3.Response;
 import com.keggin.fucknjfulib.utils.ProgressListener;
@@ -32,11 +38,43 @@ public class LibraryAuthenticator {
         return authenticate(5);
     }
     public boolean authenticate(int maxAttempts) {
-        if (authenticateSso(3)) {
-            return true;
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executor);
+
+        completionService.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                return authenticateSso(3);
+            }
+        });
+
+        completionService.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                return authenticateLegacy(maxAttempts);
+            }
+        });
+
+        boolean success = false;
+        try {
+            for (int i = 0; i < 2; i++) {
+                Future<Boolean> future = completionService.take();
+                if (future.get() != null && future.get()) {
+                    Log.d(TAG, "有一种认证方式成功，返回最快结果");
+                    success = true;
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "并发验证出错: " + e.getMessage());
+        } finally {
+            executor.shutdownNow(); // 中断未完成的闲置网络请求
         }
-        Log.w(TAG, "SSO认证失败，尝试降级为旧版加密认证流程...");
-        return authenticateLegacy(maxAttempts);
+        
+        if (!success) {
+            Log.w(TAG, "所有验证方式均失败");
+        }
+        return success;
     }
     
     public boolean authenticateSso(int maxAttempts) {
@@ -64,8 +102,26 @@ public class LibraryAuthenticator {
                 }
                 
                 reportProgress(85, "通过 CAS 获取票据...");
-                Response casResp = httpClient.get(casUrl, null); // Will follow redirects
+                Response casResp = httpClient.get(casUrl, null);
+                
+                int redirectCount = 0;
+                while (casResp.isRedirect() && redirectCount < 10) {
+                    String location = casResp.header("Location");
+                    casResp.close();
+                    if (location == null) break;
+                    if (location.contains("libseat.njfu.edu.cn/")) {
+                        String path = location.split("libseat.njfu.edu.cn/")[1];
+                        location = ApiConstants.getLibPathUrl(path);
+                    }
+                    casResp = httpClient.get(location, null);
+                    redirectCount++;
+                }
+                
                 String html = HttpClientManager.getResponseBody(casResp);
+                Log.d(TAG, "提取到的 HTML 长度: " + (html != null ? html.length() : "null"));
+                if (html != null && html.length() > 0) {
+                    Log.d(TAG, "HTML 摘要: " + html.substring(0, Math.min(html.length(), 200)));
+                }
                 if (html != null) {
                     java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("window\\.location\\.href\\s*=\\s*['\"]([^'\"]+)['\"]").matcher(html);
                     if (matcher.find()) {
@@ -76,8 +132,25 @@ public class LibraryAuthenticator {
                         }
                         reportProgress(90, "换取 Library Token...");
                         Response tokenResp = httpClient.get(redirectUrl, null);
+                        
+                        int tokenRedirectCount = 0;
+                        while (tokenResp.isRedirect() && tokenRedirectCount < 10) {
+                            String location = tokenResp.header("Location");
+                            tokenResp.close();
+                            if (location == null) break;
+                            if (location.contains("libseat.njfu.edu.cn/")) {
+                                String path = location.split("libseat.njfu.edu.cn/")[1];
+                                location = ApiConstants.getLibPathUrl(path);
+                            }
+                            tokenResp = httpClient.get(location, null);
+                            tokenRedirectCount++;
+                        }
                         tokenResp.close();
+                    } else {
+                        Log.w(TAG, "未在 HTML 中找到 JS 跳转链接! HTML: " + html);
                     }
+                } else {
+                    Log.w(TAG, "提取到的 HTML 为空");
                 }
                 
                 reportProgress(95, "抓取用户信息...");

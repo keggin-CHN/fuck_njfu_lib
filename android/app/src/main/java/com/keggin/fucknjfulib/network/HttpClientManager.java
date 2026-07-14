@@ -34,6 +34,7 @@ public class HttpClientManager {
                 .writeTimeout(15, TimeUnit.SECONDS)
                 .followRedirects(false)
                 .followSslRedirects(false)
+                .protocols(java.util.Collections.singletonList(okhttp3.Protocol.HTTP_1_1))
                 .build();
     }
     public static synchronized HttpClientManager getInstance(Context context) {
@@ -160,6 +161,10 @@ public class HttpClientManager {
                 source.readAll(buffer);
             } catch (java.io.EOFException e) {
                 Log.w(TAG, "EOFException reading body, returning partial data", e);
+                // 当 gzip trailer 被截断时，不足一个 chunk (8KB) 的数据会被卡在 source.buffer() 中没有 flush 到我们自己的 buffer 里！
+                if (source.buffer().size() > 0) {
+                    buffer.writeAll(source.buffer());
+                }
             }
             java.nio.charset.Charset charset = java.nio.charset.Charset.forName("UTF-8");
             okhttp3.MediaType contentType = response.body().contentType();

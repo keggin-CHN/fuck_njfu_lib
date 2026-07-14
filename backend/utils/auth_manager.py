@@ -12,6 +12,7 @@ from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from cryptography.fernet import Fernet
 from functools import wraps
+import concurrent.futures
 
 # 临时注释掉 Config，因为测试脚本在外部覆盖了它
 try:
@@ -628,12 +629,21 @@ class LibraryAuthenticator:
         if not self.my_client_ticket:
             return None, None
             
-        token, acc_no = self._second_level_auth_sso(max_attempts=3)
-        if token and acc_no:
-            return token, acc_no
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future_sso = executor.submit(self._second_level_auth_sso, 3)
+            future_legacy = executor.submit(self._second_level_auth_legacy, max_attempts)
             
-        logger.warning("SSO认证失败，尝试降级为旧版加密认证流程...")
-        return self._second_level_auth_legacy(max_attempts=max_attempts)
+            for future in concurrent.futures.as_completed([future_sso, future_legacy]):
+                try:
+                    token, acc_no = future.result()
+                    if token and acc_no:
+                        logger.info("认证成功，返回最快的结果")
+                        return token, acc_no
+                except Exception as e:
+                    logger.error(f"并发验证时发生异常: {e}")
+                    
+        logger.warning("所有验证方式均失败")
+        return None, None
     def authenticate(self):
         try:
             my_client_ticket, need_captcha = self.first_level_auth()
