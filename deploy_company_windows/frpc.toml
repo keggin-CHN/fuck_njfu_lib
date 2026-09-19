@@ -1,0 +1,10 @@
+serverAddr = "your-server-ip"
+serverPort = 7000
+auth.token = "your_frp_token"
+
+[[proxies]]
+name = "njfu_direct_api"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 3001
+remotePort = 3002

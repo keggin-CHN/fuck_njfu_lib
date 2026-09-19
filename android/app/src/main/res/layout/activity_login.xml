@@ -75,24 +75,6 @@
                         android:layout_height="wrap_content"
                         android:inputType="textPassword"
                         android:maxLines="1"
-                        android:imeOptions="actionNext" />
-                </com.google.android.material.textfield.TextInputLayout>
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilLibPassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:hint="@string/hint_lib_password"
-                    app:startIconDrawable="@drawable/ic_library"
-                    app:endIconMode="password_toggle"
-                    app:helperText="@string/hint_lib_password_helper"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etLibPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword"
-                        android:maxLines="1"
                         android:imeOptions="actionDone" />
                 </com.google.android.material.textfield.TextInputLayout>
                 <com.google.android.material.button.MaterialButton

@@ -136,12 +136,62 @@ public class SeatReservation {
         return new ReservationResult(result.success, result.message, result.uuid);
     }
     private ReserveResult doReserve(int seatId, String beginTime, String endTime) {
+        // 优先尝试从校内穿透服务器 API 预约（直连学校网络）
+        try {
+            com.keggin.fucknjfulib.storage.PreferenceManager pref =
+                    com.keggin.fucknjfulib.storage.PreferenceManager.getInstance(authManager.getContext());
+            if (pref != null) {
+                String serverUrl = pref.getServerApiUrl();
+                String username = pref.getStudentId();
+                String apiKey = pref.getApiKey();
+                String[] areaAndSeat = Constants.getAreaAndSeatNumber(seatId);
+                if (serverUrl != null && !serverUrl.trim().isEmpty() && username != null && !username.trim().isEmpty() && areaAndSeat != null) {
+                    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                        serverUrl = "http://" + serverUrl;
+                    }
+                    String rUrl = serverUrl + "/api/reserve/now";
+                    JSONObject rPayload = new JSONObject();
+                    rPayload.put("username", username);
+                    rPayload.put("edu_password", pref.getCasPassword());
+                    rPayload.put("lib_password", pref.getLibPassword());
+                    rPayload.put("area", areaAndSeat[0]);
+                    rPayload.put("seat_number", Integer.parseInt(areaAndSeat[1]));
+                    String[] beginParts = beginTime.split(" ");
+                    String[] endParts = endTime.split(" ");
+                    rPayload.put("date", beginParts[0]);
+                    rPayload.put("start_time", beginParts.length > 1 ? beginParts[1] : "08:00:00");
+                    rPayload.put("end_time", endParts.length > 1 ? endParts[1] : "22:00:00");
+                    Map<String, String> rHeaders = new HashMap<>();
+                    rHeaders.put("Content-Type", "application/json");
+                    if (apiKey != null && !apiKey.isEmpty()) {
+                        rHeaders.put("X-API-Key", apiKey);
+                    }
+                    Response rResp = httpClient.postJson(rUrl, rPayload.toString(), rHeaders);
+                    try {
+                        if (rResp.isSuccessful()) {
+                            String rBody = HttpClientManager.getResponseBody(rResp);
+                            if (rBody != null) {
+                                JSONObject rJson = new JSONObject(rBody);
+                                boolean success = rJson.optBoolean("success", false);
+                                String msg = rJson.optString("message", success ? "预约成功" : "预约失败");
+                                return new ReserveResult(success, msg);
+                            }
+                        }
+                    } finally {
+                        rResp.close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "从校内穿透服务器预约座位异常，回退本地预约: " + e.getMessage());
+        }
+
         if (!authManager.ensureLoggedIn()) {
             return new ReserveResult(false, "认证失败: " + authManager.getErrorMessage());
         }
         String token = authManager.getToken();
         String accNo = authManager.getAccNo();
-        if (token == null || accNo == null) {
+        if (token == null || token.isEmpty() || accNo == null || accNo.isEmpty()) {
             return new ReserveResult(false, "认证信息无效，请重新登录");
         }
         try {
@@ -157,19 +207,27 @@ public class SeatReservation {
             payload.put("memo", "");
             payload.put("captcha", "");
             payload.put("testName", "");
+            String dateOnly = beginTime.split(" ")[0];
+            String reserveUrl = ApiConstants.getReserveUrl(dateOnly);
             Map<String, String> headers = new HashMap<>();
             headers.put("token", token);
             headers.put("lan", "1");
             Log.d(TAG, "发起预约请求: seatId=" + seatId + ", time=" + beginTime + " ~ " + endTime);
-            Response response = httpClient.postJson(ApiConstants.getReserveUrl(),
+            Response response = httpClient.postJson(reserveUrl,
                     payload.toString(), headers);
             if (response.code() == 302 || response.code() == 301) {
                 Log.w(TAG, "WebVPN session Expired (302) in doReserve, forcing re-auth...");
                 response.close();
                 if (authManager.refreshAuth()) {
                     token = authManager.getToken();
+                    accNo = authManager.getAccNo();
+                    if (token == null || token.isEmpty() || accNo == null || accNo.isEmpty()) {
+                        return new ReserveResult(false, "重新认证后凭据无效，请重新登录");
+                    }
                     headers.put("token", token);
-                    response = httpClient.postJson(ApiConstants.getReserveUrl(), payload.toString(), headers);
+                    payload.put("appAccNo", accNo);
+                    payload.put("resvMember", new JSONArray().put(accNo));
+                    response = httpClient.postJson(reserveUrl, payload.toString(), headers);
                 } else {
                     return new ReserveResult(false, "重新认证失败: " + authManager.getErrorMessage());
                 }
@@ -186,8 +244,8 @@ public class SeatReservation {
             JSONObject json = new JSONObject(body);
             if (json.getInt("code") == 0) {
                 String uuid = null;
-                if (json.has("data")) {
-                    JSONObject data = json.getJSONObject("data");
+                JSONObject data = json.optJSONObject("data");
+                if (data != null) {
                     uuid = data.optString("uuid", null);
                 }
                 String message = json.optString("message", "预约成功");
@@ -206,6 +264,48 @@ public class SeatReservation {
     public ReserveResult cancelReservation(String uuid) {
         if (uuid == null || uuid.isEmpty()) {
             return new ReserveResult(false, "预约UUID无效");
+        }
+        // 优先从校内穿透服务器 API 取消
+        try {
+            com.keggin.fucknjfulib.storage.PreferenceManager pref =
+                    com.keggin.fucknjfulib.storage.PreferenceManager.getInstance(authManager.getContext());
+            if (pref != null) {
+                String serverUrl = pref.getServerApiUrl();
+                String username = pref.getStudentId();
+                String apiKey = pref.getApiKey();
+                if (serverUrl != null && !serverUrl.trim().isEmpty() && username != null && !username.trim().isEmpty()) {
+                    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                        serverUrl = "http://" + serverUrl;
+                    }
+                    String cUrl = serverUrl + "/api/cancel";
+                    JSONObject cPayload = new JSONObject();
+                    cPayload.put("username", username);
+                    cPayload.put("edu_password", pref.getCasPassword());
+                    cPayload.put("lib_password", pref.getLibPassword());
+                    cPayload.put("uuid", uuid);
+                    Map<String, String> cHeaders = new HashMap<>();
+                    cHeaders.put("Content-Type", "application/json");
+                    if (apiKey != null && !apiKey.isEmpty()) {
+                        cHeaders.put("X-API-Key", apiKey);
+                    }
+                    Response cResp = httpClient.postJson(cUrl, cPayload.toString(), cHeaders);
+                    try {
+                        if (cResp.isSuccessful()) {
+                            String cBody = HttpClientManager.getResponseBody(cResp);
+                            if (cBody != null) {
+                                JSONObject cJson = new JSONObject(cBody);
+                                boolean success = cJson.optBoolean("success", false);
+                                String msg = cJson.optString("message", success ? "取消预约成功" : "取消失败");
+                                return new ReserveResult(success, msg);
+                            }
+                        }
+                    } finally {
+                        cResp.close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "从校内穿透服务器取消预约异常，回退本地取消: " + e.getMessage());
         }
         if (!authManager.ensureLoggedIn()) {
             return new ReserveResult(false, "认证失败: " + authManager.getErrorMessage());
@@ -416,6 +516,42 @@ public class SeatReservation {
         return primary;
     }
     private OperationResult performAction(String resvId, String action) {
+        // 优先从校内穿透服务器 API 执行座位操作
+        try {
+            com.keggin.fucknjfulib.storage.PreferenceManager pref =
+                    com.keggin.fucknjfulib.storage.PreferenceManager.getInstance(authManager.getContext());
+            if (pref != null) {
+                String serverUrl = pref.getServerApiUrl();
+                String username = pref.getStudentId();
+                if (serverUrl != null && !serverUrl.trim().isEmpty() && username != null && !username.trim().isEmpty()) {
+                    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                        serverUrl = "http://" + serverUrl;
+                    }
+                    String aUrl = serverUrl + "/api/seat/action";
+                    JSONObject aPayload = new JSONObject();
+                    aPayload.put("username", username);
+                    aPayload.put("action", action);
+                    aPayload.put("resv_id", resvId);
+                    Response aResp = httpClient.postJson(aUrl, aPayload.toString(), null);
+                    try {
+                        if (aResp.isSuccessful()) {
+                            String aBody = HttpClientManager.getResponseBody(aResp);
+                            if (aBody != null) {
+                                JSONObject aJson = new JSONObject(aBody);
+                                boolean success = aJson.optBoolean("success", false);
+                                String msg = aJson.optString("message", success ? "操作成功" : "操作失败");
+                                return new OperationResult(success, msg);
+                            }
+                        }
+                    } finally {
+                        aResp.close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "从校内穿透服务器执行座位操作异常，回退本地执行: " + e.getMessage());
+        }
+
         if (!authManager.ensureLoggedIn()) {
             return new OperationResult(false, "认证失败: " + authManager.getErrorMessage());
         }
@@ -461,12 +597,94 @@ public class SeatReservation {
             return new OperationResult(false, "操作失败: " + e.getMessage());
         }
     }
+    private List<ReservationInfo> parseReservationData(JSONArray data) {
+        List<ReservationInfo> result = new ArrayList<>();
+        if (data != null) {
+            for (int i = 0; i < data.length(); i++) {
+                try {
+                    JSONObject item = data.getJSONObject(i);
+                    ReservationInfo info = new ReservationInfo();
+                    info.uuid = item.optString("uuid");
+                    info.resvId = info.uuid;
+                    info.resvIdInt = item.optInt("resvId", 0);
+                    info.beginTime = item.optLong("resvBeginTime");
+                    info.endTimestamp = item.optLong("resvEndTime");
+                    info.resvStatus = item.optInt("resvStatus", 0);
+                    info.canEndEarly = item.optBoolean("endEarly", false);
+                    info.tempLeaveEndTime = item.optInt("tempLeaveEndTime", 0);
+                    info.latestCheckInTime = item.optLong("latestCheckInTime", 0);
+                    info.statusName = item.optString("statusName", null);
+                    info.state = convertStatusToState(info.statusName, info.resvStatus);
+                    info.onDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                            .format(new java.util.Date(info.beginTime));
+                    info.startTime = DateUtils.formatTimestampToTime(info.beginTime);
+                    info.endTime = DateUtils.formatTimestampToTime(info.endTimestamp);
+                    JSONArray devInfoList = item.optJSONArray("resvDevInfoList");
+                    if (devInfoList != null && devInfoList.length() > 0) {
+                        JSONObject devInfo = devInfoList.getJSONObject(0);
+                        info.seatName = devInfo.optString("devName");
+                        info.devId = devInfo.optInt("devId");
+                        String[] areaAndSeat = Constants.getAreaAndSeatNumber(info.devId);
+                        if (areaAndSeat != null) {
+                            info.areaName = areaAndSeat[0];
+                            info.seatLabel = areaAndSeat[1];
+                        } else {
+                            info.areaName = info.seatName;
+                            info.seatLabel = String.valueOf(info.devId);
+                        }
+                    }
+                    info.hasReservation = true;
+                    result.add(info);
+                } catch (Exception e) {
+                    Log.w(TAG, "解析预约条目失败: " + e.getMessage());
+                }
+            }
+        }
+        return result;
+    }
     public List<ReservationInfo> getReservations(String beginDate, String endDate) {
         List<ReservationInfo> result = new ArrayList<>();
+
+        // 优先从校内穿透服务器 API 查询预约
+        try {
+            com.keggin.fucknjfulib.storage.PreferenceManager pref =
+                    com.keggin.fucknjfulib.storage.PreferenceManager.getInstance(authManager.getContext());
+            if (pref != null) {
+                String serverUrl = pref.getServerApiUrl();
+                String username = pref.getStudentId();
+                if (serverUrl != null && !serverUrl.trim().isEmpty() && username != null && !username.trim().isEmpty()) {
+                    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                        serverUrl = "http://" + serverUrl;
+                    }
+                    String sUrl = serverUrl + "/api/reservations/" + username;
+                    Response sResp = httpClient.get(sUrl);
+                    try {
+                        if (sResp.isSuccessful()) {
+                            String sBody = HttpClientManager.getResponseBody(sResp);
+                            if (sBody != null) {
+                                JSONObject sJson = new JSONObject(sBody);
+                                if (sJson.optBoolean("success", false)) {
+                                    JSONArray data = sJson.optJSONArray("data");
+                                    List<ReservationInfo> list = parseReservationData(data);
+                                    Log.d(TAG, "从校内穿透服务器 API 成功获取到 " + list.size() + " 条预约记录");
+                                    return list;
+                                }
+                            }
+                        }
+                    } finally {
+                        sResp.close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "从校内穿透服务器查询预约失败，回退本地查询: " + e.getMessage());
+        }
+
         if (!authManager.ensureLoggedIn()) {
             Log.e(TAG, "获取预约列表失败: 认证失败 - " + authManager.getErrorMessage());
             return result;
         }
+
         String token = authManager.getToken();
         if (token == null) {
             Log.e(TAG, "获取预约列表失败: token 无效");
@@ -511,43 +729,7 @@ public class SeatReservation {
             JSONObject json = new JSONObject(body);
             if (json.getInt("code") == 0) {
                 JSONArray data = json.optJSONArray("data");
-                if (data != null) {
-                    for (int i = 0; i < data.length(); i++) {
-                        JSONObject item = data.getJSONObject(i);
-                        ReservationInfo info = new ReservationInfo();
-                        info.uuid = item.optString("uuid");
-                        info.resvId = info.uuid;
-                        info.resvIdInt = item.optInt("resvId", 0);
-                        info.beginTime = item.optLong("resvBeginTime");
-                        info.endTimestamp = item.optLong("resvEndTime");
-                        info.resvStatus = item.optInt("resvStatus", 0);
-                        info.canEndEarly = item.optBoolean("endEarly", false);
-                        info.tempLeaveEndTime = item.optInt("tempLeaveEndTime", 0);
-                        info.latestCheckInTime = item.optLong("latestCheckInTime", 0);
-                        info.statusName = item.optString("statusName", null);
-                        info.state = convertStatusToState(info.statusName, info.resvStatus);
-                        info.onDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                                .format(new java.util.Date(info.beginTime));
-                        info.startTime = DateUtils.formatTimestampToTime(info.beginTime);
-                        info.endTime = DateUtils.formatTimestampToTime(info.endTimestamp);
-                        JSONArray devInfoList = item.optJSONArray("resvDevInfoList");
-                        if (devInfoList != null && devInfoList.length() > 0) {
-                            JSONObject devInfo = devInfoList.getJSONObject(0);
-                            info.seatName = devInfo.optString("devName");
-                            info.devId = devInfo.optInt("devId");
-                            String[] areaAndSeat = Constants.getAreaAndSeatNumber(info.devId);
-                            if (areaAndSeat != null) {
-                                info.areaName = areaAndSeat[0];
-                                info.seatLabel = areaAndSeat[1];
-                            } else {
-                                info.areaName = info.seatName;
-                                info.seatLabel = String.valueOf(info.devId);
-                            }
-                        }
-                        info.hasReservation = true;
-                        result.add(info);
-                    }
-                }
+                result = parseReservationData(data);
                 Log.d(TAG, "获取到 " + result.size() + " 条预约记录");
             }
         } catch (Exception e) {

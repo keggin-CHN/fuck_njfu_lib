@@ -27,6 +27,7 @@ import androidx.core.app.NotificationManagerCompat;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.keggin.fucknjfulib.R;
 import com.keggin.fucknjfulib.auth.AuthManager;
+import com.keggin.fucknjfulib.network.HttpClientManager;
 import com.keggin.fucknjfulib.reservation.AutoFinder;
 import com.keggin.fucknjfulib.reservation.SeatReservation;
 import com.keggin.fucknjfulib.reservation.TrafficQuery;
@@ -237,6 +238,45 @@ public class DashboardActivity extends AppCompatActivity {
                 AuthManager auth = AuthManager.getInstance(this);
                 if (!auth.ensureLoggedIn())
                     return;
+
+                com.keggin.fucknjfulib.storage.PreferenceManager pref =
+                        com.keggin.fucknjfulib.storage.PreferenceManager.getInstance(this);
+                String serverUrl = pref.getServerApiUrl();
+                String username = pref.getStudentId();
+                if (serverUrl != null && !serverUrl.trim().isEmpty() && username != null && !username.trim().isEmpty()) {
+                    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                        serverUrl = "http://" + serverUrl;
+                    }
+                    HttpClientManager sHttp = HttpClientManager.getInstance(this);
+                    okhttp3.Response sResp = sHttp.get(serverUrl + "/api/punish/" + username);
+                    try {
+                        if (sResp.isSuccessful()) {
+                            String sBody = HttpClientManager.getResponseBody(sResp);
+                            if (sBody != null) {
+                                org.json.JSONObject sJson = new org.json.JSONObject(sBody);
+                                if (sJson.optInt("code") == 0) {
+                                    org.json.JSONArray sArr = sJson.optJSONArray("data");
+                                    int sCount = sArr != null ? sArr.length() : 0;
+                                    runOnUiThread(() -> {
+                                        if (tvViolationBadge != null) {
+                                            if (sCount == 0) {
+                                                tvViolationBadge.setText("正常");
+                                                tvViolationBadge.setTextColor(0xFF388E3C);
+                                            } else {
+                                                tvViolationBadge.setText("违约中");
+                                                tvViolationBadge.setTextColor(0xFFE53935);
+                                            }
+                                        }
+                                    });
+                                    return;
+                                }
+                            }
+                        }
+                    } finally {
+                        sResp.close();
+                    }
+                }
+
                 String token = auth.getToken();
                 if (token == null)
                     return;

@@ -99,6 +99,40 @@ public class SeatQuery {
             this.availableSeatIds = new HashSet<>();
         }
     }
+    public static List<SeatInfo> parseSeatsFromData(JSONArray data) {
+        List<SeatInfo> result = new ArrayList<>();
+        if (data == null) return result;
+        for (int i = 0; i < data.length(); i++) {
+            JSONObject item = data.optJSONObject(i);
+            if (item == null) continue;
+            SeatInfo seat = new SeatInfo();
+            seat.devId = item.optInt("devId");
+            seat.devName = item.optString("devName");
+            seat.devStatus = item.optInt("devStatus");
+            seat.coordinate = item.optString("coordinate", null);
+            seat.parseCoordinate();
+            JSONArray resvInfo = item.optJSONArray("resvInfo");
+            if (resvInfo != null) {
+                for (int j = 0; j < resvInfo.length(); j++) {
+                    JSONObject resv = resvInfo.optJSONObject(j);
+                    if (resv == null) continue;
+                    ReservationSlot slot = new ReservationSlot();
+                    slot.startTime = resv.optLong("startTime");
+                    slot.endTime = resv.optLong("endTime");
+                    if (slot.startTime > 0 && slot.startTime < 10000000000L) {
+                        slot.startTime *= 1000;
+                    }
+                    if (slot.endTime > 0 && slot.endTime < 10000000000L) {
+                        slot.endTime *= 1000;
+                    }
+                    slot.resvStatus = resv.optInt("resvStatus");
+                    seat.reservations.add(slot);
+                }
+            }
+            result.add(seat);
+        }
+        return result;
+    }
     public QueryResult querySeats(String token, Constants.AreaInfo areaInfo, String dateStr) {
         QueryResult result = new QueryResult(false, "未知错误");
         if (areaInfo == null) {
@@ -106,6 +140,68 @@ public class SeatQuery {
             return result;
         }
         String compactDate = dateStr.replace("-", "");
+
+        // 优先通过校内穿透代理直连查询（全部请求走校内办公室电脑）
+        try {
+            android.content.Context ctx = authManager != null ? authManager.getContext() : null;
+            if (ctx != null) {
+                com.keggin.fucknjfulib.storage.PreferenceManager pref =
+                        com.keggin.fucknjfulib.storage.PreferenceManager.getInstance(ctx);
+                String serverUrl = pref != null ? pref.getServerApiUrl() : null;
+                if (serverUrl != null && !serverUrl.trim().isEmpty()) {
+                    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                        serverUrl = "http://" + serverUrl;
+                    }
+                    String username = pref.getStudentId();
+                    String queryUrl = serverUrl + "/api/seats/query?roomId=" + areaInfo.roomId + "&date=" + compactDate;
+                    if (username != null && !username.trim().isEmpty()) {
+                        queryUrl += "&username=" + username;
+                    }
+                    Log.d(TAG, "正在通过校内穿透代理直连查询座位: " + queryUrl);
+                    Response response = httpClient.get(queryUrl);
+                    try {
+                        if (response != null && response.isSuccessful()) {
+                            String body = HttpClientManager.getResponseBody(response);
+                            if (body != null) {
+                                JSONObject json = new JSONObject(body);
+                                if (json.optInt("code", -1) == 0) {
+                                    JSONObject sysInfo = json.optJSONObject("sysInfo");
+                                    if (sysInfo != null) {
+                                        String contentPath = sysInfo.optString("contentPath", null);
+                                        if (contentPath != null && !contentPath.isEmpty()) {
+                                            result.background = new RoomBackground(contentPath);
+                                        }
+                                    }
+                                    JSONArray data = json.optJSONArray("data");
+                                    if (data != null) {
+                                        List<SeatInfo> seats = parseSeatsFromData(data);
+                                        result.success = true;
+                                        result.message = "查询成功";
+                                        result.totalCount = seats.size();
+                                        result.availableCount = 0;
+                                        result.availableSeatIds = new HashSet<>();
+                                        result.seatsData = seats;
+                                        for (SeatInfo seat : seats) {
+                                            if (seat.isAvailable()) {
+                                                result.availableCount++;
+                                                result.availableSeatIds.add(seat.devId);
+                                            }
+                                        }
+                                        Log.d(TAG, "通过代理成功获取座位: 总数=" + seats.size() + " 可用=" + result.availableCount);
+                                        return result;
+                                    }
+                                }
+                            }
+                        }
+                    } finally {
+                        if (response != null) response.close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "通过校内穿透代理查询座位异常: " + e.getMessage());
+        }
+
         result.background = getRoomBackground(areaInfo.roomId, compactDate);
         List<SeatInfo> seats = getSeatsData(areaInfo.roomId, compactDate);
         if (seats.isEmpty()) {
@@ -188,6 +284,46 @@ public class SeatQuery {
     public List<SeatInfo> getSeatsData(int roomId, String dateStr) {
         List<SeatInfo> result = new ArrayList<>();
         Log.d(TAG, "getSeatsData 开始: roomId=" + roomId + " date=" + dateStr);
+
+        // 优先尝试从校内穿透代理获取
+        try {
+            android.content.Context ctx = authManager != null ? authManager.getContext() : null;
+            if (ctx != null) {
+                com.keggin.fucknjfulib.storage.PreferenceManager pref =
+                        com.keggin.fucknjfulib.storage.PreferenceManager.getInstance(ctx);
+                String serverUrl = pref != null ? pref.getServerApiUrl() : null;
+                if (serverUrl != null && !serverUrl.trim().isEmpty()) {
+                    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                        serverUrl = "http://" + serverUrl;
+                    }
+                    String username = pref.getStudentId();
+                    String queryUrl = serverUrl + "/api/seats/query?roomId=" + roomId + "&date=" + dateStr;
+                    if (username != null && !username.trim().isEmpty()) {
+                        queryUrl += "&username=" + username;
+                    }
+                    Response response = httpClient.get(queryUrl);
+                    try {
+                        if (response != null && response.isSuccessful()) {
+                            String body = HttpClientManager.getResponseBody(response);
+                            if (body != null) {
+                                JSONObject json = new JSONObject(body);
+                                if (json.optInt("code", -1) == 0) {
+                                    JSONArray data = json.optJSONArray("data");
+                                    if (data != null) {
+                                        return parseSeatsFromData(data);
+                                    }
+                                }
+                            }
+                        }
+                    } finally {
+                        if (response != null) response.close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "从校内代理查询座位列表失败: " + e.getMessage());
+        }
+
         if (authManager != null && !authManager.ensureLoggedIn()) {
             Log.e(TAG, "获取座位数据失败: 认证失败 - " + authManager.getErrorMessage());
             return result;
@@ -247,33 +383,7 @@ public class SeatQuery {
             if (json.optInt("code", -1) == 0) {
                 JSONArray data = json.optJSONArray("data");
                 if (data != null) {
-                    for (int i = 0; i < data.length(); i++) {
-                        JSONObject item = data.getJSONObject(i);
-                        SeatInfo seat = new SeatInfo();
-                        seat.devId = item.optInt("devId");
-                        seat.devName = item.optString("devName");
-                        seat.devStatus = item.optInt("devStatus");
-                        seat.coordinate = item.optString("coordinate", null);
-                        seat.parseCoordinate();
-                        JSONArray resvInfo = item.optJSONArray("resvInfo");
-                        if (resvInfo != null) {
-                            for (int j = 0; j < resvInfo.length(); j++) {
-                                JSONObject resv = resvInfo.getJSONObject(j);
-                                ReservationSlot slot = new ReservationSlot();
-                                slot.startTime = resv.optLong("startTime");
-                                slot.endTime = resv.optLong("endTime");
-                                if (slot.startTime > 0 && slot.startTime < 10000000000L) {
-                                    slot.startTime *= 1000;
-                                }
-                                if (slot.endTime > 0 && slot.endTime < 10000000000L) {
-                                    slot.endTime *= 1000;
-                                }
-                                slot.resvStatus = resv.optInt("resvStatus");
-                                seat.reservations.add(slot);
-                            }
-                        }
-                        result.add(seat);
-                    }
+                    result = parseSeatsFromData(data);
                 }
                 Log.d(TAG, "获取到 " + result.size() + " 个座位数据");
             } else {

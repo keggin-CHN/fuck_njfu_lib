@@ -31,8 +31,9 @@ public class ApiConstants {
     public static String getLibLoginUrl() {
         return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/ic-web/login/user?vpn-12-libseat.njfu.edu.cn";
     }
-    public static String getReserveUrl() {
-        return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/ic-web/reserve?vpn-12-libseat.njfu.edu.cn";
+    public static String getReserveUrl(String dateStr) {
+        return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/ic-web/reserve?resvDates="
+                + dateStr.replace("-", "") + "&vpn-12-libseat.njfu.edu.cn";
     }
     public static String getReservationInfoUrl() {
         return BASE_URL + VPN_PREFIX + LIB_SUFFIX + "/ic-web/reserve/resvInfo";

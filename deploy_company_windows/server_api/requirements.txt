@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+requests
+requests[socks]
+PySocks
+bs4
+beautifulsoup4
+pycryptodome
+cryptography
+pytz

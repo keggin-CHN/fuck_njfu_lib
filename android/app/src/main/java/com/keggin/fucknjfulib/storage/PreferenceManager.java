@@ -18,12 +18,22 @@ public class PreferenceManager {
     private static final String LEGACY_AUTO_RESERVE_ENABLED = "auto_reserve_enabled";
     private static final String LEGACY_LATE_PROTECTION_ENABLED = "late_protection_enabled";
     private static final String LEGACY_AUTO_FIND_SEAT_ENABLED = "auto_find_seat_enabled";
+    private static volatile PreferenceManager sInstance;
     private SharedPreferences prefs;
     private SharedPreferences encryptedPrefs;
     private Context context;
+
+    public static synchronized PreferenceManager getInstance(Context context) {
+        if (sInstance == null && context != null) {
+            sInstance = new PreferenceManager(context);
+        }
+        return sInstance;
+    }
+
     public PreferenceManager(Context context) {
         this.context = context.getApplicationContext();
         initPreferences();
+        sInstance = this;
     }
     private void initPreferences() {
         prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
@@ -64,18 +74,19 @@ public class PreferenceManager {
     }
     public String getLibPassword() {
         String v = encryptedPrefs.getString(Constants.PREF_LIB_PASSWORD, null);
-        if (v == null) {
+        if (v == null || v.isEmpty()) {
             v = encryptedPrefs.getString(LEGACY_LIB_PASSWORD, "");
+        }
+        if (v == null || v.isEmpty()) {
+            v = getCasPassword();
         }
         return v == null ? "" : v;
     }
     public boolean hasValidCredentials() {
         String studentId = getStudentId();
         String casPassword = getCasPassword();
-        String libPassword = getLibPassword();
         return studentId != null && !studentId.isEmpty()
                 && casPassword != null && !casPassword.isEmpty()
-                && libPassword != null && !libPassword.isEmpty()
                 && isLoggedIn();
     }
     public void clearCredentials() {
@@ -228,7 +239,7 @@ public class PreferenceManager {
         prefs.edit().putString(KEY_SERVER_API_URL, url).apply();
     }
     public String getServerApiUrl() {
-        return prefs.getString(KEY_SERVER_API_URL, "http://om.rainplay.cn:21859");
+        return prefs.getString(KEY_SERVER_API_URL, "http://127.0.0.1:3000");
     }
     public void setServerTaskId(String taskId) {
         prefs.edit().putString(KEY_SERVER_TASK_ID, taskId).apply();
@@ -237,10 +248,12 @@ public class PreferenceManager {
         return prefs.getString(KEY_SERVER_TASK_ID, "");
     }
     private static final String KEY_API_KEY = "server_api_key";
+    public static final String DEFAULT_API_KEY = "";
+    public static final String OLD_API_KEY = "";
     public void setApiKey(String key) {
         prefs.edit().putString(KEY_API_KEY, key).apply();
     }
     public String getApiKey() {
-        return prefs.getString(KEY_API_KEY, "GcbjN_9e1Nqli-uUdvOFKu5_eBP48CvhTIGDu6g57co");
+        return prefs.getString(KEY_API_KEY, DEFAULT_API_KEY);
     }
 }

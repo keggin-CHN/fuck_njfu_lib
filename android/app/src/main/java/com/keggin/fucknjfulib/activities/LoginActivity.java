@@ -15,8 +15,8 @@ import com.keggin.fucknjfulib.storage.PreferenceManager;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 public class LoginActivity extends AppCompatActivity {
-    private TextInputLayout tilStudentId, tilCasPassword, tilLibPassword;
-    private TextInputEditText etStudentId, etCasPassword, etLibPassword;
+    private TextInputLayout tilStudentId, tilCasPassword;
+    private TextInputEditText etStudentId, etCasPassword;
     private MaterialButton btnLogin;
     private ProgressBar progressBar;
     private TextView tvStatus;
@@ -38,10 +38,8 @@ public class LoginActivity extends AppCompatActivity {
     private void initViews() {
         tilStudentId = findViewById(R.id.tilStudentId);
         tilCasPassword = findViewById(R.id.tilCasPassword);
-        tilLibPassword = findViewById(R.id.tilLibPassword);
         etStudentId = findViewById(R.id.etStudentId);
         etCasPassword = findViewById(R.id.etCasPassword);
-        etLibPassword = findViewById(R.id.etLibPassword);
         btnLogin = findViewById(R.id.btnLogin);
         progressBar = findViewById(R.id.progressBar);
         tvStatus = findViewById(R.id.tvStatus);
@@ -58,10 +56,8 @@ public class LoginActivity extends AppCompatActivity {
     private void attemptLogin() {
         tilStudentId.setError(null);
         tilCasPassword.setError(null);
-        tilLibPassword.setError(null);
         String studentId = etStudentId.getText() != null ? etStudentId.getText().toString().trim() : "";
         String casPassword = etCasPassword.getText() != null ? etCasPassword.getText().toString() : "";
-        String libPassword = etLibPassword.getText() != null ? etLibPassword.getText().toString() : "";
         boolean hasError = false;
         if (studentId.isEmpty()) {
             tilStudentId.setError("请输入学号");
@@ -71,18 +67,37 @@ public class LoginActivity extends AppCompatActivity {
             tilCasPassword.setError("请输入统一认证密码");
             hasError = true;
         }
-        if (libPassword.isEmpty()) {
-            tilLibPassword.setError("请输入图书馆密码");
-            hasError = true;
-        }
         if (hasError) {
             return;
         }
         setLoading(true);
-        updateStatus(getString(R.string.login_status_cas));
+        updateStatus("正在准备登录...");
         executor.execute(() -> {
             try {
                 AuthManager authManager = AuthManager.getInstance(this);
+                String serverUrl = preferenceManager.getServerApiUrl();
+                if (serverUrl != null && !serverUrl.trim().isEmpty()) {
+                    runOnUiThread(() -> updateStatus("正在通过校内代理隧道直连登录..."));
+                    AuthManager.AuthResult proxyResult = authManager.loginViaServer(studentId, casPassword, casPassword);
+                    if (proxyResult.success) {
+                        preferenceManager.saveCredentials(studentId, casPassword, casPassword);
+                        authManager.saveCredentials(studentId, casPassword, casPassword);
+                        preferenceManager.setLoggedIn(true);
+                        runOnUiThread(() -> {
+                            setLoading(false);
+                            Toast.makeText(this, "校内隧道直连登录成功！", Toast.LENGTH_SHORT).show();
+                            navigateToDashboard();
+                        });
+                        return;
+                    } else {
+                        runOnUiThread(() -> {
+                            setLoading(false);
+                            showError("代理登录失败: " + proxyResult.message);
+                        });
+                        return;
+                    }
+                }
+
                 runOnUiThread(() -> updateStatus(getString(R.string.login_status_cas)));
                 AuthManager.AuthResult casResult = authManager.loginCAS(studentId, casPassword);
                 if (!casResult.success) {
@@ -93,7 +108,7 @@ public class LoginActivity extends AppCompatActivity {
                     return;
                 }
                 runOnUiThread(() -> updateStatus(getString(R.string.login_status_lib)));
-                AuthManager.AuthResult libResult = authManager.loginLibrary(studentId, libPassword);
+                AuthManager.AuthResult libResult = authManager.loginLibrary(studentId, casPassword);
                 if (!libResult.success) {
                     runOnUiThread(() -> {
                         setLoading(false);
@@ -101,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
                     });
                     return;
                 }
-                preferenceManager.saveCredentials(studentId, casPassword, libPassword);
+                preferenceManager.saveCredentials(studentId, casPassword, casPassword);
                 preferenceManager.setLoggedIn(true);
                 runOnUiThread(() -> {
                     setLoading(false);
@@ -122,7 +137,6 @@ public class LoginActivity extends AppCompatActivity {
         tvStatus.setVisibility(isLoading ? View.VISIBLE : View.GONE);
         etStudentId.setEnabled(!isLoading);
         etCasPassword.setEnabled(!isLoading);
-        etLibPassword.setEnabled(!isLoading);
     }
     private void updateStatus(String status) {
         tvStatus.setText(status);

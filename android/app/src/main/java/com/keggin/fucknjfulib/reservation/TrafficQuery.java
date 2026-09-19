@@ -23,6 +23,42 @@ public class TrafficQuery {
     public static TrafficInfo queryCurrentTraffic(android.content.Context context) {
         TrafficInfo info = new TrafficInfo();
         try {
+            // 优先通过校内穿透代理查询（直接从校内办公室电脑获取客流，避免手机端直连 WebVPN 产生 302/EOF 截断）
+            com.keggin.fucknjfulib.storage.PreferenceManager prefMgr =
+                    com.keggin.fucknjfulib.storage.PreferenceManager.getInstance(context);
+            String serverUrl = prefMgr.getServerApiUrl();
+            if (serverUrl != null && !serverUrl.trim().isEmpty()) {
+                if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                    serverUrl = "http://" + serverUrl;
+                }
+                String tUrl = serverUrl + "/api/traffic";
+                String username = prefMgr.getStudentId();
+                if (username != null && !username.isEmpty()) {
+                    tUrl += "?username=" + username;
+                }
+                HttpClientManager http = HttpClientManager.getInstance(context);
+                Response resp = http.get(tUrl);
+                try {
+                    if (resp != null && resp.isSuccessful()) {
+                        String body = HttpClientManager.getResponseBody(resp);
+                        if (body != null) {
+                            JSONObject json = new JSONObject(body);
+                            if (json.optBoolean("success", false)) {
+                                info.currentCount = json.optInt("in_library", 0);
+                                info.totalCapacity = json.optInt("total_capacity", Constants.LIBRARY_TOTAL_CAPACITY);
+                                info.occupancyRate = (float) json.optDouble("occupancy_rate", 0.0);
+                                info.updateTime = json.optString("update_time", "");
+                                info.success = true;
+                                Log.d(TAG, "从校内代理成功获取客流: 在馆=" + info.currentCount + " 占用率=" + info.occupancyRate + "%");
+                                return info;
+                            }
+                        }
+                    }
+                } finally {
+                    if (resp != null) resp.close();
+                }
+            }
+
             com.keggin.fucknjfulib.auth.AuthManager authManager = com.keggin.fucknjfulib.auth.AuthManager
                     .getInstance(context);
             if (!authManager.ensureLoggedIn()) {

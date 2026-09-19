@@ -140,7 +140,9 @@ public class VisualSeatActivity extends AppCompatActivity {
         tvEmptyHint.setVisibility(View.GONE);
         executor.execute(() -> {
             try {
-                if (!authManager.ensureLoggedIn()) {
+                String serverUrl = preferenceManager != null ? preferenceManager.getServerApiUrl() : null;
+                boolean hasServer = serverUrl != null && !serverUrl.trim().isEmpty();
+                if (!hasServer && !authManager.ensureLoggedIn()) {
                     runOnUiThread(() -> {
                         showLoading(false);
                         Toast.makeText(this, "认证失效，请重新登录", Toast.LENGTH_LONG).show();

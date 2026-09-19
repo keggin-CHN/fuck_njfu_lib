@@ -4,9 +4,29 @@ __pycache__/
 *.pyo
 *.pyd
 *.so
-.env
 .venv/
 venv/
+
+# Environment & Secret Configurations
+.env*
+!.env.example
+.api_key*
+*.key
+*.pub
+id_ed25519*
+id_rsa*
+*.pem
+
+# Network Captures & Archives
+*.har
+*.zip
+*.tar.gz
+*.7z
+*.rar
+
+# FRP Configuration with Credentials
+deploy_company_windows/frpc.toml
+!deploy_company_windows/frpc.toml.example
 
 # Flask / Database
 instance/
@@ -14,9 +34,15 @@ instance/
 *.sqlite3
 backend/database.db
 
-# Logs & temp
+# Logs & Sessions & Temp
 *.log
 *.tmp
+.stop
+logs/
+deploy_company_windows/logs/
+**/data/sessions/
+data/sessions/
+sessions/
 backend/locks/
 
 # Android
@@ -44,3 +70,4 @@ cloudflare/worker/wrangler.toml.backup
 Thumbs.db
 .idea/
 .vscode/
+*.swp
