@@ -1,6 +1,6 @@
-serverAddr = "your-server-ip"
+serverAddr = "172.207.250.61"
 serverPort = 7000
-auth.token = "your_frp_token"
+auth.token = "fuck_njfu_lib_frp_token_2026"
 
 [[proxies]]
 name = "njfu_direct_api"
