@@ -33,6 +33,7 @@ from task_executor import (
     LightUser, reserve_seat, get_reservations, cancel_reservation,
     authenticate, get_punish_info, perform_seat_action,
     get_room_seats, get_library_traffic,
+    get_user_info, get_user_credit,
 )
 
 # ---------------------------------------------------------------------------
@@ -345,6 +346,26 @@ async def query_user_punish(username: str):
     info = get_punish_info(user)
     if info is None:
         return {"code": 0, "message": "查询成功", "data": []}
+    return info
+
+
+@app.get("/api/user/info/{username}")
+async def query_user_info(username: str):
+    """查询指定用户的详细个人信息（姓名、班级、学号等）。"""
+    user = LightUser(username, "", "")
+    info = get_user_info(user)
+    if info is None:
+        return {"code": 0, "message": "查询成功", "data": None}
+    return info
+
+
+@app.get("/api/user/credit/{username}")
+async def query_user_credit(username: str):
+    """查询指定用户的信用剩余积分与明细记录。"""
+    user = LightUser(username, "", "")
+    info = get_user_credit(user)
+    if info is None:
+        return {"code": 0, "message": "查询成功", "surplus": None, "records": []}
     return info
 
 

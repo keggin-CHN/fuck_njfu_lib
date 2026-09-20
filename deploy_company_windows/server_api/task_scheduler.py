@@ -121,18 +121,20 @@ def _should_reserve_now(task: dict, now: datetime.datetime) -> bool:
     if not task.get("auto_reserve", False):
         return False
 
-    # 获取预约执行时间
-    reserve_time_str = task.get("reserve_time", Config.DEFAULT_RESERVE_TIME)
+    # 获取预约执行时间（默认 07:00:30，精确到秒）
+    reserve_time_str = task.get("reserve_time") or getattr(Config, "DEFAULT_RESERVE_TIME", "07:00:30")
     try:
-        parts = reserve_time_str.split(":")
-        target_hour, target_minute = int(parts[0]), int(parts[1])
+        parts = str(reserve_time_str).split(":")
+        target_hour = int(parts[0])
+        target_minute = int(parts[1])
+        target_second = int(parts[2]) if len(parts) >= 3 else 30
     except (ValueError, IndexError):
-        target_hour, target_minute = 7, 3
+        target_hour, target_minute, target_second = 7, 0, 30
 
-    # 当前时间是否在执行窗口内（±1分钟）
-    target = now.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0)
-    diff = abs((now - target).total_seconds())
-    if diff > 60:
+    # 当前时间是否到达预约目标时间（窗口：到达后 0 到 15 秒内）
+    target = now.replace(hour=target_hour, minute=target_minute, second=target_second, microsecond=0)
+    diff = (now - target).total_seconds()
+    if not (0 <= diff <= 15):
         return False
 
     # 检查今天是否已经执行过
@@ -141,15 +143,14 @@ def _should_reserve_now(task: dict, now: datetime.datetime) -> bool:
     if last_date == today_str:
         return False
 
-    # 检查每周计划 — 预约的是明天的座位
+    # 检查每周计划
     tomorrow = now + datetime.timedelta(days=1)
     day_key = _weekday_to_key(tomorrow.weekday())
     weekly_plan = task.get("weekly_plan", {})
     if weekly_plan:
         day_plan = weekly_plan.get(day_key, {})
-        if not day_plan.get("enabled", True):
-            logger.info(f"任务 {task.get('task_id')}: 明天({day_key})未启用，跳过")
-            return False
+        if not day_plan.get("enabled", False):
+            logger.info(f"任务 {task.get('task_id')}: 明天({day_key})未开启周计划特殊配置，采用常规默认配置预约")
 
     return True
 
@@ -356,25 +357,27 @@ def _scheduler_loop():
             now = datetime.datetime.now()
             tasks = list_all_tasks()
 
-            # 每 5 分钟自动执行一次会话心跳保活
-            now_ts = time.time()
-            if now_ts - _last_keep_alive_time >= 300:
-                _last_keep_alive_time = now_ts
-                for task in tasks:
-                    u = task.get("username")
-                    if u:
-                        try:
-                            from utils.auth_manager import LibraryAuthenticator
-                            auth = LibraryAuthenticator(u, "", "")
-                            if auth.load_session() and auth.token:
-                                logger.info(f"[{u}] 执行每5分钟会话保活...")
-                                threading.Thread(
-                                    target=auth.keep_alive,
-                                    name=f"keepalive-{u}",
-                                    daemon=True,
-                                ).start()
-                        except Exception as e:
-                            logger.warning(f"用户 {u} 保活异常: {e}")
+            # 直连校园网模式下本地网络环境稳定，无需频繁每 5 分钟刷新 WebVPN
+            is_direct_campus = getattr(Config, "DIRECT_CAMPUS_MODE", False)
+            if not is_direct_campus:
+                now_ts = time.time()
+                if now_ts - _last_keep_alive_time >= 300:
+                    _last_keep_alive_time = now_ts
+                    for task in tasks:
+                        u = task.get("username")
+                        if u:
+                            try:
+                                from utils.auth_manager import LibraryAuthenticator
+                                auth = LibraryAuthenticator(u, "", "")
+                                if auth.load_session() and auth.token:
+                                    logger.info(f"[{u}] 执行每5分钟会话保活...")
+                                    threading.Thread(
+                                        target=auth.keep_alive,
+                                        name=f"keepalive-{u}",
+                                        daemon=True,
+                                    ).start()
+                            except Exception as e:
+                                logger.warning(f"用户 {u} 保活异常: {e}")
 
             for task in tasks:
                 task_id = task.get("task_id", "unknown")
@@ -414,7 +417,12 @@ def _scheduler_loop():
         except Exception as e:
             logger.error(f"调度器循环出错: {e}")
 
-        time.sleep(30)
+        # 智能动态休眠：接近 07:00:30 (06:59:00 - 07:01:00) 时高频 0.5s 轮询，保证秒级精确；其余时间休眠 10s
+        cur_now = datetime.datetime.now()
+        if (cur_now.hour == 6 and cur_now.minute >= 59) or (cur_now.hour == 7 and cur_now.minute <= 1):
+            time.sleep(0.5)
+        else:
+            time.sleep(10)
 
     logger.info("后台调度器已停止")
 

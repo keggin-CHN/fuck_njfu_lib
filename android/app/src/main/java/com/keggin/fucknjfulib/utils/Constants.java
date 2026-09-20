@@ -93,7 +93,7 @@ public class Constants {
     }
     public static final int DEFAULT_RESERVE_HOUR = 7;
     public static final int DEFAULT_RESERVE_MINUTE = 0;
-    public static final int DEFAULT_RESERVE_SECOND = 20;
+    public static final int DEFAULT_RESERVE_SECOND = 30;
     public static final int LATE_CHECK_MINUTES_BEFORE = 20;
     public static final int LATE_PROTECTION_DELAY_HOURS = 1;
     public static final int LIBRARY_TOTAL_CAPACITY = 2749;

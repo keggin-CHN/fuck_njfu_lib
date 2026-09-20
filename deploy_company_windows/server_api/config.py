@@ -10,8 +10,8 @@ class Config:
     TIMEZONE = pytz.timezone("Asia/Shanghai")
 
     # --- 定时任务默认执行时间 ---
-    DEFAULT_AUTH_TIME = "06:55"       # 每日认证时间
-    DEFAULT_RESERVE_TIME = "07:03"    # 每日预约时间
+    DEFAULT_AUTH_TIME = "06:55"          # 每日认证时间
+    DEFAULT_RESERVE_TIME = "07:00:30"    # 每日预约时间 (精确到秒)
 
     # --- 密码加密密钥 (用于 JSON 文件中存储的密码) ---
     ENCRYPT_KEY = os.environ.get("ENCRYPT_KEY", "njfu-lib-server-api-key-2026")

@@ -599,3 +599,75 @@ def get_library_traffic(user: LightUser = None) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# 用户信息与信用分查询
+# ---------------------------------------------------------------------------
+def get_user_info(user: LightUser, authenticator: LibraryAuthenticator = None) -> dict | None:
+    """查询用户的个人基本信息（姓名、班级、学院、学号等）。"""
+    if not authenticator:
+        authenticator = authenticate(user)
+    if not authenticator:
+        return None
+
+    url = HttpClient.get_lib_url("ic-web/auth/userInfo")
+    params = {"vpn-12-libseat.njfu.edu.cn": ""}
+    api_headers = {
+        "token": authenticator.token,
+        "lan": "1",
+        "Accept": "application/json, text/plain, */*",
+    }
+    try:
+        response = authenticator.session.get(url, headers=api_headers, params=params, timeout=10)
+        if response and response.status_code == 200:
+            return response.json()
+        logger.error(f"获取用户信息失败: status={response.status_code if response else 'None'}")
+    except Exception as e:
+        logger.error(f"获取用户信息异常: {e}")
+    return None
+
+
+def get_user_credit(user: LightUser, authenticator: LibraryAuthenticator = None) -> dict | None:
+    """查询用户的信用剩余积分与明细记录。"""
+    if not authenticator:
+        authenticator = authenticate(user)
+    if not authenticator:
+        return None
+
+    surplus_url = HttpClient.get_lib_url("ic-web/creditPunishRec/surPlus")
+    rec_url = HttpClient.get_lib_url("ic-web/creditRec/getOwn")
+    params = {"vpn-12-libseat.njfu.edu.cn": ""}
+    api_headers = {
+        "token": authenticator.token,
+        "lan": "1",
+        "Accept": "application/json, text/plain, */*",
+    }
+    surplus_data = None
+    records_data = []
+    try:
+        r1 = authenticator.session.get(surplus_url, headers=api_headers, params=params, timeout=10)
+        if r1 and r1.status_code == 200:
+            j1 = r1.json()
+            if j1.get("code") == 0:
+                surplus_data = j1.get("data")
+    except Exception as e:
+        logger.error(f"获取信用积分异常: {e}")
+
+    try:
+        rec_params = {"vpn-12-libseat.njfu.edu.cn": "", "page": "1", "pageNum": "20"}
+        r2 = authenticator.session.get(rec_url, headers=api_headers, params=rec_params, timeout=10)
+        if r2 and r2.status_code == 200:
+            j2 = r2.json()
+            if j2.get("code") == 0:
+                records_data = j2.get("data", [])
+    except Exception as e:
+        logger.error(f"获取信用明细异常: {e}")
+
+    return {
+        "code": 0,
+        "message": "查询成功",
+        "surplus": surplus_data,
+        "records": records_data,
+    }
+
+
+

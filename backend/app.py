@@ -538,6 +538,16 @@ def api_suggest_alternative_seats():
                 e = r.get('endTime')
                 if s is None or e is None:
                     return False
+                if isinstance(s, str):
+                    try:
+                        s = int(datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timestamp() * 1000)
+                    except Exception:
+                        pass
+                if isinstance(e, str):
+                    try:
+                        e = int(datetime.strptime(e, "%Y-%m-%d %H:%M:%S").timestamp() * 1000)
+                    except Exception:
+                        pass
                 if not (end_ms <= s or begin_ms >= e):
                     return False
             return True

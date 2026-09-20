@@ -117,14 +117,8 @@ public class SeatQuery {
                     JSONObject resv = resvInfo.optJSONObject(j);
                     if (resv == null) continue;
                     ReservationSlot slot = new ReservationSlot();
-                    slot.startTime = resv.optLong("startTime");
-                    slot.endTime = resv.optLong("endTime");
-                    if (slot.startTime > 0 && slot.startTime < 10000000000L) {
-                        slot.startTime *= 1000;
-                    }
-                    if (slot.endTime > 0 && slot.endTime < 10000000000L) {
-                        slot.endTime *= 1000;
-                    }
+                    slot.startTime = parseTimeString(resv, "startTime");
+                    slot.endTime = parseTimeString(resv, "endTime");
                     slot.resvStatus = resv.optInt("resvStatus");
                     seat.reservations.add(slot);
                 }
@@ -132,6 +126,40 @@ public class SeatQuery {
             result.add(seat);
         }
         return result;
+    }
+
+    public static long parseTimeString(JSONObject obj, String key) {
+        if (obj == null || !obj.has(key)) return 0;
+        String s = obj.optString(key, "").trim();
+        if (s.isEmpty()) return 0;
+        try {
+            if (s.matches("^\\d+$")) {
+                long val = Long.parseLong(s);
+                if (val > 0 && val < 10000000000L) {
+                    val *= 1000;
+                }
+                return val;
+            }
+            if (s.contains("-") && s.contains(":")) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+                java.util.Date d = sdf.parse(s);
+                return d != null ? d.getTime() : 0;
+            }
+            if (s.contains(":")) {
+                String[] parts = s.split(":");
+                int h = Integer.parseInt(parts[0]);
+                int m = Integer.parseInt(parts[1]);
+                java.util.Calendar cal = java.util.Calendar.getInstance();
+                cal.set(java.util.Calendar.HOUR_OF_DAY, h);
+                cal.set(java.util.Calendar.MINUTE, m);
+                cal.set(java.util.Calendar.SECOND, 0);
+                cal.set(java.util.Calendar.MILLISECOND, 0);
+                return cal.getTimeInMillis();
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "解析预约时间失败 key=" + key + " value=" + s + ": " + e.getMessage());
+        }
+        return 0;
     }
     public QueryResult querySeats(String token, Constants.AreaInfo areaInfo, String dateStr) {
         QueryResult result = new QueryResult(false, "未知错误");

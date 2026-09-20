@@ -29,6 +29,7 @@ public class ServerTaskSynchronizer {
                 body.put("end_time", preferenceManager.getEndTime());
                 body.put("auto_reserve", preferenceManager.isAutoReserveEnabled());
                 body.put("prevent_late", preferenceManager.isLateProtectionEnabled());
+                body.put("reserve_time", "07:00:30");
                 String weeklyPlanJson = preferenceManager.getWeeklyPlanTasksJson();
                 if (weeklyPlanJson != null && !weeklyPlanJson.trim().isEmpty()) {
                     body.put("weekly_plan", new JSONObject(weeklyPlanJson));

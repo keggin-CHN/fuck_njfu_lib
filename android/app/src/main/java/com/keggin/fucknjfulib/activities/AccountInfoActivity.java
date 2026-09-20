@@ -65,61 +65,129 @@ public class AccountInfoActivity extends AppCompatActivity {
                     });
                     return;
                 }
-                String token = auth.getToken();
-                HttpClientManager http = HttpClientManager.getInstance(null);
-                Map<String, String> headers = new HashMap<>();
-                headers.put("token", token);
-                headers.put("lan", "1");
-                headers.put("Accept", ApiConstants.ACCEPT_JSON);
+                PreferenceManager prefMgr = new PreferenceManager(this);
+                String serverUrl = prefMgr.getServerApiUrl();
+                String studentId = prefMgr.getStudentId();
+                if (studentId == null || studentId.isEmpty()) {
+                    studentId = auth.getSavedUsername();
+                }
+
                 String userName = "", userDept = "";
-                String studentId = new PreferenceManager(this).getStudentId();
                 String userClass = "";
-                Response userResp = http.get(ApiConstants.getUserInfoUrl(), headers);
-                if (userResp.isSuccessful()) {
-                    String body = HttpClientManager.getResponseBody(userResp);
-                    if (body != null) {
-                        JSONObject json = new JSONObject(body);
-                        if (json.optInt("code") == 0) {
-                            JSONObject data = json.optJSONObject("data");
-                            if (data != null) {
-                                userName = data.optString("trueName", "");
-                                userDept = data.optString("deptName", "");
-                                String pid = data.optString("pid", "");
-                                if (!pid.isEmpty())
-                                    studentId = pid;
-                                userClass = data.optString("className", "");
-                            }
-                        }
-                    }
-                }
                 int creditTotal = -1, creditRemain = -1;
-                Response surplusResp = http.get(ApiConstants.getCreditSurplusUrl(), headers);
-                if (surplusResp.isSuccessful()) {
-                    String body = HttpClientManager.getResponseBody(surplusResp);
-                    if (body != null) {
-                        JSONObject json = new JSONObject(body);
-                        if (json.optInt("code") == 0) {
-                            JSONObject data = json.optJSONObject("data");
-                            if (data != null) {
-                                creditTotal = data.optInt("total8", -1);
-                                creditRemain = data.optInt("8", -1);
+                JSONArray creditList = new JSONArray();
+
+                HttpClientManager http = HttpClientManager.getInstance(null);
+
+                // 1. 优先尝试从代理服务器 (/api/user/info 和 /api/user/credit) 加载
+                boolean serverSuccess = false;
+                if (serverUrl != null && !serverUrl.trim().isEmpty() && studentId != null && !studentId.isEmpty()) {
+                    if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                        serverUrl = "http://" + serverUrl;
+                    }
+                    try {
+                        Response infoResp = http.get(serverUrl + "/api/user/info/" + studentId);
+                        if (infoResp != null && infoResp.isSuccessful()) {
+                            String body = HttpClientManager.getResponseBody(infoResp);
+                            if (body != null) {
+                                JSONObject json = new JSONObject(body);
+                                if (json.optInt("code", -1) == 0) {
+                                    JSONObject data = json.optJSONObject("data");
+                                    if (data != null) {
+                                        userName = data.optString("trueName", "");
+                                        userDept = data.optString("deptName", "");
+                                        String pid = data.optString("pid", "");
+                                        if (!pid.isEmpty()) studentId = pid;
+                                        userClass = data.optString("className", "");
+                                        serverSuccess = true;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.w("AccountInfo", "从代理服务器获取用户信息失败: " + e.getMessage());
+                    }
+
+                    try {
+                        Response creditProxyResp = http.get(serverUrl + "/api/user/credit/" + studentId);
+                        if (creditProxyResp != null && creditProxyResp.isSuccessful()) {
+                            String body = HttpClientManager.getResponseBody(creditProxyResp);
+                            if (body != null) {
+                                JSONObject json = new JSONObject(body);
+                                if (json.optInt("code", -1) == 0) {
+                                    JSONObject surplus = json.optJSONObject("surplus");
+                                    if (surplus != null) {
+                                        creditTotal = surplus.optInt("total8", -1);
+                                        creditRemain = surplus.optInt("8", -1);
+                                    }
+                                    JSONArray records = json.optJSONArray("records");
+                                    if (records != null) {
+                                        creditList = records;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.w("AccountInfo", "从代理服务器获取信用信息失败: " + e.getMessage());
+                    }
+                }
+
+                // 2. 如果代理未成功，回退到校园网/WebVPN直连模式
+                if (!serverSuccess) {
+                    String token = auth.getToken();
+                    Map<String, String> headers = new HashMap<>();
+                    headers.put("token", token != null ? token : "");
+                    headers.put("lan", "1");
+                    headers.put("Accept", ApiConstants.ACCEPT_JSON);
+
+                    Response userResp = http.get(ApiConstants.getUserInfoUrl(), headers);
+                    if (userResp.isSuccessful()) {
+                        String body = HttpClientManager.getResponseBody(userResp);
+                        if (body != null) {
+                            JSONObject json = new JSONObject(body);
+                            if (json.optInt("code") == 0) {
+                                JSONObject data = json.optJSONObject("data");
+                                if (data != null) {
+                                    userName = data.optString("trueName", "");
+                                    userDept = data.optString("deptName", "");
+                                    String pid = data.optString("pid", "");
+                                    if (!pid.isEmpty())
+                                        studentId = pid;
+                                    userClass = data.optString("className", "");
+                                }
+                            }
+                        }
+                    }
+
+                    Response surplusResp = http.get(ApiConstants.getCreditSurplusUrl(), headers);
+                    if (surplusResp.isSuccessful()) {
+                        String body = HttpClientManager.getResponseBody(surplusResp);
+                        if (body != null) {
+                            JSONObject json = new JSONObject(body);
+                            if (json.optInt("code") == 0) {
+                                JSONObject data = json.optJSONObject("data");
+                                if (data != null) {
+                                    creditTotal = data.optInt("total8", -1);
+                                    creditRemain = data.optInt("8", -1);
+                                }
+                            }
+                        }
+                    }
+
+                    Response creditResp = http.get(ApiConstants.getCreditRecUrl() + "&page=1&pageNum=20", headers);
+                    if (creditResp.isSuccessful()) {
+                        String body = HttpClientManager.getResponseBody(creditResp);
+                        if (body != null) {
+                            JSONObject json = new JSONObject(body);
+                            if (json.optInt("code") == 0) {
+                                JSONArray arr = json.optJSONArray("data");
+                                if (arr != null)
+                                    creditList = arr;
                             }
                         }
                     }
                 }
-                JSONArray creditList = new JSONArray();
-                Response creditResp = http.get(ApiConstants.getCreditRecUrl() + "&page=1&pageNum=20", headers);
-                if (creditResp.isSuccessful()) {
-                    String body = HttpClientManager.getResponseBody(creditResp);
-                    if (body != null) {
-                        JSONObject json = new JSONObject(body);
-                        if (json.optInt("code") == 0) {
-                            JSONArray arr = json.optJSONArray("data");
-                            if (arr != null)
-                                creditList = arr;
-                        }
-                    }
-                }
+
                 final String finalName = userName.isEmpty() ? studentId : userName;
                 final String finalDept = userDept;
                 final String finalStudentId = studentId;
